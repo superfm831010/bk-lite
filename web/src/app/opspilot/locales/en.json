@@ -339,6 +339,8 @@
       "llmModel": "LLM Model",
       "showThought": "Show Thought",
       "enableSuggest": "Enable Suggest",
+      "problemOptimization": "Problem Optimization",
+      "problemOptimizationTip": "When enabled, the LLM model will optimize and process user questions to achieve more accurate query results.",
       "temperature": "Temperature",
       "temperatureTip": "Used to control the randomness and creativity of text generation; a low temperature produces more definitive results, while a high temperature increases the diversity and randomness of the text.",
       "prompt": "Prompt",
@@ -713,6 +715,7 @@
     "unsavedChangesWarning": "You have unsaved changes. Are you sure you want to leave this page?",
     "unsavedWorkflowChanges": "You have unsaved workflow changes. Do you want to save before leaving?",
     "saveAndLeave": "Save and Leave",
+    "leaveWithoutSaving": "Leave Without Saving",
     "nodeProperties": {
       "name": "Node Name",
       "type": "Node Type"

@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import { Drawer, Form, Input, Select, InputNumber, Button, message, TimePicker, Upload, Radio } from 'antd';
-import { DeleteOutlined, InboxOutlined } from '@ant-design/icons';
+import { DeleteOutlined, InboxOutlined, CopyOutlined } from '@ant-design/icons';
 import { Node } from '@xyflow/react';
 import type { UploadProps, UploadFile } from 'antd';
 import { useSkillApi } from '@/app/opspilot/api/skill';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -49,6 +51,8 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   const [loadingSkills, setLoadingSkills] = useState(false);
 
   const { fetchSkill } = useSkillApi();
+  const searchParams = useSearchParams();
+  const botId = searchParams ? searchParams.get('id') : '1';
 
   // Load LLM model list
   const loadLlmModels = async () => {
@@ -61,6 +65,24 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       message.error('获取智能体列表失败');
     } finally {
       setLoadingSkills(false);
+    }
+  };
+
+  // 复制API URL到剪贴板
+  const copyApiUrl = async () => {
+    const apiUrl = `http://bklite.canwya.net/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`;
+    
+    try {
+      await navigator.clipboard.writeText(apiUrl);
+      message.success('API链接已复制到剪贴板');
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = apiUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      message.success('API链接已复制到剪贴板');
     }
   };
 
@@ -357,7 +379,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                       <TimePicker
                         format="HH:mm"
                         placeholder="选择时间"
-                        style={{ width: '100%' }}
+                        className="w-full"
                       />
                     </Form.Item>
                   )}
@@ -379,7 +401,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         <TimePicker
                           format="HH:mm"
                           placeholder="选择时间"
-                          style={{ width: '100%' }}
+                          className="w-full"
                         />
                       </Form.Item>
                     </>
@@ -398,7 +420,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         <TimePicker
                           format="HH:mm"
                           placeholder="选择时间"
-                          style={{ width: '100%' }}
+                          className="w-full"
                         />
                       </Form.Item>
                     </>
@@ -424,20 +446,20 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         </Select>
                       </Form.Item>
                       <Form.Item name="url" noStyle rules={[{ required: true }]}>
-                        <Input placeholder="输入URL" style={{ flex: 1 }} />
+                        <Input placeholder="输入URL" className="flex-1" />
                       </Form.Item>
                     </div>
                   </Form.Item>
 
                   <Form.Item label="请求参数">
                     <div className="space-y-2">
-                      <div className="grid gap-2 text-sm text-gray-500 mb-1" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                      <div className="grid gap-2 text-sm text-gray-500 mb-1 grid-cols-[1fr_1fr_60px]">
                         <span>变量名</span>
                         <span>变量值</span>
                         <span>操作</span>
                       </div>
                       {paramRows.map((row, index) => (
-                        <div key={index} className="grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                        <div key={index} className="grid gap-2 items-center grid-cols-[1fr_1fr_60px]">
                           <Input
                             placeholder="输入参数名"
                             value={row.key}
@@ -473,13 +495,13 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
 
                   <Form.Item label="请求头">
                     <div className="space-y-2">
-                      <div className="grid gap-2 text-sm text-gray-500 mb-1" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                      <div className="grid gap-2 text-sm text-gray-500 mb-1 grid-cols-[1fr_1fr_60px]">
                         <span>变量名</span>
                         <span>变量值</span>
                         <span>操作</span>
                       </div>
                       {headerRows.map((row, index) => (
-                        <div key={index} className="grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                        <div key={index} className="grid gap-2 items-center grid-cols-[1fr_1fr_60px]">
                           <Input
                             placeholder="输入参数名"
                             value={row.key}
@@ -514,14 +536,14 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                   </Form.Item>
 
                   <Form.Item name="requestBody" label="请求体">
-                    <Select defaultValue="JSON" style={{ width: '100%', marginBottom: 8 }}>
+                    <Select defaultValue="JSON" className="w-full mb-2">
                       <Option value="JSON">JSON</Option>
                     </Select>
                     <TextArea rows={6} placeholder="请输入JSON格式的请求体" />
                   </Form.Item>
 
                   <Form.Item name="timeout" label="超时设置（秒）">
-                    <InputNumber min={1} max={300} style={{ width: '100%' }} />
+                    <InputNumber min={1} max={300} className="w-full" />
                   </Form.Item>
 
                   <Form.Item name="outputMode" label="输出模式">
@@ -566,7 +588,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                     </Select>
                   </Form.Item>
                   {/* Hidden field to save agent name */}
-                  <Form.Item name="agentName" style={{ display: 'none' }}>
+                  <Form.Item name="agentName" className="hidden">
                     <Input />
                   </Form.Item>
                 </>
@@ -575,13 +597,30 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
             case 'restful':
               return (
                 <>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-gray-600 mb-2">
-                      对外提供REST接口，适合以外部系统/应用进行调用，可指定&ldquo;接口文档&rdquo;查看具体步骤和参数
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-xs leading-5">
+                    <p className="text-[var(--color-text-2)] mb-2">
+                      对外提供REST接口，适合以外部系统/应用进行调用。当画布保存后，可点击节点查询对应的调用参数如下
                     </p>
-                    <a href="#" className="text-blue-500 text-sm hover:underline">
+                    <div className="mt-2 mb-2 relative">
+                      <Input.TextArea
+                        readOnly
+                        value={`http://bklite.canwya.net/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`}
+                        autoSize={{ minRows: 2, maxRows: 4 }}
+                        className="font-mono text-xs text-[var(--color-text-2)] bg-white pr-10 border-none"
+                      />
+                      <Button
+                        type="text"
+                        icon={<CopyOutlined />}
+                        size="small"
+                        onClick={copyApiUrl}
+                        className="absolute top-2 right-2 z-10 text-[var(--color-text-3)] hover:text-[var(--color-primary)]"
+                        title="复制链接"
+                      />
+                    </div>
+                    <span className="text-[var(--color-text-2)]">更多详细介绍，可前往“接口文档”进行查看</span>
+                    <Link href="/opspilot/studio/detail/api" target="_blank" className="text-blue-500 hover:underline">
                       查看接口文档 →
-                    </a>
+                    </Link>
                   </div>
                 </>
               );
@@ -589,13 +628,30 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
             case 'openai':
               return (
                 <>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-gray-600 mb-2">
-                      对外提供的接口，可通过OpenAI的方式进行流程调用，支持SSE、流式设置完成后，可前往&ldquo;接口文档&rdquo;查看具体步骤和参数
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-xs leading-5">
+                    <p className="text-[var(--color-text-2)] mb-2">
+                      对外提供的接口，可通过OpenAI的方式进行流程调用，支持SSE流式设置。当画布保存后，可点击节点查看对应调用参数如下
                     </p>
-                    <a href="#" className="text-blue-500 text-sm hover:underline">
+                    <div className="mt-2 mb-2 relative">
+                      <Input.TextArea
+                        readOnly
+                        value={`http://bklite.canwya.net/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`}
+                        autoSize={{ minRows: 2, maxRows: 4 }}
+                        className="font-mono text-xs text-[var(--color-text-2)] bg-white pr-10 border-none"
+                      />
+                      <Button
+                        type="text"
+                        icon={<CopyOutlined />}
+                        size="small"
+                        onClick={copyApiUrl}
+                        className="absolute top-2 right-2 z-10 text-[var(--color-text-3)] hover:text-[var(--color-primary)]"
+                        title="复制链接"
+                      />
+                    </div>
+                    <span className="text-[var(--color-text-2)]">更多详细介绍，可前往“接口文档”进行查看</span>
+                    <Link href="/opspilot/studio/detail/api" target="_blank" className="text-blue-500 hover:underline">
                       查看接口文档 →
-                    </a>
+                    </Link>
                   </div>
                 </>
               );
