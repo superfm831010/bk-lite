@@ -180,6 +180,12 @@
     "publishSuccess": "Publish Successfully",
     "publishStatus": "Publishing status",
     "delModel": "Delete Model",
-    "delModelContent": "Are you sure you want to delete this model?"
+    "delModelContent": "Are you sure you want to delete this model?",
+    "apiEndpoint": "API Endpoint",
+    "maxRequestsPerMinute": "Max Requests Per Minute",
+    "supportedLogFormats": "Supported Log Formats",
+    "inputApiEndpoint": "Please enter API endpoint",
+    "inputMaxRequests": "Please enter max requests per minute",
+    "inputLogFormats": "Please enter supported log formats"
   }
 }

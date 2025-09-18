@@ -191,7 +191,7 @@ const TimeSeriesPredict = () => {
   const handleSubmit = async () => {
     setConfirmLoading(true);
     try {
-      if (activeTap === 'log_clustering') {
+      if (activeTap === 'timeseries_predict') {
         const params = {
           is_train_data: selectedTags.includes('is_train_data'),
           is_val_data: selectedTags.includes('is_val_data'),

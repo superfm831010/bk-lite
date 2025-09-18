@@ -329,6 +329,15 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
           <Input placeholder="请输入节点名称" />
         </Form.Item>
 
+        {/* Common input and output parameters for all node types */}
+        <Form.Item name="inputParams" label="输入参数" rules={[{ required: true, message: '请输入输入参数' }]}>
+          <Input placeholder="请输入输入参数" />
+        </Form.Item>
+        
+        <Form.Item name="outputParams" label="输出参数" rules={[{ required: true, message: '请输入输出参数' }]}>
+          <Input placeholder="请输入输出参数" />
+        </Form.Item>
+
         {/* Render specific configuration based on node type */}
         {(() => {
           switch (nodeType) {

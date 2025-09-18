@@ -10,7 +10,8 @@ const { TextArea } = Input;
 interface ModalProps {
   id: number;
   name: string;
-  categoryID?: number;
+  categoryID: number;
+  categoryType: string;
   description?: string;
   parent?: number;
   is_active?: boolean;
@@ -23,7 +24,9 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
   const { t } = useTranslation();
   const formRef = useRef<FormInstance>(null);
   const {
-    getServingsList,
+    getAnomalyServingsList,
+    getTimeSeriesPredictServingsList,
+    getLogClusteringServingsList,
     createCategory,
     createCapability,
     updateCapability,
@@ -56,6 +59,7 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
 
   const initForm = useCallback(async () => {
     if (!formRef.current) return;
+    if (!formData?.categoryID) return;
     formRef.current?.resetFields();
     if (type.trim().startsWith('update')) {
       formRef.current?.setFieldsValue({
@@ -75,10 +79,17 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
     'updateCapability': async (id: number, data: any) => await updateCapability(id, data),
   };
 
+  const getServingsList: Record<string, any> = {
+    'anomaly': getAnomalyServingsList,
+    'timeseries_predict': getTimeSeriesPredictServingsList,
+    'log_clustering': getLogClusteringServingsList
+  };
+
   const renderServingsOption = async () => {
     setSelectLoading(true);
     try {
-      const data = await getServingsList();
+      if (!formData?.categoryType) return;
+      const data = await getServingsList[formData.categoryType]();
       const options = data?.filter((item: any) => item?.status === 'active').map((item: any) => {
         return {
           label: item?.name,
@@ -93,9 +104,9 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
         }
       });
       setServingsOptions(options);
-      if(type.startsWith('update')) {
+      if (type.startsWith('update')) {
         const servingID = formData?.config?.serving_id;
-        const config = options.find((k:any) => k.value === servingID)?.data || {};
+        const config = options.find((k: any) => k.value === servingID)?.data || {};
         formRef.current?.setFieldValue('serving_id', servingID);
         setServingConfig(config)
       }
@@ -104,7 +115,6 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
       message.error(t(`manage.modelInferFailed`));
     } finally {
       setSelectLoading(false);
-      
     }
   };
 
@@ -137,6 +147,7 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
     setOpen(false);
     setConfirm(false);
     setFormData(null);
+    setServingsOptions([]);
   };
 
   return (

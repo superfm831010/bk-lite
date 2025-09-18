@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-基础设施实例视图
+基础设施实例视图 - MVP 简化版本
+专注核心功能：启动/停止容器，确保同技术栈网络互通
 """
 
+import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -15,13 +17,16 @@ from apps.lab.serializers import (
     InfraInstanceListSerializer,
     InfraInstanceCreateSerializer,
 )
+from apps.lab.services.simple_docker import SimpleDockerService
+
+logger = logging.getLogger(__name__)
 
 
 class InfraInstanceViewSet(viewsets.ModelViewSet):
     """
-    基础设施实例视图集
+    基础设施实例视图集 - MVP 版本
     
-    提供基础设施实例的增删改查功能
+    提供基础设施实例的增删改查功能，专注 Docker 容器管理
     """
     queryset = InfraInstance.objects.select_related('image').order_by('-created_at')
     serializer_class = InfraInstanceSerializer
@@ -55,9 +60,13 @@ class InfraInstanceViewSet(viewsets.ModelViewSet):
             updated_by=getattr(self.request.user, 'username', 'system'),
         )
         
+    def get_docker_service(self):
+        """获取 Docker 服务实例"""
+        return SimpleDockerService()
+        
     @action(detail=True, methods=['post'])
     def start(self, request, pk=None):
-        """启动基础设施实例（占位实现）"""
+        """启动基础设施实例"""
         instance = self.get_object()
         
         if instance.status == 'running':
@@ -66,20 +75,45 @@ class InfraInstanceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # TODO: 实现实际的容器启动逻辑
-        # 这里只是占位实现，实际应调用容器编排服务
-        instance.status = 'starting'
-        instance.save(update_fields=['status', 'updated_at'])
-        
-        return Response({
-            'detail': '实例启动命令已发送',
-            'status': instance.status,
-            'message': '请稍后查看实例状态'
-        })
+        try:
+            # 设置状态为启动中
+            instance.status = 'starting'
+            instance.save(update_fields=['status', 'updated_at'])
+            
+            # 启动容器
+            docker_service = self.get_docker_service()
+            result = docker_service.start_container(instance)
+            
+            # 更新实例状态和端点
+            instance.status = result['status']
+            if result.get('endpoint'):
+                instance.endpoint = result['endpoint']
+            instance.save(update_fields=['status', 'endpoint', 'updated_at'])
+            
+            return Response({
+                'detail': '实例启动完成',
+                'status': instance.status,
+                'endpoint': instance.endpoint,
+                'message': result.get('message', ''),
+                'container_id': result.get('container_id')
+            })
+            
+        except Exception as e:
+            logger.error(f"启动实例失败 {instance.name}: {e}")
+            instance.status = 'error'
+            instance.save(update_fields=['status', 'updated_at'])
+            return Response(
+                {
+                    'detail': '启动实例失败',
+                    'error': str(e),
+                    'status': instance.status
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
     @action(detail=True, methods=['post'])
     def stop(self, request, pk=None):
-        """停止基础设施实例（占位实现）"""
+        """停止基础设施实例"""
         instance = self.get_object()
         
         if instance.status == 'stopped':
@@ -88,28 +122,96 @@ class InfraInstanceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # TODO: 实现实际的容器停止逻辑
-        # 这里只是占位实现，实际应调用容器编排服务
-        instance.status = 'stopping'
-        instance.save(update_fields=['status', 'updated_at'])
-        
-        return Response({
-            'detail': '实例停止命令已发送',
-            'status': instance.status,
-            'message': '请稍后查看实例状态'
-        })
+        try:
+            # 停止容器
+            docker_service = self.get_docker_service()
+            result = docker_service.stop_container(instance.name)
+            
+            # 更新实例状态
+            instance.status = result['status']
+            instance.endpoint = None  # 清除端点信息
+            instance.save(update_fields=['status', 'endpoint', 'updated_at'])
+            
+            return Response({
+                'detail': '实例停止完成',
+                'status': instance.status,
+                'message': result.get('message', '')
+            })
+            
+        except Exception as e:
+            logger.error(f"停止实例失败 {instance.name}: {e}")
+            return Response(
+                {
+                    'detail': '停止实例失败',
+                    'error': str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
     @action(detail=True, methods=['get'])
     def logs(self, request, pk=None):
-        """获取实例日志（占位实现）"""
+        """获取实例日志"""
+        instance = self.get_object()
+        lines = int(request.query_params.get('lines', 100))
+        
+        try:
+            docker_service = self.get_docker_service()
+            logs = docker_service.get_container_logs(instance.name, lines)
+            
+            return Response({
+                'instance_name': instance.name,
+                'logs': logs,
+                'lines': lines
+            })
+            
+        except Exception as e:
+            logger.error(f"获取实例日志失败 {instance.name}: {e}")
+            return Response(
+                {
+                    'detail': '获取日志失败',
+                    'error': str(e),
+                    'instance_name': instance.name
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+    @action(detail=True, methods=['post'])
+    def sync_status(self, request, pk=None):
+        """同步容器状态"""
         instance = self.get_object()
         
-        # TODO: 实现实际的日志获取逻辑
-        return Response({
-            'instance_name': instance.name,
-            'logs': '暂无日志数据（功能开发中）',
-            'message': '日志功能将在后续版本中实现'
-        })
+        try:
+            docker_service = self.get_docker_service()
+            result = docker_service.get_container_status(instance.name)
+            
+            old_status = instance.status
+            instance.status = result['status']
+            if result.get('endpoint'):
+                instance.endpoint = result['endpoint']
+            elif result['status'] == 'stopped':
+                instance.endpoint = None
+                
+            instance.save(update_fields=['status', 'endpoint', 'updated_at'])
+            
+            return Response({
+                'detail': '状态同步完成',
+                'instance_name': instance.name,
+                'old_status': old_status,
+                'new_status': instance.status,
+                'endpoint': instance.endpoint,
+                'message': result.get('message', '')
+            })
+            
+        except Exception as e:
+            logger.error(f"同步实例状态失败 {instance.name}: {e}")
+            return Response(
+                {
+                    'detail': '同步状态失败',
+                    'error': str(e),
+                    'instance_name': instance.name
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
     @action(detail=False, methods=['get'])
     def running(self, request):

@@ -180,6 +180,12 @@
     "publishSuccess": "发布成功",
     "publishStatus": "发布状态",
     "delModel": "删除模型",
-    "delModelContent": "你确认要删除这个模型吗？"
+    "delModelContent": "你确认要删除这个模型吗？",
+    "apiEndpoint": "API 端点",
+    "maxRequestsPerMinute": "每分钟最大请求数",
+    "supportedLogFormats": "支持的日志格式",
+    "inputApiEndpoint": "请输入API端点",
+    "inputMaxRequests": "请输入每分钟最大请求数",
+    "inputLogFormats": "请输入支持的日志格式"
   }
 }

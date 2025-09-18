@@ -40,7 +40,6 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
     setFileList(fileList);
   };
 
-
   const props: UploadProps = {
     name: 'file',
     multiple: false,
