@@ -712,6 +712,10 @@
     "selectedAgent": "智能体",
     "knowledgeBase": "知识库",
     "apiInterface": "API接口",
+    "unsavedChanges": "未保存的更改",
+    "unsavedChangesWarning": "您有未保存的更改，确定要离开此页面吗？",
+    "unsavedWorkflowChanges": "您的工作流有未保存的更改，离开前是否要保存？",
+    "saveAndLeave": "保存并离开",
     "nodeProperties": {
       "name": "节点名称",
       "type": "节点类型"

@@ -16,6 +16,7 @@ import styles from '@/app/opspilot/styles/common.module.scss';
 import Icon from '@/components/icon';
 import { useStudioApi } from '@/app/opspilot/api/studio';
 import ChatflowSettings from '@/app/opspilot/components/studio/chatflowSettings';
+import { useUnsavedChanges } from '@/app/opspilot/hooks/useUnsavedChanges';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -42,7 +43,11 @@ const StudioSettingsPage: React.FC = () => {
   const [botType, setBotType] = useState<number>(1);
   // Move workflow data state to top level
   const [workflowData, setWorkflowData] = useState<{ nodes: any[], edges: any[] }>({ nodes: [], edges: [] });
-  
+
+  // Track unsaved changes for workflow
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [originalWorkflowData, setOriginalWorkflowData] = useState<{ nodes: any[], edges: any[] }>({ nodes: [], edges: [] });
+
   const searchParams = useSearchParams();
   const botId = searchParams ? searchParams.get('id') : null;
   const { fetchInitialData, saveBotConfig, toggleOnlineStatus } = useStudioApi();
@@ -134,6 +139,17 @@ const StudioSettingsPage: React.FC = () => {
 
     fetchData();
   }, [botId]);
+
+  // Initialize original workflow data when page loads
+  useEffect(() => {
+    if (!pageLoading && botType === 3) {
+      setOriginalWorkflowData({ 
+        nodes: [...workflowData.nodes], 
+        edges: [...workflowData.edges] 
+      });
+      setHasUnsavedChanges(false);
+    }
+  }, [pageLoading, botType]);
 
   const handleAddSkill = () => setIsSkillModalVisible(true);
   const handleDeleteSkill = (id: number) => setSelectedSkills(prev => prev.filter(item => item !== id));
@@ -293,26 +309,53 @@ const StudioSettingsPage: React.FC = () => {
 
   // Move chatflow related functions to top level
   const handleClearCanvas = () => {
-    // Reset workflow data to empty
-    setWorkflowData({ nodes: [], edges: [] });
+    console.log('Clear canvas operation started');
+    const emptyWorkflowData = { nodes: [], edges: [] };
+    setWorkflowData(emptyWorkflowData);
+    
+    // Check if clearing makes data different from original
+    const originalDataStr = JSON.stringify(originalWorkflowData);
+    const emptyDataStr = JSON.stringify(emptyWorkflowData);
+    const isChanged = originalDataStr !== emptyDataStr;
+    setHasUnsavedChanges(isChanged);
+    
+    console.log('Clear canvas operation completed, unsaved:', isChanged);
     message.success('Canvas cleared');
   };
 
   const handleSaveWorkflow = useCallback((newWorkflowData: { nodes: any[], edges: any[] }) => {
-    // Use data fingerprint to avoid meaningless updates
-    const currentDataStr = JSON.stringify(workflowData);
-    const newDataStr = JSON.stringify(newWorkflowData);
+    console.log('StudioSettingsPage: Workflow data updated', newWorkflowData);
     
-    if (currentDataStr !== newDataStr) {
-      console.log('StudioSettingsPage: Workflow data updated', newWorkflowData);
-      setWorkflowData(newWorkflowData);
-    }
-  }, [workflowData]);
+    // Update workflow data
+    setWorkflowData(prev => {
+      const prevDataStr = JSON.stringify(prev);
+      const newDataStr = JSON.stringify(newWorkflowData);
+      
+      if (prevDataStr !== newDataStr) {
+        // Check if data has changed from original
+        const originalDataStr = JSON.stringify(originalWorkflowData);
+        const isChanged = newDataStr !== originalDataStr;
+        setHasUnsavedChanges(isChanged);
+        
+        console.log('StudioSettingsPage: Workflow data changed, unsaved:', isChanged);
+        return { nodes: [...newWorkflowData.nodes], edges: [...newWorkflowData.edges] };
+      }
+      
+      return prev;
+    });
+  }, [originalWorkflowData]);
 
   const handleChatflowSave = async (isPublish = false) => {
     setSaveLoading(true);
     try {
       const values = await form.validateFields();
+
+      console.log('handleChatflowSave: Preparing to save workflow data', {
+        nodesLength: workflowData.nodes.length,
+        edgesLength: workflowData.edges.length,
+        workflowData: workflowData,
+        isPublish
+      });
 
       const payload = {
         name: values.name,
@@ -322,19 +365,38 @@ const StudioSettingsPage: React.FC = () => {
         is_publish: isPublish
       };
 
+      console.log('handleChatflowSave: Complete payload being sent to backend', payload);
+
       await saveBotConfig(botId, payload);
+      
+      // Reset unsaved changes status after successful save
+      setOriginalWorkflowData({ 
+        nodes: [...workflowData.nodes], 
+        edges: [...workflowData.edges] 
+      });
+      setHasUnsavedChanges(false);
+      
       message.success(t(isPublish ? 'common.publishSuccess' : 'common.saveSuccess'));
       
       if (isPublish) {
         setOnline(true);
       }
     } catch (error) {
-      console.error(error);
+      console.error('handleChatflowSave: Save failed', error);
       message.error(t('common.saveFailed'));
     } finally {
       setSaveLoading(false);
     }
   };
+
+  // Setup unsaved changes warning
+  useUnsavedChanges({
+    hasUnsavedChanges: botType === 3 && hasUnsavedChanges,
+    onSave: async () => {
+      await handleChatflowSave(false);
+    },
+    message: t('chatflow.unsavedWorkflowChanges')
+  });
 
   // Move chatflowMenu to top level
   const chatflowMenu = (
