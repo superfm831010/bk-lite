@@ -385,7 +385,7 @@ const StrategyOperation = () => {
                           <Select
                             style={{ width: 800 }}
                             showSearch
-                            mode="tags"
+                            mode="multiple"
                             maxTagCount="responsive"
                             placeholder={t('log.integration.logGroup')}
                             options={streamList.map((item: ListItem) => ({
@@ -454,7 +454,7 @@ const StrategyOperation = () => {
                                     style={{ width: 800 }}
                                     allowClear
                                     showSearch
-                                    mode="tags"
+                                    mode="multiple"
                                     maxTagCount="responsive"
                                   >
                                     {fieldList.map((item) => (
@@ -513,7 +513,51 @@ const StrategyOperation = () => {
                                 </Form.Item>
                               </Form.Item>
                             </>
-                          ) : null
+                          ) : (
+                            <Form.Item<StrategyFields>
+                              required
+                              label={
+                                <span className="w-[100px]">
+                                  {t('log.event.displayFields')}
+                                </span>
+                              }
+                            >
+                              <Form.Item
+                                name="show_fields"
+                                noStyle
+                                rules={[
+                                  {
+                                    required: true,
+                                    message: t('common.required'),
+                                  },
+                                ]}
+                              >
+                                <Select
+                                  style={{ width: 800 }}
+                                  showSearch
+                                  mode="multiple"
+                                  maxTagCount="responsive"
+                                  options={fieldList
+                                    .filter(
+                                      (item) =>
+                                        ![
+                                          'message',
+                                          'timestamp',
+                                          '_time',
+                                          '_msg',
+                                        ].includes(item)
+                                    )
+                                    .map((item) => ({
+                                      value: item,
+                                      label: item,
+                                    }))}
+                                />
+                              </Form.Item>
+                              <div className="text-[var(--color-text-3)] mt-[10px]">
+                                {t('log.event.displayFieldsDes')}
+                              </div>
+                            </Form.Item>
+                          )
                         }
                       </Form.Item>
                       <Form.Item<StrategyFields>
@@ -703,7 +747,7 @@ const StrategyOperation = () => {
                                   }}
                                   showSearch
                                   allowClear
-                                  mode="tags"
+                                  mode="multiple"
                                   maxTagCount="responsive"
                                   placeholder={t('log.event.notifier')}
                                 >

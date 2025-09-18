@@ -22,10 +22,10 @@ const { Search } = Input;
 
 const AnomalyDetail = () => {
   const { t } = useTranslation();
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const { getAnomalyTrainData, deleteAnomalyTrainData, labelingData } = useMlopsManageApi();
   const modalRef = useRef<ModalRef>(null);
+  const searchParams = useSearchParams();
+  const { getAnomalyTrainData, deleteAnomalyTrainData, labelingData } = useMlopsManageApi();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [currentData, setCurrentData] = useState<any>(null);
@@ -65,15 +65,11 @@ const AnomalyDetail = () => {
       title: t('datasets.trainFileType'),
       key: 'type',
       dataIndex: 'type',
-      render(_, record) {
+      render: (_, record) => {
         const activeTypes = Object.entries(record.type)
           .filter(([, value]) => value === true)
           .map(([key]) => <Tag key={key} color={TYPE_COLOR[key]}>{t(`datasets.${TYPE_CONTENT[key]}`)}</Tag>);
-        return (
-          <>
-            {activeTypes.length ? activeTypes : '--'}
-          </>
-        )
+        return (<>{activeTypes.length ? activeTypes : '--'}</>)
       },
     },
     {
@@ -168,7 +164,7 @@ const AnomalyDetail = () => {
       });
     }
     catch (e) { console.log(e) }
-    finally { setLoading(false); }
+    finally { setLoading(false) }
   }, [t, searchParams]);
 
   const onUpload = () => {
@@ -242,12 +238,8 @@ const AnomalyDetail = () => {
           <Breadcrumb
             separator=">"
             items={[
-              {
-                title: <a href="#" onClick={() => router.push(`/mlops/manage/list`)}>{t(`datasets.datasets`)}</a>
-              },
-              {
-                title: t(`datasets.datasetsDetail`)
-              }
+              { title: <a href="#" onClick={() => router.push(`/mlops/manage/list`)}>{t(`datasets.datasets`)}</a> },
+              { title: t(`datasets.datasetsDetail`) }
             ]}
           />
         </div>

@@ -34,19 +34,103 @@ log() {
     echo -e "${color}[$(date +'%Y-%m-%d %H:%M:%S')] [$level] $message${NC}"
 }
 
-DOCKER_COMPOSE_CMD=""
+# Function to compare version numbers
+# Returns 0 if version1 >= version2, 1 otherwise
+version_compare() {
+    local version1="$1"
+    local version2="$2"
+    
+    # Remove 'v' prefix if present
+    version1=$(echo "$version1" | sed 's/^v//')
+    version2=$(echo "$version2" | sed 's/^v//')
+    
+    # Split versions into arrays
+    IFS='.' read -ra ver1_parts <<< "$version1"
+    IFS='.' read -ra ver2_parts <<< "$version2"
+    
+    # Pad arrays to same length
+    local max_parts=$(( ${#ver1_parts[@]} > ${#ver2_parts[@]} ? ${#ver1_parts[@]} : ${#ver2_parts[@]} ))
+    
+    for ((i=0; i<max_parts; i++)); do
+        local part1=${ver1_parts[i]:-0}
+        local part2=${ver2_parts[i]:-0}
+        
+        if [[ $part1 -gt $part2 ]]; then
+            return 0
+        elif [[ $part1 -lt $part2 ]]; then
+            return 1
+        fi
+    done
+    
+    return 0  # versions are equal
+}
 
-if command -v docker-compose >/dev/null 2>&1; then
-    DOCKER_COMPOSE_CMD="docker-compose"
-    log "INFO" "检测到 docker-compose 命令，使用 docker-compose 进行部署"
-# 当docker compose version 返回0时，表示安装了docker compose v2
-elif docker compose version >/dev/null 2>&1; then
-    DOCKER_COMPOSE_CMD="docker compose"
-    log "INFO" "检测到 docker compose 命令，使用 docker compose 进行部署"
-else
-    log "ERROR" "未找到 docker-compose 或 docker compose 命令，请安装 docker-compose或将docker升级到最新版本"
-    exit 1
-fi
+# Function to check Docker version
+check_docker_version() {
+    local required_version="20.10.23"
+    
+    if ! command -v docker >/dev/null 2>&1; then
+        log "ERROR" "未找到 docker 命令，请安装 Docker"
+        exit 1
+    fi
+    
+    local docker_version=$(docker --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    
+    if [ -z "$docker_version" ]; then
+        log "ERROR" "无法获取 Docker 版本信息"
+        exit 1
+    fi
+    
+    log "INFO" "当前 Docker 版本: $docker_version"
+    
+    if version_compare "$docker_version" "$required_version"; then
+        log "SUCCESS" "Docker 版本满足要求 (>= $required_version)"
+    else
+        log "ERROR" "Docker 版本过低，要求版本 >= $required_version，当前版本: $docker_version"
+        log "ERROR" "请升级 Docker 到最新版本"
+        exit 1
+    fi
+}
+
+# Function to check Docker Compose version
+check_docker_compose_version() {
+    local required_version="2.27.0"
+    local compose_version=""
+    local cmd_type=""
+    
+    if command -v docker-compose >/dev/null 2>&1; then
+        compose_version=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        cmd_type="docker-compose"
+        DOCKER_COMPOSE_CMD="docker-compose"
+    elif docker compose version >/dev/null 2>&1; then
+        compose_version=$(docker compose version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        cmd_type="docker compose"
+        DOCKER_COMPOSE_CMD="docker compose"
+    else
+        log "ERROR" "未找到 docker-compose 或 docker compose 命令，请安装 docker-compose 或将 docker 升级到最新版本"
+        exit 1
+    fi
+    
+    if [ -z "$compose_version" ]; then
+        log "ERROR" "无法获取 Docker Compose 版本信息"
+        exit 1
+    fi
+    
+    log "INFO" "当前 Docker Compose 版本: $compose_version (使用 $cmd_type 命令)"
+    
+    if version_compare "$compose_version" "$required_version"; then
+        log "SUCCESS" "Docker Compose 版本满足要求 (>= $required_version)"
+    else
+        log "ERROR" "Docker Compose 版本过低，要求版本 >= $required_version，当前版本: $compose_version"
+        log "ERROR" "请升级 Docker Compose 到最新版本"
+        exit 1
+    fi
+}
+
+# Check Docker and Docker Compose versions
+log "INFO" "开始检查 Docker 和 Docker Compose 版本..."
+check_docker_version
+check_docker_compose_version
 
 # 检查是否添加--opspilot参数
 if [[ "$@" == *"--opspilot"* ]]; then

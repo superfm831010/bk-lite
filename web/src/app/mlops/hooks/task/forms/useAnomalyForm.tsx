@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, RefObject } from 'react';
 import { FormInstance, message, Form, Select, Input, InputNumber, Divider } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import useMlopsTaskApi from '@/app/mlops/api/task';
@@ -19,25 +19,29 @@ interface UseAnomalyFormProps {
   datasetOptions: Option[];
   activeTag: string[];
   onSuccess: () => void;
+  formRef: RefObject<FormInstance>
 }
 
-export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnomalyFormProps) => {
+export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess, formRef }: UseAnomalyFormProps) => {
   const { t } = useTranslation();
   const [key] = activeTag;
-  const { addAnomalyTrainTask, updateAnomalyTrainTask } = useMlopsTaskApi();
+  const {
+    addAnomalyTrainTask,
+    updateAnomalyTrainTask,
+    addLogClusteringTrainTask,
+    updateLogClusteringTrainTask,
+    addTimeSeriesTrainTask,
+    updateTimeSeriesTrainTask
+  } = useMlopsTaskApi();
   const { loadTrainOptions, getDatasetByTrainId } = useTrainDataLoader();
   const { hyperoptConversion, renderParams } = useParamsUtil();
-
-  const formRef = useRef<FormInstance>(null);
-
+  // const formRef = useRef<FormInstance>(null);
   const [modalState, setModalState] = useState<ModalState>({
     isOpen: false,
     type: 'add',
     title: 'addtask',
   });
-
   const [formData, setFormData] = useState<TrainJob | null>(null);
-
   const [loadingState, setLoadingState] = useState<{
     confirm: boolean,
     dataset: boolean,
@@ -47,7 +51,6 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
     dataset: false,
     select: false
   });
-
   const [traindataOption, setTrainDataOption] = useState<{
     trainOption: Option[],
     valOption: Option[],
@@ -57,8 +60,33 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
     valOption: [],
     testOption: []
   });
-
   const [isShow, setIsShow] = useState<boolean>(false);
+  const [algorithmType, setAlgorithmsType] = useState<string>('');
+  const addTrainTask: Record<string, any> = {
+    'anomaly': addAnomalyTrainTask,
+    'log_clustering': addLogClusteringTrainTask,
+    'timeseries_predict': addTimeSeriesTrainTask
+  };
+  const updateTrainTask: Record<string, any> = {
+    'anomaly': updateAnomalyTrainTask,
+    'log_clustering': updateLogClusteringTrainTask,
+    'timeseries_predict': updateTimeSeriesTrainTask
+  };
+  const algorithmOptions: Record<string, Option[]> = {
+    'anomaly': [
+      { value: 'RandomForest', label: `RandomForest` },
+    ],
+    'log_clustering': [
+      { value: 'KMeans', label: 'KMeans' },
+      { value: 'DBSCAN', label: 'DBSCAN' },
+      { value: 'AgglomerativeClustering', label: '层次聚类' },
+      { value: 'Drain', label: 'Drain' },
+      { value: 'LogCluster', label: 'LogCluster' },
+    ],
+    'timeseries_predict': [
+      { value: 'Prophet', label: 'Prophet' }
+    ]
+  };
 
   // 当 formData 和 modalState.isOpen 改变时初始化表单
   useEffect(() => {
@@ -80,20 +108,20 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
 
   // 初始化表单
   const initializeForm = async (formData: TrainJob) => {
-    if (key !== 'anomaly') return;
-    const defaultParams: Record<string, any> = {};
-    ALGORITHMS_PARAMS['RandomForest'].forEach(item => {
-      defaultParams[item.name] = item.default;
-    });
-
+    if (key === 'rasa') return;
+    // const defaultParams: Record<string, any> = {};
+    // ALGORITHMS_PARAMS[algorithmType].forEach(item => {
+    //   defaultParams[item.name] = item.default;
+    // });
     if (!formRef.current) return;
     formRef.current.resetFields();
 
     if (modalState.type === 'add') {
-      formRef.current.setFieldsValue({
-        hyperopt_config: defaultParams
-      });
+      // formRef.current.setFieldsValue({
+      //   hyperopt_config: defaultParams
+      // });
     } else if (formData) {
+      setAlgorithmsType(formData.algorithm);
       const immediateData = {
         name: formData.name,
         type: formData.type,
@@ -135,7 +163,7 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
   const renderOptions = useCallback(async (dataset: number) => {
     if (!formRef.current || !dataset) return;
     // 加载训练数据选项
-    const trainOptions = await loadTrainOptions(dataset);
+    const trainOptions = await loadTrainOptions(dataset, key);
     setTrainDataOption(trainOptions);
     formRef.current.setFieldsValue({
       train_data_id: formData?.train_data_id,
@@ -146,6 +174,7 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
 
   // 渲染超参数表单项
   const renderItem = useCallback((param: AlgorithmParam[]) => {
+    if(!param) return [];
     return param.map((item) => (
       <Form.Item key={item.name} name={['hyperopt_config', item.name]} label={item.name} rules={[{ required: true, message: t('common.inputMsg') }]}>
         {item.type === 'randint' ?
@@ -157,8 +186,16 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
   }, [t]);
 
   // 算法变化
-  const onTypeChange = useCallback(() => {
+  const onTypeChange = useCallback((value: string) => {
     if (!formRef.current) return;
+    const defaultParams: Record<string, any> = {};
+    ALGORITHMS_PARAMS[value].forEach(item => {
+      defaultParams[item.name] = item.default;
+    });
+    formRef.current.setFieldsValue({
+      hyperopt_config: defaultParams
+    });
+    setAlgorithmsType(value);
     setIsShow(true);
   }, []);
 
@@ -169,7 +206,7 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
 
     try {
       const value = await formRef.current?.validateFields();
-      const hyperopt_config = renderParams(value?.hyperopt_config);
+      const hyperopt_config = renderParams(value?.hyperopt_config, algorithmType);
       const params = {
         ...value,
         status: 'pending',
@@ -178,18 +215,19 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
       };
 
       if (modalState.type === 'add') {
-        await addAnomalyTrainTask(params);
+        await addTrainTask[key](params);
 
       } else {
-        await updateAnomalyTrainTask(formData?.id as string, params);
+        await updateTrainTask[key](formData?.id as string, params);
       }
 
       setModalState((prev) => ({ ...prev, isOpen: false }));
-      message.success(t(`datasets.${modalState.type}Success`));
+      message.success(t(`common.${modalState.type}Success`));
+      setIsShow(false);
       onSuccess();
     } catch (e) {
       console.log(e);
-      message.error(t(`common.${modalState.type}Failed`));
+      message.error(t(`common.error`));
     } finally {
       setLoadingState((prev) => ({ ...prev, confirm: false }));
     }
@@ -197,10 +235,11 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
 
   // 取消处理
   const handleCancel = useCallback(() => {
-    setModalState((prev) => ({
-      ...prev,
-      isOpen: false
-    }));
+    setModalState({
+      isOpen: false,
+      type: 'add',
+      title: 'addtask',
+    });
     formRef.current?.resetFields();
     setTrainDataOption({
       trainOption: [],
@@ -212,7 +251,7 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
 
   // 渲染表单内容
   const renderFormContent = useCallback(() => {
-    if(key !== 'anomaly') return;
+    // if (key !== 'anomaly') return;
     return (
       <>
         <Form.Item
@@ -227,9 +266,7 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
           label={t('traintask.algorithms')}
           rules={[{ required: true, message: t('common.inputMsg') }]}
         >
-          <Select placeholder={t('traintask.selectAlgorithmsMsg')} onChange={onTypeChange} options={[
-            { value: 'RandomForest', label: `RandomForest` },
-          ]} />
+          <Select placeholder={t('traintask.selectAlgorithmsMsg')} onChange={onTypeChange} options={algorithmOptions[key]} />
         </Form.Item>
         <Form.Item
           name='max_evals'
@@ -277,7 +314,7 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
             <Divider orientation='start' orientationMargin={'0'} plain style={{ borderColor: '#d1d5db' }}>
               {t(`traintask.hyperopt`)}
             </Divider>
-            {renderItem(ALGORITHMS_PARAMS['RandomForest'])}
+            {renderItem(ALGORITHMS_PARAMS[algorithmType])}
           </>
         )}
       </>

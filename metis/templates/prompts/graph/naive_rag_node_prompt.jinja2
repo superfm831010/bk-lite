@@ -32,9 +32,8 @@
     <content>{{ rag_result.content }}</content>
     <chunk_type>{{ rag_result.chunk_type }}</chunk_type>
 </knowledge>
-
-chunk_type有 Document、QA、Graph 三种类型，分别表示文档知识、问答对知识和图谱知识。
 {% endfor %}
+chunk_type有 Document、QA、Graph 三种类型，分别表示文档知识、问答对知识和图谱知识。
 {% else %}
 **注意：没有找到相关的背景资料**
 {% endif %}

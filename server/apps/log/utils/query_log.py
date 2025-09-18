@@ -14,6 +14,17 @@ class VictoriaMetricsAPI:
         self.password = VICTORIALOGS_PWD
         self.ssl_verify = VICTORIALOGS_SSL_VERIFY
 
+    def field_names(self, start, end, field, limit=100):
+        data = {"query": f"{field}:*", "field":field, "start": start, "end": end, "limit": limit}
+        response = requests.get(
+            f"{self.host}/select/logsql/field_names",
+            params=data,
+            auth=(self.username, self.password),
+            verify=self.ssl_verify,
+        )
+        response.raise_for_status()
+        return response.json()
+
     def query(self, query, start, end, limit=10):
         data = {"query": query, "start": start, "end": end, "limit": limit}
         response = requests.post(

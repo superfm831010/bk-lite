@@ -103,6 +103,9 @@
     "copySuccess": "复制成功",
     "copyFailed": "复制失败",
     "successfullyExported": "成功导出",
-    "exportFailed": "导出失败"
+    "exportFailed": "导出失败",
+    "leave": "离开",
+    "addFail": "添加失败",
+    "updateFail": "更新失败"
   }
 }

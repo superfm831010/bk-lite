@@ -135,17 +135,12 @@ const Detail = () => {
   ), [folder_name]);
 
   const topSection = useMemo(() => {
-    if (menu) {
-      return (
-        <TopSection title={t(`datasets.${menu}`)} content={RasaContent(menu)} />
-      )
-    }
-    return <TopSection title={folder_name} content={description} />
+    if (menu)
+      return <TopSection title={t(`datasets.${menu}`)} content={RasaContent(menu)} />;
+    return <TopSection title={folder_name} content={description} />;
   }, [menu]);
 
-  const backToList = () => {
-    router.push(`/mlops/manage/list`);
-  };
+  const backToList = () => router.push(`/mlops/manage/list`);
 
   return (
     <>
