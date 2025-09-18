@@ -7,7 +7,7 @@ services:
   vector:
     image: ${DOCKER_IMAGE_VECTOR}
     container_name: vector
-    command: ["vector", "--config", "/etc/vector/vector.yaml"]
+    command: ["--config", "/etc/vector/vector.yaml"]
     environment:
       NATS_ADMIN_USERNAME: ${NATS_ADMIN_USERNAME}
       NATS_ADMIN_PASSWORD: ${NATS_ADMIN_PASSWORD}
