@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { NodeType } from '@/app/mlops/types';
 // import { UpOutlined, DownOutlined } from '@ant-design/icons';
 import Icon from '@/components/icon';
-// import { useTranslation } from '@/utils/i18n';
+import { useTranslation } from '@/utils/i18n';
 
 interface NodePanelProps {
   nodeTypes: NodeType[];
@@ -11,7 +11,7 @@ interface NodePanelProps {
 }
 
 const NodePanel: React.FC<NodePanelProps> = ({ onDragStart, nodeTypes }) => {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
   const [showDetail, setShowDetail] = useState<boolean>(false);
 
   // const handleClick = (event: any, nodeType: any) => {
@@ -38,7 +38,6 @@ const NodePanel: React.FC<NodePanelProps> = ({ onDragStart, nodeTypes }) => {
           <div className="flex flex-col items-center justify-center">
             <div
               className={`flex flex-col my-1 items-center py-2 px-[6px] justify-center h-[32px] rounded-lg ${showDetail && 'bg-sky-100'} hover:bg-sky-100`}
-              draggable
               // onDragStart={(event) => onDragStart(event, nodeType.type)}
               onClick={() => setShowDetail(prev => !prev)}
             >
@@ -65,7 +64,7 @@ const NodePanel: React.FC<NodePanelProps> = ({ onDragStart, nodeTypes }) => {
         rounded-[10px] z-20 border 
         bg-[var(--color-bg)] shadow-lg'
         >
-          <span className='font-xs text-xs text-[var(--color-text-3)]'>节点</span>
+          <span className='font-xs text-xs text-[var(--color-text-3)]'>{t(`common.node`)}</span>
           {nodeTypes.map((nodeType: NodeType) => (
             <div
               key={nodeType.type}

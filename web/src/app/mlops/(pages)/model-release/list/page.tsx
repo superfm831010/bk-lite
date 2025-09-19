@@ -49,13 +49,14 @@ const ModelRelease = () => {
           key: 'rasa'
         },
         {
+          title: t(`datasets.timeseriesPredict`),
+          key: 'timeseries_predict'
+        },
+        {
           title: t(`datasets.logClustering`),
           key: 'log_clustering'
         },
-        {
-          title: t(`datasets.timeseriesPredict`),
-          key: 'timeseries_predict'
-        }
+        
       ]
     }
   ];

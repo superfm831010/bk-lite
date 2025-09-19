@@ -282,6 +282,13 @@ const RASA_CONFIG: Record<string, {
       dest: '歧义阈值'
     }
   ],
+  'ResponseSelector': [
+    {
+      name: 'epochs',
+      type: 'number',
+      dest: '训练轮数'
+    }
+  ],
   'RegexEntityExtractor': [
     {
       name: 'case_sensitive',

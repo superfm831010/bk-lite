@@ -261,7 +261,7 @@ const useMlopsManageApi = () => {
 
   // 获取指定时序预测样本的详情
   const getTimeSeriesPredictTrainDataInfo = async (id: number | string, include_train_data?: boolean, include_metadata?: boolean) => {
-    return await get(`/mlops/log_clustering_train_data/${id}?include_train_data=${include_train_data}&include_metadata=${include_metadata}`);
+    return await get(`/mlops/timeseries_predict_train_data/${id}?include_train_data=${include_train_data}&include_metadata=${include_metadata}`);
   };
 
   // 新增异常检测数据集
@@ -517,7 +517,8 @@ const useMlopsManageApi = () => {
   const updateLogClusteringTrainData = async (id: string, params: {
     is_train_data?: boolean,
     is_val_data?: boolean,
-    is_test_data?: boolean
+    is_test_data?: boolean,
+    train_data?: any[]
   }) => {
     return await patch(`/mlops/log_clustering_train_data/${id}/`, params)
   };

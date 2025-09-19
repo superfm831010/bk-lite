@@ -41,7 +41,7 @@ const LogDetail = () => {
   const {
     folder_id,
     folder_name,
-    // description,
+    description,
     activeTap
   } = useMemo(() => ({
     folder_id: searchParams.get('folder_id'),
@@ -76,6 +76,15 @@ const LogDetail = () => {
       fixed: 'right',
       render: (_: unknown, record) => (
         <>
+          <PermissionWrapper requiredPermissions={['File Edit']}>
+            <Button
+              type="link"
+              className="mr-[10px]"
+              onClick={() => toAnnotation(record)}
+            >
+              {t('common.detail')}
+            </Button>
+          </PermissionWrapper>
           <PermissionWrapper requiredPermissions={['File Edit']}>
             <Button
               type="link"
@@ -120,6 +129,10 @@ const LogDetail = () => {
 
   const onSearch = (search: string) => {
     getDataset(search);
+  };
+
+  const toAnnotation = (data: any) => {
+    router.push(`/mlops/manage/annotation?id=${data.id}&folder_id=${folder_id}&folder_name=${folder_name}&description=${description}&activeTap=${activeTap}`);
   };
 
   const getDataset = useCallback(async (search: string = '') => {
