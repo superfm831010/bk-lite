@@ -22,12 +22,18 @@ const Analysis: React.FC = () => {
 
   // 将菜单项转换为树结构
   const treeData = useMemo(() => {
-    const treeItems: TreeItem[] = menuItems.map((item) => ({
-      title: item.name,
-      key: item.id,
-      label: item.name,
-      children: [],
-    }));
+    const treeItems: TreeItem[] = [
+      {
+        title: 'Packbeat',
+        key: 'packbeat',
+        children: menuItems.map((item) => ({
+          title: item.name,
+          key: item.id,
+          label: item.name,
+          children: [],
+        })),
+      },
+    ];
     return treeItems;
   }, [menuItems]);
 

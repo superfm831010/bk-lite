@@ -156,7 +156,7 @@
       "dashboard": "仪表盘",
       "dimension": "维度",
       "packetbeat": {
-        "dashboardName": "packetbeat基础视图",
+        "dashboardName": "网络流量基础仪表盘",
         "protocolTrafficDistribution": "协议流量分布趋势图",
         "protocolTrafficDistributionDesc": "统计不同协议（TCP/UDP/ICMP）产生的流量比例，帮助了解网络使用情况。（单位是GB）",
         "totalNetworkTraffic": "网络总流量趋势图",
