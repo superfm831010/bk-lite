@@ -181,7 +181,8 @@ def node_list(query_data: dict):
     page = query_data.get('page', 1)
     page_size = query_data.get('page_size', 10)
     is_active = query_data.get('is_active')
-    return NodeService.get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size, is_active)
+    permission_data = query_data.get('permission_data', {})
+    return NodeService.get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size, is_active, permission_data)
 
 
 @nats_client.register

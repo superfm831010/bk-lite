@@ -9,7 +9,6 @@ from apps.monitor.constants import OBJ_ORDER, DEFAULT_OBJ_ORDER, MONITOR_OBJ_KEY
 from apps.monitor.models.monitor_metrics import Metric
 from apps.monitor.models.monitor_object import MonitorInstance, MonitorObject, MonitorInstanceOrganization
 from apps.monitor.models.setting import Setting
-from apps.monitor.utils.instance import calculation_status
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
 from apps.monitor.tasks.grouping_rule import sync_instance_and_group
 
@@ -18,7 +17,7 @@ class MonitorObjectService:
     @staticmethod
     def get_instances_by_metric(metric: str, instance_id_keys: list):
         """获取监控对象实例"""
-        metrics = VictoriaMetricsAPI().query(metric, "24h")
+        metrics = VictoriaMetricsAPI().query(metric)
         instance_map = {}
         for metric_info in metrics.get("data", {}).get("result", []):
             instance_id = str(tuple([metric_info["metric"].get(i) for i in instance_id_keys]))
@@ -50,10 +49,11 @@ class MonitorObjectService:
 
             conf_info["organization"] = list(org_map.get(conf_info["instance_id"], []))
 
-            if conf_info["time"] == 0:
-                conf_info["status"] = ""
+            if conf_info["time"]:
+                conf_info["status"] = "normal"
             else:
-                conf_info["status"] = calculation_status(conf_info["time"])
+                conf_info["status"] = "unavailable"
+
 
     @staticmethod
     def get_monitor_instance(monitor_object_id, page, page_size, name, qs, add_metrics=False):

@@ -2,25 +2,11 @@ networks:
   prod:
 
 volumes:
-  minio:
   rabbitmq:
   elasticsearch:
   falkordb-opspilot:
 
 services:
-  minio:
-    image: ${DOCKER_IMAGE_MINIO}
-    restart: always
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio:/data
-    networks:
-      - prod
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/ready"]
   
   rabbitmq:
     image: ${DOCKER_IMAGE_RABBITMQ}
@@ -52,6 +38,7 @@ services:
       KNOWLEDGE_GRAPH_PORT: 6379
       GRAPHITI_TELEMETRY_ENABLED: "false"
       OPENAI_API_KEY: ""
+      UV_OFFLINE: true
     networks:
       - prod
     depends_on:

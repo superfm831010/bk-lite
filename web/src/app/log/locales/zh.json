@@ -147,7 +147,35 @@
       "search": "搜索",
       "displayFields": "表格展示字段",
       "hiddenFields": "可选字段",
-      "searchError": "日志分组不能为空"
+      "searchError": "日志分组不能为空",
+      "storageConditions": "保存条件",
+      "loadConditions": "加载条件",
+      "query": "查询"
+    },
+    "analysis": {
+      "dashboard": "仪表盘",
+      "dimension": "维度",
+      "packetbeat": {
+        "dashboardName": "packetbeat基础视图",
+        "protocolTrafficDistribution": "协议流量分布趋势图",
+        "protocolTrafficDistributionDesc": "统计不同协议（TCP/UDP/ICMP）产生的流量比例，帮助了解网络使用情况。（单位是GB）",
+        "totalNetworkTraffic": "网络总流量趋势图",
+        "totalNetworkTrafficDesc": "显示网络流量随时间的变化，帮助管理员快速判断流量高峰和异常。（单位是GB）",
+        "totalPacketCount": "网络总包数趋势图",
+        "totalPacketCountDesc": "显示网络总包随时间的变化，便于监控网络负载及瞬时峰值。",
+        "topSourceIPs": "高消耗流量源IP Top 20",
+        "topSourceIPsDesc": "显示流量最高的 20 个源 IP 地址，便于发现大流量源或潜在异常源。（流量单位是GB）",
+        "topDestinationIPs": "高消耗流量目标IP Top 20",
+        "topDestinationIPsDesc": "展示流量最大的前 20 个目的 IP，用于发现潜在的流量热点或异常目标。（流量单位是GB）",
+        "highTrafficSankey": "高流量五元组桑基图",
+        "highTrafficSankeyDesc": "展示流量最大的源 IP + 目的 IP + 协议 + 源端口 + 目的端口组合，便于定位特定会话的流量情况。（展示top20，流量单位是GB）",
+        "sourceIP": "Source IP",
+        "destinationIP": "Destination IP",
+        "networkTrafficGB": "Network Traffic（GB）",
+        "transport": "Transport",
+        "sourcePort": "Source Port",
+        "destinationPort": "Destination Port"
+      }
     },
     "integration": {
       "interval": "间隔",
@@ -336,7 +364,9 @@
       "seeMore": "查看详情",
       "noticeWay": "暂无通知渠道，可去",
       "systemManage": "系统管理",
-      "config": "配置。"
+      "config": "配置。",
+      "displayFields": "展示字段",
+      "displayFieldsDes": "请为日志产生的告警，选择告警详情中表格的展示字段，以便获取更多的信息便于告警分析。"
     }
   }
 }

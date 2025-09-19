@@ -17,9 +17,9 @@ import { createNodeByType } from '../utils/registerNode';
 
 const serializeNodeConfig = (nodeData: any, nodeType: string) => {
   const styleConfigMapping: Record<string, string[]> = {
-    'single-value': ['textColor', 'fontSize', 'backgroundColor', 'borderColor'],
-    'basic-shape': ['width', 'height', 'backgroundColor', 'borderColor', 'borderWidth', 'lineType', 'shapeType'],
-    icon: ['width', 'height'],
+    'single-value': ['textColor', 'fontSize', 'backgroundColor', 'borderColor', 'nameColor', 'nameFontSize', 'thresholdColors'],
+    'basic-shape': ['width', 'height', 'backgroundColor', 'borderColor', 'borderWidth', 'lineType', 'shapeType', 'renderEffect'],
+    icon: ['width', 'height', 'backgroundColor', 'borderColor', 'fontSize', 'textColor', 'iconPadding', 'textDirection'],
     text: ['fontSize', 'fontWeight', 'textColor'],
     chart: ['width', 'height'],
   };
@@ -58,6 +58,9 @@ export const useGraphData = (
         id: nodeData.id,
         type: nodeData.type,
         name: nodeData.name,
+        unit: nodeData.unit,
+        conversionFactor: nodeData.conversionFactor,
+        decimalPlaces: nodeData.decimalPlaces,
         description: nodeData.description || '',
         position,
         zIndex: zIndex || 0, 
@@ -83,9 +86,11 @@ export const useGraphData = (
         targetPort: edge.getTargetPortId(),
         lineType: edgeData?.lineType || 'common_line',
         lineName: edgeData?.lineName || '',
+        arrowDirection: edgeData?.arrowDirection || 'single',
         sourceInterface: edgeData?.sourceInterface,
         targetInterface: edgeData?.targetInterface,
         vertices: vertices || [],
+        styleConfig: edgeData?.styleConfig,
         config: edgeData?.config ? {
           strokeColor: edgeData.config.strokeColor,
           strokeWidth: edgeData.config.strokeWidth,
@@ -197,14 +202,19 @@ export const useGraphData = (
     });
 
     data.edges?.forEach((edgeConfig) => {
+      const connectionType = (edgeConfig as any).arrowDirection || 'single';
       const edgeData: any = {
         lineType: edgeConfig.lineType as 'common_line' | 'network_line',
         lineName: edgeConfig.lineName,
+        arrowDirection: connectionType, 
         sourceInterface: edgeConfig.sourceInterface,
         targetInterface: edgeConfig.targetInterface,
         vertices: edgeConfig.vertices || [],
+        styleConfig: edgeConfig.styleConfig,
         config: edgeConfig.config,
       };
+
+      const edgeStyle = getEdgeStyleWithLabel(edgeData, connectionType, edgeConfig.styleConfig);
 
       const edge = graphInstance.createEdge({
         id: edgeConfig.id,
@@ -213,7 +223,7 @@ export const useGraphData = (
         sourcePort: edgeConfig.sourcePort,
         targetPort: edgeConfig.targetPort,
         shape: 'edge',
-        ...getEdgeStyleWithLabel(edgeData, 'single'),
+        ...edgeStyle,
         data: edgeData,
       });
 

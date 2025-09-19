@@ -153,6 +153,11 @@ class DirectoryModelViewSet(ModelViewSet):
         Directory.objects.create(**data)
         return Response(data)
 
+
+    def update(self, request, *args, **kwargs):
+        Directory.objects.filter(id=kwargs["pk"]).update(**request.data)
+        return Response(request.data)
+
     @action(detail=False, methods=["get"], url_path="tree")
     def tree(self, request, *args, **kwargs):
         """

@@ -38,13 +38,14 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
       const edges: Edge[] = [];
       const nodes: Node<NodeData>[] = currentStory.steps?.map((item: any) => {
         if (item.source?.length) {
-          item.source?.forEach((source: string) => {
-            const edgeId = `${source}-${item.id}`;
+          item.source?.forEach((source: any) => {
+            const edgeId = `${source?.id}-${item.id}`;
             if (!edgeMap.has(edgeId)) {
               edges.push({
                 id: edgeId,
+                type: 'buttonedge',
                 source: item.id,
-                target: source,
+                target: source?.id,
                 animated: true
               });
               edgeMap.set(edgeId, true);
@@ -52,12 +53,13 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
           })
         }
         if (item.target?.length) {
-          item.target?.forEach((target: string) => {
-            const edgeId = `${item.id}-${target}`;
+          item.target?.forEach((target: any) => {
+            const edgeId = `${item.id}-${target?.id}`;
             if (!edgeMap.has(edgeId)) {
               edges.push({
                 id: edgeId,
-                source: target,
+                type: 'buttonedge',
+                source: target?.id,
                 target: item.id,
                 animated: true
               });
@@ -72,6 +74,7 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
           position: item.position,
           data: {
             id: item?.id,
+            type: item?.type,
             name: item?.name,
             source: item.source,
             target: item.target
@@ -108,6 +111,7 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
       }
     } catch (e) {
       console.log(e);
+      message.error(t(`common.updateFailed`));
     } finally {
       setFlowLoading(false);
     }
@@ -120,9 +124,6 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
       nodeTypes={nodeTypes}
       dataset={dataset}
       loading={flowLoading}
-      // panel={[
-      //   <Button key="back" size="small" variant="outlined" className="mr-2 text-xs" onClick={backToList}>{t(`mlops-common.backToList`)}</Button>,
-      // ]}
       handleSaveFlow={(data) => updateStoryData(data)}
     />
   )

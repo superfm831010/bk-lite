@@ -49,6 +49,9 @@ export interface TopologyNodeData {
   id?: string;
   type: string;
   name: string;
+  unit?: string;
+  conversionFactor?: number;
+  decimalPlaces?: number;
   position?: Point;
   zIndex?: number; 
   logoType?: string;
@@ -74,11 +77,20 @@ export interface TopologyNodeData {
     backgroundColor?: string;
     borderColor?: string;
     borderWidth?: number;
+    renderEffect?: 'normal' | 'glass';
+    iconPadding?: number;
     lineType?: 'solid' | 'dashed' | 'dotted';
     shapeType?: 'rectangle' | 'circle';
     textColor?: string;
     fontSize?: number;
     fontWeight?: string | number;
+    nameColor?: string;
+    nameFontSize?: number;
+    textDirection?: 'top' | 'bottom' | 'left' | 'right';
+    thresholdColors?: Array<{
+      value: string;
+      color: string;
+    }>;
   };
 }
 
@@ -133,7 +145,16 @@ export interface PortPositions {
 
 // Hook 返回类型
 export interface UseContextMenuAndModalReturn {
-  handleEdgeConfigConfirm: (values: { lineType: 'common_line' | 'network_line'; lineName?: string }) => void;
+  handleEdgeConfigConfirm: (values: {
+    lineType: 'common_line' | 'network_line';
+    lineName?: string;
+    styleConfig?: {
+      lineColor?: string;
+      lineWidth?: number;
+      lineStyle?: 'line' | 'dotted' | 'point';
+      enableAnimation?: boolean;
+    }
+  }) => void;
   closeEdgeConfig: () => void;
   handleMenuClick: (event: MenuClickEvent) => void;
 }
@@ -143,6 +164,13 @@ export interface EdgeData {
   id?: string;
   lineType: 'common_line' | 'network_line';
   lineName?: string;
+  arrowDirection?: 'none' | 'single' | 'double';
+  styleConfig?: {
+    lineColor?: string;
+    lineWidth?: number;
+    lineStyle?: 'line' | 'dotted' | 'point';
+    enableAnimation?: boolean;
+  };
   config?: any;
   sourceNode: { id: string; name: string };
   targetNode: { id: string; name: string };
@@ -166,7 +194,7 @@ export interface NodeConfPanelProps {
   onClose?: () => void;
   onConfirm?: (values: NodeConfigFormValues) => void;
   onCancel?: () => void;
-  initialValues?: NodeConfigFormValues;
+  editingNodeData?: any;
 }
 
 export interface ContextMenuProps {
@@ -232,6 +260,10 @@ export interface ToolbarProps {
   onDelete: () => void;
   onSelectMode: () => void;
   onAddText: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 // ViewConfig 表单值类型
@@ -268,8 +300,18 @@ export interface NodeConfigFormValues {
   borderWidth?: number;
   textColor?: string;
   fontSize?: number;
+  iconPadding?: number;
   lineType?: string;
   shapeType?: string;
+  nameColor?: string;
+  nameFontSize?: number;
+  unit?: string;
+  conversionFactor?: number;
+  decimalPlaces?: number;
+  thresholdColors?: Array<{
+    value: string;
+    color: string;
+  }>;
 }
 
 // Topology 组件 Props 和 Ref 类型
@@ -296,6 +338,7 @@ interface NodeAttrs {
   body?: Record<string, any>;
   image?: Record<string, any>;
   label?: Record<string, any>;
+  nameLabel?: Record<string, any>;
 }
 
 // 创建节点返回的类型

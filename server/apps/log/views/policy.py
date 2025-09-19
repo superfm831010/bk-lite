@@ -12,7 +12,7 @@ from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.utils.permission_utils import get_permission_rules, get_permissions_rules, permission_filter, check_instance_permission
 from apps.core.utils.web_utils import WebUtils
 from apps.log.constants import POLICY_MODULE, DEFAULT_PERMISSION, ALERT_STATUS_NEW, ALERT_STATUS_CLOSED
-from apps.log.filters.policy import PolicyFilter, AlertFilter, EventFilter
+from apps.log.filters.policy import PolicyFilter, AlertFilter, EventFilter, EventRawDataFilter
 from apps.log.models.policy import Policy, Alert, Event, EventRawData
 from apps.log.serializers.policy import PolicySerializer, AlertSerializer, EventSerializer, EventRawDataSerializer
 from config.drf.pagination import CustomPageNumberPagination
@@ -611,7 +611,36 @@ class EventViewSet(viewsets.ReadOnlyModelViewSet):
 class EventRawDataViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = EventRawData.objects.all()
     serializer_class = EventRawDataSerializer
+    filterset_class = EventRawDataFilter
     pagination_class = CustomPageNumberPagination
 
     def get_queryset(self):
-        return EventRawData.objects.select_related('event').order_by('-id')
+        return EventRawData.objects.select_related('event').order_by('-event__event_time', '-id')
+
+    @swagger_auto_schema(
+        operation_id="rawdata_get_by_event_id",
+        operation_description="根据事件ID获取原始数据",
+        manual_parameters=[
+            openapi.Parameter('event_id', openapi.IN_QUERY, description="事件ID", type=openapi.TYPE_STRING, required=True),
+        ]
+    )
+    @action(methods=['get'], detail=False, url_path='by_event_id')
+    def rawdata_list_by_event_id(self, request):
+        """
+        根据事件ID获取原始数据
+        
+        由于每个事件只对应一条原始数据记录，所以直接返回对应的数据，无需分页
+
+        URL: /api/event-raw-data/by_event_id/?event_id=xxx
+        """
+        event_id = request.query_params.get('event_id')
+        if not event_id:
+            return WebUtils.response_error("缺少事件ID参数")
+
+        try:
+            # 直接获取对应的原始数据记录
+            event_raw_data = EventRawData.objects.select_related('event').get(event_id=event_id)
+            serializer = self.get_serializer(event_raw_data)
+            return WebUtils.response_success(serializer.data)
+        except EventRawData.DoesNotExist:
+            return WebUtils.response_error("未找到对应的原始数据")

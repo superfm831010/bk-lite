@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState, useMemo, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -25,23 +25,34 @@ import Icon from '@/components/icon';
 import NodeConfigDrawer from './NodeConfigDrawer';
 import styles from './ChatflowEditor.module.scss';
 
-// 节点类型定义
+// 节点类型定义 - 使用索引签名使其兼容 ReactFlow 的 Node 类型
 interface ChatflowNodeData {
   label: string;
-  type: 'timeTrigger' | 'restfulApi' | 'openaiApi' | 'agents' | 'ifCondition' | 'httpRequest' | 'promptAppend' | 'knowledgeAppend';
+  type: 'celery' | 'restful' | 'openai' | 'agents' | 'condition' | 'http';
   config?: any;
   description?: string;
+  [key: string]: unknown; // 添加索引签名以兼容 Record<string, unknown>
+}
+
+// 类型守卫函数，用于检查节点是否为 ChatflowNode
+const isChatflowNode = (node: Node): node is ChatflowNode => {
+  return node.data && 
+         typeof (node.data as any).label === 'string' && 
+         typeof (node.data as any).type === 'string';
+}
+
+// 扩展Node类型以包含具体的data类型
+interface ChatflowNode extends Node {
+  data: ChatflowNodeData;
 }
 
 const nodeConfig = {
-  timeTrigger: { icon: 'a-icon-dingshichufa1x', color: 'green' },
-  restfulApi: { icon: 'RESTfulAPI', color: 'purple' },
-  openaiApi: { icon: 'icon-test2', color: 'blue' },
+  celery: { icon: 'a-icon-dingshichufa1x', color: 'green' },
+  restful: { icon: 'RESTfulAPI', color: 'purple' },
+  openai: { icon: 'icon-test2', color: 'blue' },
   agents: { icon: 'zhinengti', color: 'orange' },
-  ifCondition: { icon: 'tiaojianfenzhi', color: 'yellow' },
-  httpRequest: { icon: 'HTTP', color: 'cyan' },
-  promptAppend: { icon: 'prompt_o', color: 'purple' },
-  knowledgeAppend: { icon: 'zhishiku2', color: 'green' },
+  condition: { icon: 'tiaojianfenzhi', color: 'yellow' },
+  http: { icon: 'HTTP', color: 'cyan' },
 };
 
 // 通用节点组件
@@ -66,6 +77,8 @@ const BaseNode = ({
   hasOutput?: boolean;
   hasMultipleOutputs?: boolean;
 }) => {
+  const { t } = useTranslation();
+  
   const handleColorClasses = {
     green: '!bg-green-500',
     purple: '!bg-purple-500',
@@ -79,6 +92,63 @@ const BaseNode = ({
   const handleNodeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onConfig(id);
+  };
+
+  // 格式化配置信息显示
+  const formatConfigInfo = () => {
+    const config = data.config;
+    
+    if (!config || Object.keys(config).length === 0) {
+      return t('chatflow.notConfigured');
+    }
+
+    switch (data.type) {
+      case 'celery':
+        if (config.frequency) {
+          const frequencyMap: { [key: string]: string } = {
+            'daily': t('chatflow.daily'),
+            'weekly': t('chatflow.weekly'), 
+            'monthly': t('chatflow.monthly')
+          };
+          const timeStr = config.time ? ` ${config.time.format ? config.time.format('HH:mm') : config.time}` : '';
+          const weekdayStr = config.weekday !== undefined ? ` ${t('chatflow.weekday')}${config.weekday}` : '';
+          const dayStr = config.day ? ` ${config.day}${t('chatflow.day')}` : '';
+          
+          return `${frequencyMap[config.frequency] || config.frequency}${timeStr}${weekdayStr}${dayStr}`;
+        }
+        return t('chatflow.triggerFrequency') + ': --';
+
+      case 'http':
+        if (config.method && config.url) {
+          return `${config.method} ${config.url}`;
+        } else if (config.method) {
+          return config.method;
+        } else if (config.url) {
+          return config.url;
+        }
+        return t('chatflow.httpMethod') + ': --';
+
+      case 'agents':
+        if (config.agent) {
+          // 优先使用保存的智能体名称，如果没有则显示ID
+          const agentDisplayName = config.agentName || config.agent;
+          return t('chatflow.selectedAgent') + `: ${agentDisplayName}`;
+        }
+        return t('chatflow.selectedAgent') + ': --';
+
+      case 'condition':
+        if (config.conditionField && config.conditionOperator && config.conditionValue) {
+          return `${config.conditionField} ${config.conditionOperator} ${config.conditionValue}`;
+        }
+        return t('chatflow.condition') + ': --';
+
+      case 'restful':
+      case 'openai':
+        return t('chatflow.apiInterface');
+
+      default:
+        return t('chatflow.notConfigured');
+    }
   };
 
   return (
@@ -100,9 +170,14 @@ const BaseNode = ({
       </div>
       
       <div className={styles.nodeContent}>
-        <p className={styles.nodeDescription}>
-          {data.config?.description || data.description || ''}
-        </p>
+        <div className={styles.nodeConfigInfo}>
+          {formatConfigInfo()}
+        </div>
+        {data.description && (
+          <p className={styles.nodeDescription}>
+            {data.description}
+          </p>
+        )}
       </div>
       
       {hasOutput && !hasMultipleOutputs && (
@@ -115,17 +190,21 @@ const BaseNode = ({
       
       {hasMultipleOutputs && (
         <>
+          {/* True 输出点 - 右侧上方，绿色 */}
           <Handle 
             type="source" 
             position={Position.Right} 
-            className={`w-2.5 h-2.5 ${handleColorClasses[color as keyof typeof handleColorClasses] || handleColorClasses.blue} !border-2 !border-white shadow-md`} 
-            id="true" 
+            className="w-2.5 h-2.5 !bg-green-500 !border-2 !border-white shadow-md" 
+            id="true"
+            style={{ top: '30%' }}
           />
+          {/* False 输出点 - 右侧下方，红色 */}
           <Handle 
             type="source" 
-            position={Position.Bottom} 
-            className={`w-2.5 h-2.5 ${handleColorClasses[color as keyof typeof handleColorClasses] || handleColorClasses.blue} !border-2 !border-white shadow-md`} 
-            id="false" 
+            position={Position.Right} 
+            className="w-2.5 h-2.5 !bg-red-500 !border-2 !border-white shadow-md" 
+            id="false"
+            style={{ top: '70%' }}
           />
         </>
       )}
@@ -135,15 +214,15 @@ const BaseNode = ({
 
 // 具体节点组件
 const TimeTriggerNode = (props: any) => (
-  <BaseNode {...props} icon={nodeConfig.timeTrigger.icon} color={nodeConfig.timeTrigger.color} hasOutput={true} />
+  <BaseNode {...props} icon={nodeConfig.celery.icon} color={nodeConfig.celery.color} hasOutput={true} />
 );
 
 const RestfulApiNode = (props: any) => (
-  <BaseNode {...props} icon={nodeConfig.restfulApi.icon} color={nodeConfig.restfulApi.color} hasOutput={true} />
+  <BaseNode {...props} icon={nodeConfig.restful.icon} color={nodeConfig.restful.color} hasOutput={true} />
 );
 
 const OpenAIApiNode = (props: any) => (
-  <BaseNode {...props} icon={nodeConfig.openaiApi.icon} color={nodeConfig.openaiApi.color} hasOutput={true} />
+  <BaseNode {...props} icon={nodeConfig.openai.icon} color={nodeConfig.openai.color} hasOutput={true} />
 );
 
 const AgentsNode = (props: any) => (
@@ -151,83 +230,101 @@ const AgentsNode = (props: any) => (
 );
 
 const HttpRequestNode = (props: any) => (
-  <BaseNode {...props} icon={nodeConfig.httpRequest.icon} color={nodeConfig.httpRequest.color} hasInput={true} hasOutput={true} />
+  <BaseNode {...props} icon={nodeConfig.http.icon} color={nodeConfig.http.color} hasInput={true} hasOutput={true} />
 );
 
 const IfConditionNode = (props: any) => (
-  <BaseNode {...props} icon={nodeConfig.ifCondition.icon} color={nodeConfig.ifCondition.color} hasInput={true} hasMultipleOutputs={true} />
+  <BaseNode 
+    {...props} 
+    icon={nodeConfig.condition.icon} 
+    color={nodeConfig.condition.color} 
+    hasInput={true} 
+    hasOutput={false}
+    hasMultipleOutputs={true} 
+  />
 );
 
-const PromptAppendNode = (props: any) => (
-  <BaseNode {...props} icon={nodeConfig.promptAppend.icon} color={nodeConfig.promptAppend.color} hasInput={true} hasOutput={true} />
-);
-
-const KnowledgeAppendNode = (props: any) => (
-  <BaseNode {...props} icon={nodeConfig.knowledgeAppend.icon} color={nodeConfig.knowledgeAppend.color} hasInput={true} hasOutput={true} />
-);
+interface ChatflowEditorRef {
+  clearCanvas: () => void;
+}
 
 interface ChatflowEditorProps {
   onSave?: (nodes: Node[], edges: Edge[]) => void;
-  initialData?: { nodes: Node[], edges: Edge[] };
+  initialData?: { nodes: Node[], edges: Edge[] } | null;
 }
 
-const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) => {
+const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onSave, initialData }, ref) => {
   const { t } = useTranslation();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [selectedNode, setSelectedNode] = useState<ChatflowNode | null>(null);
   const [isConfigDrawerVisible, setIsConfigDrawerVisible] = useState(false);
-
-  // 初始节点 - 空画布
-  const getInitialNodes = useCallback((): Node[] => [], []);
-
-  const getInitialEdges = useCallback((): Edge[] => [], []);
+  const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
+  const [selectedEdges, setSelectedEdges] = useState<Edge[]>([]);
+  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 0.8 });
 
   // 使用外部传入的 initialData 或默认数据
   const [nodes, setNodes, onNodesChange] = useNodesState(
-    initialData?.nodes?.length ? initialData.nodes : getInitialNodes()
+    initialData?.nodes && Array.isArray(initialData.nodes) ? initialData.nodes : []
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState(
-    initialData?.edges?.length ? initialData.edges : getInitialEdges()
+    initialData?.edges && Array.isArray(initialData.edges) ? initialData.edges : []
   );
 
-  // 添加一个 ref 来跟踪是否正在同步外部数据，避免循环调用
-  const isSyncingExternalData = useRef(false);
-  
-  // 监听 initialData 变化，当外部数据更新时同步更新内部状态
-  useEffect(() => {
-    if (initialData && !isSyncingExternalData.current) {
-      isSyncingExternalData.current = true;
-      setNodes(initialData.nodes || []);
-      setEdges(initialData.edges || []);
-      // 延迟重置标志，确保状态更新完成
-      setTimeout(() => {
-        isSyncingExternalData.current = false;
-      }, 0);
-    }
-  }, [initialData, setNodes, setEdges]);
-
   // 当 nodes 或 edges 发生变化时，自动调用 onSave 同步数据
-  // 添加防抖和初始化标志，避免无限循环
   const [isInitialized, setIsInitialized] = useState(false);
+  const lastSaveData = useRef<string>('');
   
   useEffect(() => {
-    // 如果正在同步外部数据，则不触发 onSave
-    if (isSyncingExternalData.current) {
-      return;
-    }
-    
-    // 首次加载时标记为已初始化
+    // 首次加载时标记为已初始化，但不触发保存
     if (!isInitialized) {
       setIsInitialized(true);
       return;
     }
     
-    // 只有在初始化完成后且不是同步外部数据时才调用 onSave
+    // 只有在有实际数据变化时才调用 onSave
     if (isInitialized && onSave) {
-      onSave(nodes, edges);
+      // 使用数据指纹避免重复保存相同数据
+      const currentData = JSON.stringify({ 
+        nodes: nodes.map(n => ({ id: n.id, type: n.type, position: n.position, data: n.data })), 
+        edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target }))
+      });
+      
+      // 无论数据是否为空都可以保存（包括清空操作）
+      if (currentData !== lastSaveData.current) {
+        lastSaveData.current = currentData;
+        
+        // 立即保存数据变化
+        const timeoutId = setTimeout(() => {
+          console.log('ChatflowEditor: 保存数据变化', { 
+            nodes: nodes.length, 
+            edges: edges.length,
+            actualNodes: nodes,
+            actualEdges: edges
+          });
+          onSave(nodes, edges);
+        }, 100);
+        
+        return () => clearTimeout(timeoutId);
+      }
     }
   }, [nodes, edges, onSave, isInitialized]);
+
+  // 清空画布的方法
+  const clearCanvas = useCallback(() => {
+    setNodes([]);
+    setEdges([]);
+    setSelectedNode(null);
+    setSelectedNodes([]);
+    setSelectedEdges([]);
+    setIsConfigDrawerVisible(false);
+    lastSaveData.current = JSON.stringify({ nodes: [], edges: [] });
+  }, [setNodes, setEdges]);
+
+  // 暴露清空方法给外部组件
+  useImperativeHandle(ref, () => ({
+    clearCanvas
+  }), [clearCanvas]);
 
   // 节点删除处理 - 提前声明
   const handleDeleteNode = useCallback((nodeId: string) => {
@@ -244,14 +341,12 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
 
   // 节点配置处理 - 提前声明
   const handleConfigNode = useCallback((nodeId: string) => {
-    console.log('点击节点配置:', nodeId); // 添加调试日志
     const node = nodes.find(n => n.id === nodeId);
-    if (node) {
-      console.log('找到节点:', node); // 添加调试日志
+    if (node && isChatflowNode(node)) {
       setSelectedNode(node);
       setIsConfigDrawerVisible(true);
     } else {
-      console.log('未找到节点:', nodeId); // 添加调试日志
+      console.log('未找到节点或节点类型不匹配:', nodeId); // 添加调试日志
     }
   }, [nodes]);
 
@@ -270,20 +365,26 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
     };
 
     return {
-      timeTrigger: createNodeComponent(TimeTriggerNode),
-      restfulApi: createNodeComponent(RestfulApiNode),
-      openaiApi: createNodeComponent(OpenAIApiNode),
+      celery: createNodeComponent(TimeTriggerNode),
+      restful: createNodeComponent(RestfulApiNode),
+      openai: createNodeComponent(OpenAIApiNode),
       agents: createNodeComponent(AgentsNode),
-      ifCondition: createNodeComponent(IfConditionNode),
-      httpRequest: createNodeComponent(HttpRequestNode),
-      promptAppend: createNodeComponent(PromptAppendNode),
-      knowledgeAppend: createNodeComponent(KnowledgeAppendNode),
+      condition: createNodeComponent(IfConditionNode),
+      http: createNodeComponent(HttpRequestNode),
     };
   }, [handleDeleteNode, handleConfigNode]);
 
   // ReactFlow 实例初始化
   const onInit = useCallback((instance: any) => {
     setReactFlowInstance(instance);
+    // 初始化时设置视窗状态
+    const currentViewport = instance.getViewport();
+    setViewport(currentViewport);
+  }, []);
+
+  // 视窗变化处理
+  const onMove = useCallback((event: any, newViewport: any) => {
+    setViewport(newViewport);
   }, []);
 
   // 处理连接
@@ -292,12 +393,105 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
     [setEdges]
   );
 
+  // 处理节点和连线选择变化
+  const onSelectionChange = useCallback((params: { nodes: Node[]; edges: Edge[] }) => {
+    setSelectedNodes(params.nodes);
+    setSelectedEdges(params.edges);
+  }, []);
+
+  // 键盘事件处理
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // 检查是否按下了Delete键或Backspace键
+    if ((event.key === 'Delete' || event.key === 'Backspace') && (selectedNodes.length > 0 || selectedEdges.length > 0)) {
+      // 阻止默认行为（避免浏览器返回上一页）
+      event.preventDefault();
+      
+      // 处理节点和连线删除
+      const hasNodes = selectedNodes.length > 0;
+      const hasEdges = selectedEdges.length > 0;
+      
+      if (hasNodes) {
+        // 节点删除需要确认对话框
+        let title = '';
+        let content = '';
+        
+        if (selectedNodes.length === 1) {
+          const nodeToDelete = selectedNodes[0];
+          title = t('chatflow.messages.deleteConfirm');
+          content = `${t('chatflow.messages.deleteNodeContent')} ${nodeToDelete.data.label}`;
+        } else {
+          title = t('chatflow.messages.deleteMultipleConfirm');
+          content = `${t('chatflow.messages.deleteMultipleContent')} ${selectedNodes.length}`;
+        }
+
+        Modal.confirm({
+          title,
+          content,
+          okText: t('common.confirm'),
+          cancelText: t('common.cancel'),
+          okButtonProps: { danger: true },
+          onOk: () => {
+            // 删除选中的节点
+            const selectedNodeIds = selectedNodes.map(node => node.id);
+            setNodes((nds) => nds.filter((n) => !selectedNodeIds.includes(n.id)));
+            // 删除与节点相关的连线
+            setEdges((eds) => eds.filter((e) => !selectedNodeIds.includes(e.source) && !selectedNodeIds.includes(e.target)));
+            
+            // 同时删除选中的连线（如果有）
+            if (hasEdges) {
+              const selectedEdgeIds = selectedEdges.map(edge => edge.id);
+              setEdges((eds) => eds.filter((e) => !selectedEdgeIds.includes(e.id)));
+            }
+            
+            // 清空选择状态
+            setSelectedNodes([]);
+            setSelectedEdges([]);
+            setIsConfigDrawerVisible(false);
+            
+            // 显示删除成功消息
+            if (hasEdges) {
+              message.success(`${t('chatflow.messages.itemsDeleted')} ${selectedNodes.length} ${t('chatflow.messages.nodes')} ${selectedEdges.length} ${t('chatflow.messages.edges')}`);
+            } else {
+              message.success(`${t('chatflow.messages.multipleNodesDeleted')} ${selectedNodes.length}`);
+            }
+          }
+        });
+      } else if (hasEdges) {
+        // 只有连线的情况，直接删除不需要确认
+        const selectedEdgeIds = selectedEdges.map(edge => edge.id);
+        setEdges((eds) => eds.filter((e) => !selectedEdgeIds.includes(e.id)));
+        
+        // 清空选择状态
+        setSelectedEdges([]);
+        
+        // 显示删除成功消息
+        message.success(`${t('chatflow.messages.edgesDeleted')} ${selectedEdges.length}`);
+      }
+    }
+  }, [selectedNodes, selectedEdges, setNodes, setEdges, t]);
+
+  // 监听键盘事件
+  useEffect(() => {
+    // 确保组件聚焦时才监听键盘事件
+    const flowContainer = reactFlowWrapper.current;
+    if (flowContainer) {
+      // 设置tabIndex使div可以接收键盘事件
+      flowContainer.tabIndex = 0;
+      flowContainer.addEventListener('keydown', handleKeyDown);
+      
+      return () => {
+        flowContainer.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [handleKeyDown]);
+
   // 拖拽处理
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  // Handle drag and drop operations
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
@@ -310,80 +504,126 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
           return;
         }
 
-        // 计算相对于 ReactFlow 容器的位置
-        const dropPosition = {
-          x: event.clientX - reactFlowBounds.left,
-          y: event.clientY - reactFlowBounds.top,
-        };
+        // Calculate mouse position relative to ReactFlow container
+        const mouseX = event.clientX - reactFlowBounds.left;
+        const mouseY = event.clientY - reactFlowBounds.top;
 
-        // 将屏幕坐标转换为流程图坐标
-        const flowPosition = reactFlowInstance.screenToFlowPosition(dropPosition);
+        // Check if mouse is within canvas bounds
+        if (mouseX < 0 || mouseY < 0 || mouseX > reactFlowBounds.width || mouseY > reactFlowBounds.height) {
+          return;
+        }
 
-        // 获取当前视口信息
-        const viewport = reactFlowInstance.getViewport();
-        const zoom = viewport.zoom;
-        
-        // 计算容器的可视区域范围（考虑缩放和平移）
-        const containerWidth = reactFlowBounds.width;
-        const containerHeight = reactFlowBounds.height;
-        
-        // 估算节点大小（默认节点大小约为 160x80）
+        // Convert screen coordinates to flow position using ReactFlow's built-in method
+        const flowPosition = reactFlowInstance.screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+
+        // Node dimensions for positioning adjustment
         const nodeWidth = 160;
         const nodeHeight = 80;
         
-        // 计算可视区域的边界（流程图坐标系）
-        const visibleBounds = {
-          left: -viewport.x / zoom,
-          top: -viewport.y / zoom,
-          right: (-viewport.x + containerWidth) / zoom,
-          bottom: (-viewport.y + containerHeight) / zoom,
+        // Adjust position to center node on mouse position
+        const adjustedPosition = {
+          x: flowPosition.x - nodeWidth / 2,
+          y: flowPosition.y - nodeHeight / 2,
         };
-
-        // 确保节点在可视区域内
-        flowPosition.x = Math.max(
-          visibleBounds.left + 20, // 左边距
-          Math.min(flowPosition.x, visibleBounds.right - nodeWidth - 20) // 右边距
-        );
-        
-        flowPosition.y = Math.max(
-          visibleBounds.top + 20, // 上边距
-          Math.min(flowPosition.y, visibleBounds.bottom - nodeHeight - 20) // 下边距
-        );
 
         const getNodeLabel = (nodeType: string) => {
           try {
-            return t(`chatflow.${nodeType}`) || nodeType;
+            return t(`chatflow.${nodeType}`);
           } catch {
             return nodeType;
           }
         };
 
-        const newNode: Node = {
+        // Set default input/output parameters for all node types
+        const getDefaultConfig = (nodeType: string) => {
+          const baseConfig = {
+            inputParams: 'last_message',
+            outputParams: 'last_message'
+          };
+
+          // Add node-type specific default configurations
+          switch (nodeType) {
+            case 'celery':
+              return {
+                ...baseConfig,
+                frequency: 'daily',
+                time: null,
+                message: ''
+              };
+            case 'http':
+              return {
+                ...baseConfig,
+                method: 'GET',
+                url: '',
+                params: [],
+                headers: [],
+                requestBody: '',
+                timeout: 30,
+                outputMode: 'once'
+              };
+            case 'agents':
+              return {
+                ...baseConfig,
+                agent: null,
+                agentName: '',
+                prompt: '',
+                uploadedFiles: []
+              };
+            case 'condition':
+              return {
+                ...baseConfig,
+                conditionField: '',
+                conditionOperator: 'equals',
+                conditionValue: ''
+              };
+            case 'restful':
+            case 'openai':
+              return baseConfig;
+            default:
+              return baseConfig;
+          }
+        };
+
+        const newNode: ChatflowNode = {
           id: `${type}-${Date.now()}`,
           type,
-          position: flowPosition,
+          position: adjustedPosition,
           data: { 
             label: getNodeLabel(type),
             type: type as ChatflowNodeData['type'],
-            config: {},
+            config: getDefaultConfig(type),
             description: ''
           },
         };
 
-        setNodes((nds) => nds.concat(newNode));
-        message.success(`成功添加${getNodeLabel(type)}节点`);
+        
+        setNodes((nds) => {
+          const updatedNodes = nds.concat(newNode);
+          
+          // Immediately trigger save after node addition
+          setTimeout(() => {
+            if (onSave) {
+              onSave(updatedNodes, edges);
+            }
+          }, 50);
+          
+          return updatedNodes;
+        });
         
       } catch (error) {
-        console.error('拖拽放置错误:', error);
-        message.error('拖拽失败');
+        console.error('Drag and drop error:', error);
+        message.error(t('chatflow.messages.dragFailed'));
       }
     },
-    [reactFlowInstance, setNodes, t]
+    [reactFlowInstance, setNodes, edges, onSave, t]
   );
 
   // 保存配置
   const handleSaveConfig = useCallback((nodeId: string, values: any) => {
-    const { name, description, ...config } = values;
+    const { name, ...config } = values;
     
     setNodes((nds) => 
       nds.map((node) => 
@@ -393,7 +633,6 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
             data: { 
               ...node.data, 
               label: name || node.data.label,
-              description,
               config 
             } 
           }
@@ -405,7 +644,17 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
 
   return (
     <div className={styles.chatflowEditor}>
-      <div className={styles.flowContainer} ref={reactFlowWrapper}>
+      <div 
+        className={styles.flowContainer} 
+        ref={reactFlowWrapper}
+        onFocus={() => {
+          // 当容器获得焦点时，确保可以接收键盘事件
+          if (reactFlowWrapper.current) {
+            reactFlowWrapper.current.focus();
+          }
+        }}
+        style={{ outline: 'none' }} // 移除焦点时的轮廓线
+      >
         <ReactFlowProvider>
           <ReactFlow
             nodes={nodes}
@@ -416,11 +665,28 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
             onInit={onInit}
             onDrop={onDrop}
             onDragOver={onDragOver}
+            onSelectionChange={onSelectionChange}
             nodeTypes={nodeTypes}
-            fitView
+            defaultViewport={viewport}
+            onMove={onMove}
+            minZoom={0.1}
+            maxZoom={2}
             attributionPosition="bottom-left"
+            fitView={false}
+            fitViewOptions={{
+              padding: 0.2,
+              includeHiddenNodes: false,
+            }}
           >
-            <MiniMap />
+            <MiniMap 
+              nodeColor="#1890ff"
+              nodeStrokeColor="#f0f0f0"
+              nodeStrokeWidth={1}
+              maskColor="rgba(255, 255, 255, 0.8)"
+              pannable={true}
+              zoomable={true}
+              ariaLabel="流程图缩略图"
+            />
             <Controls />
             <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
           </ReactFlow>
@@ -431,12 +697,18 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
       <NodeConfigDrawer
         visible={isConfigDrawerVisible}
         node={selectedNode}
+        nodes={Array.isArray(nodes) ? nodes.filter(isChatflowNode) : []} // 确保传递正确格式的数组
         onClose={() => setIsConfigDrawerVisible(false)}
         onSave={handleSaveConfig}
         onDelete={handleDeleteNode}
       />
     </div>
   );
-};
+});
+
+ChatflowEditor.displayName = 'ChatflowEditor';
 
 export default ChatflowEditor;
+
+// 导出类型映射函数供其他组件使用
+export type { ChatflowNodeData, ChatflowEditorRef };

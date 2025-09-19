@@ -52,10 +52,10 @@ class BasicGraph(ABC):
         graph_builder.add_edge("suggest_question_node",
                                "add_chat_history_node")
 
-        graph_builder.add_edge("add_chat_history_node", "naive_rag_node")
-        graph_builder.add_edge("naive_rag_node", "user_message_node")
+        graph_builder.add_edge("add_chat_history_node", "user_message_node")
+        graph_builder.add_edge("user_message_node", "naive_rag_node")
 
-        return 'user_message_node'
+        return 'naive_rag_node'
 
     async def invoke(self, graph, request: BasicLLMRequest, stream_mode='values'):
         config = {

@@ -20,6 +20,101 @@ const NODE_TYPE_MAP = {
 
 const DEFAULT_ICON_PATH = '/app/assets/assetModelIcon/cc-default_默认.svg';
 
+const getBasicShapeAttrs = (nodeConfig: TopologyNodeData, shapeType?: string): Record<string, any> => {
+  const { BASIC_SHAPE_NODE } = NODE_DEFAULTS;
+  const backgroundColor = nodeConfig.styleConfig?.backgroundColor;
+  const borderColor = nodeConfig.styleConfig?.borderColor;
+  const borderWidth = nodeConfig.styleConfig?.borderWidth;
+  const lineType = nodeConfig.styleConfig?.lineType;
+
+  const isTransparent = !backgroundColor ||
+    backgroundColor === 'transparent' ||
+    backgroundColor === 'none' ||
+    backgroundColor === '' ||
+    backgroundColor === 'rgba(0,0,0,0)';
+
+  const baseAttrs: any = {
+    body: {
+      fill: isTransparent ? BASIC_SHAPE_NODE.backgroundColor : backgroundColor,
+      stroke: borderColor || BASIC_SHAPE_NODE.borderColor,
+      strokeWidth: borderWidth || BASIC_SHAPE_NODE.borderWidth,
+      rx: 16,
+      ry: 16,
+      opacity: 1
+    }
+  };
+
+  // 处理线型
+  if (lineType === 'dashed') {
+    baseAttrs.body.strokeDasharray = '8,4';
+  } else if (lineType === 'dotted') {
+    baseAttrs.body.strokeDasharray = '2,2';
+  }
+
+  // 处理形状类型
+  if (shapeType === 'circle') {
+    baseAttrs.body.rx = '50%';
+    baseAttrs.body.ry = '50%';
+  } else if (shapeType === 'polygon') {
+    baseAttrs.body.rx = 0;
+    baseAttrs.body.ry = 0;
+  }
+
+  return baseAttrs;
+};
+
+const getLabelAttrsByDirection = (direction: 'top' | 'bottom' | 'left' | 'right' = 'bottom') => {
+  switch (direction) {
+    case 'top':
+      return {
+        textAnchor: 'middle',
+        textVerticalAnchor: 'bottom',
+        refX: '50%',
+        refY: '0%',
+        refY2: '-8',
+        textWrap: { width: '90%', ellipsis: true }
+      };
+    case 'bottom':
+      return {
+        textAnchor: 'middle',
+        textVerticalAnchor: 'top',
+        refX: '50%',
+        refY: '100%',
+        refY2: '8',
+        textWrap: { width: '90%', ellipsis: true }
+      };
+    case 'left':
+      return {
+        textAnchor: 'end',
+        textVerticalAnchor: 'middle',
+        refX: '0%',
+        refX2: '-5',
+        refY: '50%',
+        refY2: '1',
+        textWrap: { width: '60px', ellipsis: true }
+      };
+    case 'right':
+      return {
+        textAnchor: 'start',
+        textVerticalAnchor: 'middle',
+        refX: '100%',
+        refX2: '5',
+        refY: '50%',
+        refY2: '1',
+        textWrap: { width: '60px', ellipsis: true }
+      };
+    default:
+      return {
+        textAnchor: 'middle',
+        textVerticalAnchor: 'top',
+        refX: '50%',
+        refY: '100%',
+        refY2: '8',
+        textWrap: { width: '90%', ellipsis: true }
+      };
+  }
+};
+
 const registerIconNode = () => {
   const { ICON_NODE } = NODE_DEFAULTS;
 
@@ -75,7 +170,8 @@ const registerSingleValueNode = () => {
     height: SINGLE_VALUE_NODE.height,
     markup: [
       { tagName: 'rect', selector: 'body' },
-      { tagName: 'text', selector: 'label' }
+      { tagName: 'text', selector: 'label' },
+      { tagName: 'text', selector: 'nameLabel' }
     ],
     attrs: {
       body: {
@@ -92,8 +188,19 @@ const registerSingleValueNode = () => {
         textAnchor: 'middle',
         textVerticalAnchor: 'middle',
         refX: '50%',
-        refY: '50%',
-        textWrap: { width: '90%', ellipsis: true }
+        refY: '38%',
+        textWrap: false
+      },
+      nameLabel: {
+        fill: '#666666',
+        fontSize: 12,
+        fontFamily: SINGLE_VALUE_NODE.fontFamily,
+        textAnchor: 'middle',
+        textVerticalAnchor: 'middle',
+        refX: '50%',
+        refY: '72%',
+        textWrap: { width: '90%', ellipsis: true },
+        display: 'none'
       }
     },
     ports: createPortConfig()
@@ -149,6 +256,7 @@ const registerBasicShapeNode = () => {
         strokeWidth: BASIC_SHAPE_NODE.borderWidth,
         rx: BASIC_SHAPE_NODE.borderRadius,
         ry: BASIC_SHAPE_NODE.borderRadius,
+        opacity: 1
       }
     },
     ports: createPortConfig()
@@ -226,13 +334,39 @@ const getIconUrl = (nodeConfig: TopologyNodeData): string => {
 const createIconNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
   const logoUrl = getIconUrl(nodeConfig);
 
+  const iconPadding = nodeConfig.styleConfig?.iconPadding || 0;
+  const iconSize = Math.max(10, 100 - iconPadding * 2);
+
+  const textDirection = nodeConfig.styleConfig?.textDirection || 'bottom';
+  const labelAttrs = getLabelAttrsByDirection(textDirection);
+
+  const hasName = !!(nodeConfig.name && nodeConfig.name.trim());
+
   return {
     ...baseNodeData,
     width: nodeConfig.styleConfig?.width,
     height: nodeConfig.styleConfig?.height,
     attrs: {
+      body: {
+        stroke: nodeConfig.styleConfig?.borderColor || NODE_DEFAULTS.ICON_NODE.borderColor,
+        strokeWidth: NODE_DEFAULTS.ICON_NODE.strokeWidth,
+        fill: nodeConfig.styleConfig?.backgroundColor || NODE_DEFAULTS.ICON_NODE.backgroundColor,
+      },
       image: {
-        'xlink:href': logoUrl
+        'xlink:href': logoUrl,
+        refWidth: `${iconSize}%`,
+        refHeight: `${iconSize}%`,
+        refX: '50%',
+        refY: '50%',
+        refX2: `-${iconSize / 2}%`,
+        refY2: `-${iconSize / 2}%`,
+      },
+      label: {
+        fill: nodeConfig.styleConfig?.textColor || NODE_DEFAULTS.ICON_NODE.textColor,
+        fontSize: nodeConfig.styleConfig?.fontSize || NODE_DEFAULTS.ICON_NODE.fontSize,
+        text: hasName ? nodeConfig.name : '',
+        display: hasName ? 'block' : 'none',
+        ...labelAttrs
       }
     },
     ports: createPortConfig()
@@ -242,6 +376,8 @@ const createIconNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData
 const createSingleValueNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
   const valueConfig = nodeConfig.valueConfig || {};
   const hasDataSource = !!(valueConfig.dataSource && (valueConfig.selectedFields?.length ?? 0) > 0);
+  const hasName = !!(nodeConfig.name && nodeConfig.name.trim());
+  const initialText = hasDataSource ? 'loading' : '--';
 
   return {
     ...baseNodeData,
@@ -253,12 +389,21 @@ const createSingleValueNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseN
     },
     attrs: {
       body: {
-        fill: nodeConfig.styleConfig?.backgroundColor,
-        stroke: nodeConfig.styleConfig?.borderColor
+        fill: nodeConfig.styleConfig?.backgroundColor || 'transparent',
+        stroke: nodeConfig.styleConfig?.borderColor || 'transparent'
       },
       label: {
         fill: nodeConfig.styleConfig?.textColor,
-        fontSize: nodeConfig.styleConfig?.fontSize
+        fontSize: nodeConfig.styleConfig?.fontSize,
+        refY: hasName ? '38%' : '50%',
+        text: initialText,
+        textWrap: false
+      },
+      nameLabel: {
+        text: hasName ? nodeConfig.name : '',
+        fill: nodeConfig.styleConfig?.nameColor || '#666666',
+        fontSize: nodeConfig.styleConfig?.nameFontSize || 12,
+        display: hasName ? 'block' : 'none'
       }
     },
     ports: createPortConfig()
@@ -284,54 +429,6 @@ const createTextNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData
 };
 
 const createBasicShapeNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
-  const { BASIC_SHAPE_NODE } = NODE_DEFAULTS;
-
-  const getShapeSpecificAttrs = (shapeType?: string): Record<string, any> => {
-    // 直接使用配置对象中的值
-    const backgroundColor = nodeConfig.styleConfig?.backgroundColor;
-    const borderColor = nodeConfig.styleConfig?.borderColor;
-    const borderWidth = nodeConfig.styleConfig?.borderWidth;
-    const lineType = nodeConfig.styleConfig?.lineType;
-
-    // 支持透明背景 - 处理ColorPicker的透明值
-    const isTransparent = !backgroundColor ||
-      backgroundColor === 'transparent' ||
-      backgroundColor === 'none' ||
-      backgroundColor === '' ||
-      backgroundColor === 'rgba(0,0,0,0)';
-
-    const baseAttrs: any = {
-      fill: isTransparent ? BASIC_SHAPE_NODE.backgroundColor : backgroundColor,
-      fillOpacity: isTransparent ? 0 : 1,
-      stroke: borderColor,
-      strokeWidth: borderWidth,
-    };
-
-    if (lineType === 'dashed') {
-      baseAttrs.strokeDasharray = '5,5';
-    } else if (lineType === 'dotted') {
-      baseAttrs.strokeDasharray = '2,2';
-    } else {
-      baseAttrs.strokeDasharray = 'none';
-    }
-
-    switch (shapeType) {
-      case 'circle':
-        return {
-          ...baseAttrs,
-          rx: '50%',
-          ry: '50%'
-        };
-      case 'rectangle':
-      default:
-        return {
-          ...baseAttrs,
-          rx: BASIC_SHAPE_NODE.borderRadius,
-          ry: BASIC_SHAPE_NODE.borderRadius
-        };
-    }
-  };
-
   const shapeType = nodeConfig.styleConfig?.shapeType;
   const width = nodeConfig.styleConfig?.width;
   const height = nodeConfig.styleConfig?.height;
@@ -340,9 +437,7 @@ const createBasicShapeNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNo
     ...baseNodeData,
     width: width,
     height: height,
-    attrs: {
-      body: getShapeSpecificAttrs(shapeType)
-    },
+    attrs: getBasicShapeAttrs(nodeConfig, shapeType),
     ports: createPortConfig()
   };
 };
@@ -366,7 +461,6 @@ const createChartNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeDat
 export const createNodeByType = (nodeConfig: TopologyNodeData): CreatedNodeConfig => {
   const shape = getRegisteredNodeShape(nodeConfig.type);
 
-  // 兼容旧数据格式：优先使用 position 对象，如果不存在则使用直接在 nodeConfig 上的 x, y
   const x = nodeConfig.position?.x ?? (nodeConfig as any).x ?? 0;
   const y = nodeConfig.position?.y ?? (nodeConfig as any).y ?? 0;
 
@@ -397,12 +491,36 @@ export const createNodeByType = (nodeConfig: TopologyNodeData): CreatedNodeConfi
 
 const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   const logoUrl = getIconUrl(nodeConfig);
+
+  const iconPadding = nodeConfig.styleConfig?.iconPadding || 0;
+  const iconSize = Math.max(10, 100 - iconPadding * 2);
+
+  const textDirection = nodeConfig.styleConfig?.textDirection || 'bottom';
+  const labelAttrs = getLabelAttrsByDirection(textDirection);
+
+  const hasName = !!(nodeConfig.name && nodeConfig.name.trim());
+
   node.setAttrs({
+    body: {
+      stroke: nodeConfig.styleConfig?.borderColor || NODE_DEFAULTS.ICON_NODE.borderColor,
+      strokeWidth: NODE_DEFAULTS.ICON_NODE.strokeWidth,
+      fill: nodeConfig.styleConfig?.backgroundColor || NODE_DEFAULTS.ICON_NODE.backgroundColor,
+    },
     image: {
-      'xlink:href': logoUrl
+      'xlink:href': logoUrl,
+      refWidth: `${iconSize}%`,
+      refHeight: `${iconSize}%`,
+      refX: '50%',
+      refY: '50%',
+      refX2: `-${iconSize / 2}%`,
+      refY2: `-${iconSize / 2}%`,
     },
     label: {
-      fill: nodeConfig.styleConfig?.textColor
+      fill: nodeConfig.styleConfig?.textColor || NODE_DEFAULTS.ICON_NODE.textColor,
+      fontSize: nodeConfig.styleConfig?.fontSize || NODE_DEFAULTS.ICON_NODE.fontSize,
+      text: hasName ? nodeConfig.name : '',
+      display: hasName ? 'block' : 'none',
+      ...labelAttrs
     }
   });
 
@@ -414,19 +532,47 @@ const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
       node.prop('ports', createPortConfig());
     }
   }
-};
+}; const updateSingleValueNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
+  const hasName = !!(nodeConfig.name && nodeConfig.name.trim());
 
-const updateSingleValueNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
-  node.setAttrs({
+  const nodeData = node.getData();
+  const isLoading = nodeData?.isLoading;
+
+  const shouldSetDefaultText = !isLoading;
+  let displayText = '';
+
+  if (shouldSetDefaultText) {
+    const currentText = node.getAttrByPath('label/text') as string;
+    if (!currentText || currentText === 'loading' || currentText === '无数据') {
+      displayText = hasName ? nodeConfig.name || '--' : '--';
+    } else {
+      displayText = currentText;
+    }
+  }
+  const attrs: any = {
     body: {
-      fill: nodeConfig.styleConfig?.backgroundColor,
-      stroke: nodeConfig.styleConfig?.borderColor,
+      fill: nodeConfig.styleConfig?.backgroundColor || 'transparent',
+      stroke: nodeConfig.styleConfig?.borderColor || 'transparent',
     },
     label: {
       fill: nodeConfig.styleConfig?.textColor,
       fontSize: nodeConfig.styleConfig?.fontSize,
+      refY: hasName ? '38%' : '50%',
+      textWrap: false
+    },
+    nameLabel: {
+      text: hasName ? nodeConfig.name : '',
+      fill: nodeConfig.styleConfig?.nameColor || '#666666',
+      fontSize: nodeConfig.styleConfig?.nameFontSize || 12,
+      display: hasName ? 'block' : 'none'
     }
-  });
+  };
+
+  if (shouldSetDefaultText && displayText) {
+    attrs.label.text = displayText;
+  }
+
+  node.setAttrs(attrs);
 };
 
 const updateTextNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
@@ -444,61 +590,9 @@ const updateTextNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
 };
 
 const updateBasicShapeNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
-  const { BASIC_SHAPE_NODE } = NODE_DEFAULTS;
-
-  const getShapeSpecificAttrs = (shapeType?: string): Record<string, any> => {
-    // 直接使用配置对象中的值
-    const backgroundColor = nodeConfig.styleConfig?.backgroundColor;
-    const borderColor = nodeConfig.styleConfig?.borderColor;
-    const borderWidth = nodeConfig.styleConfig?.borderWidth;
-    const lineType = nodeConfig.styleConfig?.lineType;
-
-    // 支持透明背景 - 处理ColorPicker的透明值
-    const isTransparent = !backgroundColor ||
-      backgroundColor === 'transparent' ||
-      backgroundColor === 'none' ||
-      backgroundColor === '' ||
-      backgroundColor === 'rgba(0,0,0,0)';
-
-    const baseAttrs: any = {
-      fill: isTransparent ? BASIC_SHAPE_NODE.backgroundColor : backgroundColor,
-      fillOpacity: isTransparent ? 0 : 1,
-      stroke: borderColor,
-      strokeWidth: borderWidth,
-    };
-
-    // 根据线条类型设置 strokeDasharray
-    if (lineType === 'dashed') {
-      baseAttrs.strokeDasharray = '5,5';
-    } else if (lineType === 'dotted') {
-      baseAttrs.strokeDasharray = '2,2';
-    } else {
-      // 实线类型，确保清除 strokeDasharray
-      baseAttrs.strokeDasharray = 'none';
-    }
-
-    switch (shapeType) {
-      case 'circle':
-        return {
-          ...baseAttrs,
-          rx: '50%',
-          ry: '50%'
-        };
-      case 'rectangle':
-      default:
-        return {
-          ...baseAttrs,
-          rx: BASIC_SHAPE_NODE.borderRadius,
-          ry: BASIC_SHAPE_NODE.borderRadius
-        };
-    }
-  };
-
   const shapeType = nodeConfig.styleConfig?.shapeType;
-
-  node.setAttrs({
-    body: getShapeSpecificAttrs(shapeType)
-  });
+  const attrs = getBasicShapeAttrs(nodeConfig, shapeType);
+  node.setAttrs(attrs);
 
   const width = nodeConfig.styleConfig?.width;
   const height = nodeConfig.styleConfig?.height;
@@ -515,7 +609,12 @@ const updateBasicShapeNodeAttributes = (node: Node, nodeConfig: TopologyNodeData
 export const updateNodeAttributes = (node: Node, nodeConfig: TopologyNodeData): void => {
   if (!node || !nodeConfig) return;
 
-  node.setAttrByPath('label/text', nodeConfig.name);
+  if (nodeConfig.type !== 'single-value') {
+    node.setAttrByPath('label/text', nodeConfig.name);
+  }
+
+  node.removeProp('data/styleConfig/thresholdColors');
+
   node.setData({
     ...node.getData(),
     ...nodeConfig,

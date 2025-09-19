@@ -27,9 +27,19 @@ const usePlayroundApi = () => {
     return await get(`/playground/category/`);
   };
 
-  // 获取能力发布列表
-  const getServingsList = async () => {
+  // 获取异常检测能力发布列表
+  const getAnomalyServingsList = async () => {
     return await get(`/mlops/anomaly_detection_servings/`);
+  };
+
+  // 获取时序预测能力列表
+  const getTimeSeriesPredictServingsList = async () => {
+    return await get(`/mlops/timeseries_predict_servings/`);
+  };
+
+  // 获取日志聚类能力列表
+  const getLogClusteringServingsList = async () => {
+    return await get(`/mlops/log_clustering_servings/`);
   };
   
   // 获取能力发布详情
@@ -154,7 +164,9 @@ const usePlayroundApi = () => {
 
   return {
     getCategoryList,
-    getServingsList,
+    getAnomalyServingsList,
+    getTimeSeriesPredictServingsList,
+    getLogClusteringServingsList,
     getCategoryDetail,
     getCapabilityList,
     getCapabilityDetail,

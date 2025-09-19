@@ -3756,7 +3756,7 @@ wheels = [
 [[package]]
 name = "server"
 version = "3.7.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "adrf" },
     { name = "better-exceptions" },
@@ -3813,7 +3813,7 @@ dependencies = [
     { name = "wrapt" },
 ]
 
-[package.dev-dependencies]
+[package.optional-dependencies]
 cmdb = [
     { name = "cos-python-sdk-v5" },
     { name = "falkordb" },
@@ -3853,8 +3853,11 @@ opspilot = [
 [package.metadata]
 requires-dist = [
     { name = "adrf", specifier = "==0.1.9" },
+    { name = "behavex", marker = "extra == 'dev'", specifier = "==3.2.0" },
     { name = "better-exceptions", specifier = "==0.3" },
+    { name = "boto3", marker = "extra == 'mlops'", specifier = "==1.38.41" },
     { name = "celery", specifier = "==5.4.0" },
+    { name = "cos-python-sdk-v5", marker = "extra == 'cmdb'", specifier = "==1.9.37" },
     { name = "daphne", specifier = "==4.0.0" },
     { name = "django", specifier = "==4.2.22" },
     { name = "django-ace", specifier = "==1.32.4" },
@@ -3863,6 +3866,7 @@ requires-dist = [
     { name = "django-celery-results", specifier = "==2.6.0" },
     { name = "django-comment-migrate", specifier = "==0.1.7" },
     { name = "django-cors-headers", specifier = "==4.2.0" },
+    { name = "django-debug-toolbar", marker = "extra == 'dev'", specifier = "==4.2.0" },
     { name = "django-filter", specifier = "==23.2" },
     { name = "django-import-export", specifier = "==3.3.6" },
     { name = "django-minio-backend", specifier = "==3.6.0" },
@@ -3874,73 +3878,62 @@ requires-dist = [
     { name = "djangorestframework", specifier = "==3.15.2" },
     { name = "djangorestframework-simplejwt", specifier = "==5.3.0" },
     { name = "docker", specifier = "==7.1.0" },
+    { name = "drf-yasg", marker = "extra == 'dev'", specifier = "==1.21.7" },
+    { name = "falkordb", marker = "extra == 'cmdb'", specifier = "==1.2.0" },
     { name = "filetype", specifier = "==1.0.13" },
+    { name = "flower", marker = "extra == 'dev'", specifier = "==2.0.1" },
     { name = "gunicorn", specifier = "==23.0.0" },
     { name = "httpx", specifier = "==0.27.2" },
+    { name = "hyperopt", marker = "extra == 'mlops'", specifier = "==0.2.7" },
+    { name = "imblearn", marker = "extra == 'mlops'", specifier = "==0.0" },
     { name = "jinja2", specifier = "==3.1.6" },
     { name = "joblib", specifier = "==1.3.2" },
     { name = "jsonpickle", specifier = "==3.4.2" },
     { name = "kubernetes", specifier = "==29.0.0" },
+    { name = "langserve", extras = ["client"], marker = "extra == 'opspilot'", specifier = "==0.2.2" },
     { name = "minio", specifier = "==7.1.13" },
+    { name = "mlflow", marker = "extra == 'mlops'", specifier = "==3.1.0" },
     { name = "nanoid", specifier = "==2.0.0" },
     { name = "nats-py", specifier = "==2.9.0" },
+    { name = "neo4j", marker = "extra == 'cmdb'", specifier = "==5.23.1" },
     { name = "pandas", specifier = "==2.1.4" },
     { name = "pika", specifier = "==1.3.2" },
     { name = "pillow", specifier = "==11.3.0" },
+    { name = "poethepoet", marker = "extra == 'dev'", specifier = ">=0.37.0" },
     { name = "psycopg2-binary", specifier = "==2.9.9" },
     { name = "pyarmor", specifier = "==9.0.7" },
     { name = "pycryptodome", specifier = "==3.20.0" },
     { name = "pydantic", specifier = "==2.5.3" },
     { name = "pymysql", specifier = "==1.1.1" },
+    { name = "pyod", marker = "extra == 'mlops'", specifier = "==2.0.5" },
     { name = "pyotp", specifier = "==2.9.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = "==0.26.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==4.1.0" },
+    { name = "pytest-django", marker = "extra == 'dev'", specifier = "==4.7.0" },
+    { name = "pytest-dotenv", marker = "extra == 'dev'", specifier = "==0.5.2" },
+    { name = "pytest-html", marker = "extra == 'dev'", specifier = "==4.1.1" },
+    { name = "pytest-instafail", marker = "extra == 'dev'", specifier = "==0.5.0" },
+    { name = "pytest-mock", marker = "extra == 'dev'", specifier = "==3.12.0" },
+    { name = "pytest-sugar", marker = "extra == 'dev'", specifier = "==1.0.0" },
+    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = "==3.5.0" },
     { name = "python-dotenv", specifier = "==1.0.0" },
     { name = "qrcode", specifier = "==8.2" },
     { name = "redis", specifier = "==5.0.1" },
     { name = "requests", specifier = "==2.32.4" },
+    { name = "scikit-learn", marker = "extra == 'mlops'", specifier = "==1.6.1" },
     { name = "singleton-decorator", specifier = "==1.0.0" },
     { name = "sqlalchemy", specifier = "==2.0.20" },
+    { name = "suod", marker = "extra == 'mlops'", specifier = "==0.1.4" },
+    { name = "tencentcloud-sdk-python", marker = "extra == 'cmdb'", specifier = "==3.0.1403" },
     { name = "toml", specifier = "==0.10.2" },
     { name = "tqdm", specifier = "==4.66.4" },
     { name = "uvicorn", specifier = "==0.32.0" },
     { name = "wechatpy", specifier = "==1.8.18" },
     { name = "whitenoise", specifier = "==6.5.0" },
     { name = "wrapt", specifier = "==1.16.0" },
+    { name = "xgboost", marker = "extra == 'mlops'", specifier = "==3.0.0" },
 ]
-
-[package.metadata.requires-dev]
-cmdb = [
-    { name = "cos-python-sdk-v5", specifier = "==1.9.37" },
-    { name = "falkordb", specifier = "==1.2.0" },
-    { name = "neo4j", specifier = "==5.23.1" },
-    { name = "tencentcloud-sdk-python", specifier = "==3.0.1403" },
-]
-dev = [
-    { name = "behavex", specifier = "==3.2.0" },
-    { name = "django-debug-toolbar", specifier = "==4.2.0" },
-    { name = "drf-yasg", specifier = "==1.21.7" },
-    { name = "flower", specifier = "==2.0.1" },
-    { name = "poethepoet", specifier = ">=0.37.0" },
-    { name = "pytest-asyncio", specifier = "==0.26.0" },
-    { name = "pytest-cov", specifier = "==4.1.0" },
-    { name = "pytest-django", specifier = "==4.7.0" },
-    { name = "pytest-dotenv", specifier = "==0.5.2" },
-    { name = "pytest-html", specifier = "==4.1.1" },
-    { name = "pytest-instafail", specifier = "==0.5.0" },
-    { name = "pytest-mock", specifier = "==3.12.0" },
-    { name = "pytest-sugar", specifier = "==1.0.0" },
-    { name = "pytest-xdist", specifier = "==3.5.0" },
-]
-mlops = [
-    { name = "boto3", specifier = "==1.38.41" },
-    { name = "hyperopt", specifier = "==0.2.7" },
-    { name = "imblearn", specifier = "==0.0" },
-    { name = "mlflow", specifier = "==3.1.0" },
-    { name = "pyod", specifier = "==2.0.5" },
-    { name = "scikit-learn", specifier = "==1.6.1" },
-    { name = "suod", specifier = "==0.1.4" },
-    { name = "xgboost", specifier = "==3.0.0" },
-]
-opspilot = [{ name = "langserve", extras = ["client"], specifier = "==0.2.2" }]
+provides-extras = ["cmdb", "dev", "mlops", "opspilot"]
 
 [[package]]
 name = "service-identity"

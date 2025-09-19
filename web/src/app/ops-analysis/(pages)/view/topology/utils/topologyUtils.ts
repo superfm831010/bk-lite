@@ -48,9 +48,38 @@ export const getValueByPath = (obj: any, path: string): any => {
   }, obj);
 };
 
-export const formatDisplayValue = (value: any): string => {
-  if (value === null || value === undefined) return '-';
+export const formatDisplayValue = (
+  value: any,
+  unit?: string,
+  decimalPlaces?: number,
+  conversionFactor?: number
+): string => {
+  if (value === null || value === undefined) return '--';
+
+  // 如果是对象，直接转字符串
   if (typeof value === 'object') return JSON.stringify(value);
+
+  // 尝试转换为数字并应用换算系数
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+
+  if (typeof numValue === 'number' && !isNaN(numValue)) {
+    // 应用换算系数
+    const factor = conversionFactor !== undefined ? conversionFactor : 1;
+    const convertedValue = numValue * factor;
+
+    // 格式化小数位
+    let formattedValue = decimalPlaces !== undefined
+      ? convertedValue.toFixed(decimalPlaces)
+      : String(convertedValue);
+
+    // 添加单位
+    if (unit && unit.trim()) {
+      formattedValue += unit;
+    }
+
+    return formattedValue;
+  }
+
   return String(value);
 };
 
@@ -93,6 +122,7 @@ export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: num
   const nodeData = node.getData();
   const styleConfig = nodeData?.styleConfig || {};
   const fontSize = styleConfig.fontSize || NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize;
+  const hasName = !!(nodeData?.name && nodeData.name.trim());
 
   // 计算文本宽度
   const textWidth = calculateTextWidth(text, fontSize);
@@ -101,12 +131,22 @@ export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: num
   const targetWidth = Math.max(textWidth + padding, minWidth);
   const currentSize = node.getSize();
 
-  // 只有当宽度变化较大时才调整（避免频繁微调）
-  if (Math.abs(targetWidth - currentSize.width) > 10) {
-    node.resize(targetWidth, currentSize.height);
+  // 如果有名称，确保节点高度足够容纳内容和名称（都在边框内）
+  const nameFontSize = styleConfig.nameFontSize || 12;
+  const minHeightForName = hasName ? Math.max(80, fontSize + nameFontSize + 24) : NODE_DEFAULTS.SINGLE_VALUE_NODE.height;
+  const targetHeight = Math.max(minHeightForName, NODE_DEFAULTS.SINGLE_VALUE_NODE.height);
+
+  const needsWidthUpdate = Math.abs(targetWidth - currentSize.width) > 10;
+  const needsHeightUpdate = Math.abs(targetHeight - currentSize.height) > 5;
+
+  if (needsWidthUpdate || needsHeightUpdate) {
+    const newWidth = needsWidthUpdate ? targetWidth : currentSize.width;
+    const newHeight = needsHeightUpdate ? targetHeight : currentSize.height;
+
+    node.resize(newWidth, newHeight);
 
     // 更新端口配置以适应新尺寸
-    const newPortConfig = createPortConfig(PORT_DEFAULTS.FILL_COLOR, { width: targetWidth, height: currentSize.height });
+    const newPortConfig = createPortConfig(PORT_DEFAULTS.FILL_COLOR, { width: newWidth, height: newHeight });
     node.prop('ports', newPortConfig);
 
     // 更新节点数据中的配置
@@ -114,7 +154,8 @@ export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: num
       ...nodeData,
       styleConfig: {
         ...styleConfig,
-        width: targetWidth,
+        width: newWidth,
+        height: newHeight,
       }
     };
     node.setData(updatedNodeData);
@@ -239,7 +280,16 @@ export const createEdgeLabel = (text: string = '') => {
   };
 };
 
-export const getEdgeStyle = (connectionType: 'none' | 'single' | 'double') => {
+// 根据样式配置获取边线样式
+export const getEdgeStyleWithConfig = (
+  connectionType: 'none' | 'single' | 'double' = 'single',
+  styleConfig?: {
+    lineColor?: string;
+    lineWidth?: number;
+    lineStyle?: 'line' | 'dotted' | 'point';
+    enableAnimation?: boolean;
+  }
+) => {
   const arrowConfig = {
     none: { sourceMarker: null, targetMarker: null },
     single: { sourceMarker: null, targetMarker: { name: 'block', size: 8 } },
@@ -249,13 +299,33 @@ export const getEdgeStyle = (connectionType: 'none' | 'single' | 'double') => {
     },
   };
 
+  const lineAttrs: any = {
+    stroke: styleConfig?.lineColor || COLORS.EDGE.DEFAULT,
+    strokeWidth: styleConfig?.lineWidth || SPACING.STROKE_WIDTH.THIN,
+    ...arrowConfig[connectionType],
+  };
+
+  // 设置线条样式
+  if (styleConfig?.lineStyle === 'dotted') {
+    lineAttrs.strokeDasharray = '3 3';
+  } else if (styleConfig?.lineStyle === 'point') {
+    lineAttrs.strokeDasharray = '1 3';
+  } else if (styleConfig?.lineStyle === 'line') {
+    lineAttrs.strokeDasharray = null;
+  }
+
+  // 设置动画
+  if (
+    connectionType === 'single' &&
+    styleConfig?.enableAnimation &&
+    (styleConfig?.lineStyle === 'dotted' || styleConfig?.lineStyle === 'point')
+  ) {
+    lineAttrs.class = 'edge-flow-animation';
+  }
+
   return {
     attrs: {
-      line: {
-        stroke: COLORS.EDGE.DEFAULT,
-        strokeWidth: SPACING.STROKE_WIDTH.THIN,
-        ...arrowConfig[connectionType],
-      },
+      line: lineAttrs,
     },
     labels: [],
   };
@@ -263,9 +333,23 @@ export const getEdgeStyle = (connectionType: 'none' | 'single' | 'double') => {
 
 export const getEdgeStyleWithLabel = (
   edgeData: EdgeCreationData,
-  connectionType: 'none' | 'single' | 'double' = 'single'
+  connectionType: 'none' | 'single' | 'double' = 'single',
+  styleConfig?: {
+    lineColor?: string;
+    lineWidth?: number;
+    lineStyle?: 'line' | 'dotted' | 'point';
+    enableAnimation?: boolean;
+  }
 ): any => {
-  const baseStyle = getEdgeStyle(connectionType);
+  // 如果没有提供样式配置，使用默认配置
+  const defaultStyleConfig = {
+    lineColor: COLORS.EDGE.DEFAULT,
+    lineWidth: 1,
+    lineStyle: 'line' as const,
+    enableAnimation: false,
+  };
+
+  const baseStyle = getEdgeStyleWithConfig(connectionType, styleConfig || defaultStyleConfig);
 
   if (edgeData.lineType === 'common_line' && edgeData.lineName) {
     (baseStyle as any).labels = [createEdgeLabel(edgeData.lineName)];

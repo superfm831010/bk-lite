@@ -13,6 +13,7 @@ ADD ./support-files/release/supervisor/consumer.conf  /etc/supervisor/conf.d/con
 ADD . .
 RUN pip install uv
 RUN uv sync --all-groups
+RUN uv sync --all-extras
 
 RUN chmod +x ./support-files/release/startup.sh
 ENTRYPOINT ["/bin/bash","/apps/support-files/release/startup.sh"]

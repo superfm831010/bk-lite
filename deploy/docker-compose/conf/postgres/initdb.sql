@@ -1,1 +1,2 @@
 CREATE DATABASE bklite;
+CREATE DATABASE mlflow;

@@ -20,7 +20,9 @@
     "required": "必填",
     "noSearchData": "没有找到匹配的结果",
     "btn": "按钮",
-    "restart": "重启"
+    "restart": "重启",
+    "showThumbnail": "显示缩略图",
+    "hideThumbnail": "隐藏缩略图"
   },
   "datasets": {
     "datasets": "数据集",
@@ -95,8 +97,8 @@
     "delDatasetInfo": "确认删除数据集吗？",
     "anomaly": "单指标异常检测",
     "rasa": "Rasa模型",
-    "forecast": "时间序列预测",
-    "log": "日志",
+    "timeseriesPredict": "时序预测",
+    "logClustering": "日志聚类",
     "uploadSuccess": "上传成功",
     "pleaseUpload": "请上传文件",
     "uploadWarn": "仅支持上传csv文件",
@@ -105,7 +107,8 @@
     "editSuccess": "更新成功",
     "saveError": "保存错误",
     "downloadError": "上传错误",
-    "downloadText": "仅支持csv格式的文件，点击",
+    "downloadCSV": "仅支持csv格式的文件，点击",
+    "downloadTxt": "仅支持txt格式的文件，点击",
     "template": "下载模板",
     "anomalyTitle": "异常点",
     "annotate": "标注",
@@ -177,6 +180,12 @@
     "publishSuccess": "发布成功",
     "publishStatus": "发布状态",
     "delModel": "删除模型",
-    "delModelContent": "你确认要删除这个模型吗？"
+    "delModelContent": "你确认要删除这个模型吗？",
+    "apiEndpoint": "API 端点",
+    "maxRequestsPerMinute": "每分钟最大请求数",
+    "supportedLogFormats": "支持的日志格式",
+    "inputApiEndpoint": "请输入API端点",
+    "inputMaxRequests": "请输入每分钟最大请求数",
+    "inputLogFormats": "请输入支持的日志格式"
   }
 }

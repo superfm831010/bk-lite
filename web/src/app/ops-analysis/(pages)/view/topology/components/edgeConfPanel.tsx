@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from '@/utils/i18n';
+import { COLORS } from '../constants/nodeDefaults';
 import { EdgeConfigPanelProps } from '@/app/ops-analysis/types/topology';
 import {
   Drawer,
@@ -10,6 +11,9 @@ import {
   Space,
   Typography,
   Radio,
+  ColorPicker,
+  InputNumber,
+  Switch,
 } from 'antd';
 
 const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
@@ -28,6 +32,10 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
       const initialValues = {
         lineType: edgeData.lineType || 'common_line',
         lineName: edgeData.lineName || '',
+        lineColor: edgeData.styleConfig?.lineColor || COLORS.EDGE.DEFAULT,
+        lineWidth: edgeData.styleConfig?.lineWidth || 1,
+        lineStyle: edgeData.styleConfig?.lineStyle || 'line',
+        enableAnimation: edgeData.styleConfig?.enableAnimation || false,
         sourceInterfaceType: edgeData.sourceInterface?.type || 'existing',
         sourceInterfaceValue: edgeData.sourceInterface?.value || '',
         targetInterfaceType: edgeData.targetInterface?.type || 'existing',
@@ -41,6 +49,15 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
     if (onConfirm) {
       const result = {
         ...values,
+        styleConfig: {
+          lineColor:
+            typeof values.lineColor === 'object'
+              ? values.lineColor.toHexString()
+              : values.lineColor || COLORS.EDGE.DEFAULT,
+          lineWidth: values.lineWidth || 1,
+          lineStyle: values.lineStyle || 'line',
+          enableAnimation: values.enableAnimation || false,
+        },
         sourceInterface: {
           type: values.sourceInterfaceType,
           value: values.sourceInterfaceValue,
@@ -60,6 +77,13 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
     if (lineType === 'network_line') {
       form.setFieldValue('lineName', '');
     }
+  };
+
+  const canEnableAnimation = (arrowDirection: string, lineStyle: string) => {
+    return (
+      arrowDirection === 'single' &&
+      (lineStyle === 'point' || lineStyle === 'dotted')
+    );
   };
 
   // 渲染接口配置组件
@@ -205,7 +229,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
 
   return (
     <Drawer
-      title={readonly ? t('topology.edgeView') : t('topology.edgeConfig')}
+      title={readonly ? t('topology.edgeView') : t('topology.edgeSetting')}
       placement="right"
       width={600}
       open={visible}
@@ -229,17 +253,25 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
       <div style={{ padding: '24px' }}>
         <Form
           form={form}
-          layout="vertical"
+          layout="horizontal"
+          labelCol={{ span: 5 }}
           onFinish={handleFinish}
           initialValues={{
             lineType: edgeData?.lineType || 'common_line',
             lineName: edgeData?.lineName || '',
+            lineColor: edgeData?.styleConfig?.lineColor || COLORS.EDGE.DEFAULT,
+            lineWidth: edgeData?.styleConfig?.lineWidth || 1,
+            lineStyle: edgeData?.styleConfig?.lineStyle || 'line',
+            enableAnimation: edgeData?.styleConfig?.enableAnimation || false,
             sourceInterfaceType: edgeData?.sourceInterface?.type || 'existing',
             sourceInterfaceValue: edgeData?.sourceInterface?.value || '',
             targetInterfaceType: edgeData?.targetInterface?.type || 'existing',
             targetInterfaceValue: edgeData?.targetInterface?.value || '',
           }}
         >
+          <div className="font-bold text-[var(--color-text-1)] mb-4">
+            {t('topology.nodeConfig.basicSettings')}
+          </div>
           {/* 线条类型选择 */}
           <Form.Item
             label={t('topology.lineType')}
@@ -262,6 +294,102 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
 
           {/* 线条名称配置 */}
           {renderLineNameConfig()}
+
+          <div className="mb-6">
+            <div className="font-bold text-[var(--color-text-1)] mb-4">
+              {t('topology.styleSettings')}
+            </div>
+
+            <Form.Item
+              label={t('topology.edgeConfig.lineColor')}
+              name="lineColor"
+            >
+              <ColorPicker
+                disabled={readonly}
+                size="small"
+                showText
+                allowClear
+                format="hex"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={t('topology.edgeConfig.lineWidth')}
+              name="lineWidth"
+            >
+              <InputNumber
+                min={1}
+                max={8}
+                step={1}
+                addonAfter="px"
+                disabled={readonly}
+                placeholder={t('common.inputMsg')}
+                style={{ width: '120px' }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={t('topology.edgeConfig.lineStyle')}
+              name="lineStyle"
+            >
+              <Select
+                placeholder={t('common.selectTip')}
+                disabled={readonly}
+                onChange={(value) => {
+                  const arrowDirection = edgeData?.arrowDirection || 'single';
+                  if (!canEnableAnimation(arrowDirection, value)) {
+                    form.setFieldValue('enableAnimation', false);
+                  }
+                }}
+              >
+                <Select.Option value="line">
+                  {t('topology.edgeConfig.lineStyleSolid')}
+                </Select.Option>
+                <Select.Option value="dotted">
+                  {t('topology.edgeConfig.lineStyleDotted')}
+                </Select.Option>
+                <Select.Option value="point">
+                  {t('topology.edgeConfig.lineStylePoint')}
+                </Select.Option>
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              noStyle
+              shouldUpdate={(prevValues, currentValues) =>
+                prevValues.lineStyle !== currentValues.lineStyle
+              }
+            >
+              {({ getFieldValue }) => {
+                const lineStyle = getFieldValue('lineStyle');
+                const arrowDirection = edgeData?.arrowDirection || 'single';
+                const animationEnabled = canEnableAnimation(
+                  arrowDirection,
+                  lineStyle
+                );
+
+                return (
+                  <Form.Item
+                    label={t('topology.edgeConfig.enableAnimation')}
+                    name="enableAnimation"
+                  >
+                    <Switch disabled={readonly || !animationEnabled} />
+                    {!animationEnabled && (
+                      <div
+                        style={{
+                          fontSize: '12px',
+                          color: 'var(--color-text-2)',
+                          marginTop: '4px',
+                        }}
+                      >
+                        {t('topology.edgeConfig.animationTip')}
+                      </div>
+                    )}
+                  </Form.Item>
+                );
+              }}
+            </Form.Item>
+          </div>
 
           {/* 网络线配置 */}
           {renderNetworkLineConfig()}

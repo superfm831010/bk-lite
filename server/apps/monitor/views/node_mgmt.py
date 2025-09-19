@@ -42,7 +42,12 @@ class NodeMgmtView(ViewSet):
             os=request.data.get("os"),
             page=request.data.get("page", 1),
             page_size=request.data.get("page_size", 10),
-            is_active=request.data.get("is_active")
+            is_active=request.data.get("is_active"),
+            permission_data={
+                "username": request.user.username,
+                "domain": request.user.domain,
+                "current_team": request.COOKIES.get("current_team"),
+            }
         ))
         return WebUtils.response_success(data)
 

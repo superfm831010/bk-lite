@@ -133,9 +133,12 @@ class AnomalyDetectionTrainJobViewSet(ModelViewSet):
             }
          )
       except Exception as e:
+         
          return Response(
-            {'error': f'获取运行历史失败: {str(e)}'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            {
+               'train_job_name': train_job.name,
+               'data': [],
+            }
          )
 
    @action(detail=False, methods=['get'], url_path='runs_metrics_list/(?P<run_id>.+?)')

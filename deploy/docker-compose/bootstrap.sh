@@ -34,19 +34,103 @@ log() {
     echo -e "${color}[$(date +'%Y-%m-%d %H:%M:%S')] [$level] $message${NC}"
 }
 
-DOCKER_COMPOSE_CMD=""
+# Function to compare version numbers
+# Returns 0 if version1 >= version2, 1 otherwise
+version_compare() {
+    local version1="$1"
+    local version2="$2"
+    
+    # Remove 'v' prefix if present
+    version1=$(echo "$version1" | sed 's/^v//')
+    version2=$(echo "$version2" | sed 's/^v//')
+    
+    # Split versions into arrays
+    IFS='.' read -ra ver1_parts <<< "$version1"
+    IFS='.' read -ra ver2_parts <<< "$version2"
+    
+    # Pad arrays to same length
+    local max_parts=$(( ${#ver1_parts[@]} > ${#ver2_parts[@]} ? ${#ver1_parts[@]} : ${#ver2_parts[@]} ))
+    
+    for ((i=0; i<max_parts; i++)); do
+        local part1=${ver1_parts[i]:-0}
+        local part2=${ver2_parts[i]:-0}
+        
+        if [[ $part1 -gt $part2 ]]; then
+            return 0
+        elif [[ $part1 -lt $part2 ]]; then
+            return 1
+        fi
+    done
+    
+    return 0  # versions are equal
+}
 
-if command -v docker-compose >/dev/null 2>&1; then
-    DOCKER_COMPOSE_CMD="docker-compose"
-    log "INFO" "检测到 docker-compose 命令，使用 docker-compose 进行部署"
-# 当docker compose version 返回0时，表示安装了docker compose v2
-elif docker compose version >/dev/null 2>&1; then
-    DOCKER_COMPOSE_CMD="docker compose"
-    log "INFO" "检测到 docker compose 命令，使用 docker compose 进行部署"
-else
-    log "ERROR" "未找到 docker-compose 或 docker compose 命令，请安装 docker-compose或将docker升级到最新版本"
-    exit 1
-fi
+# Function to check Docker version
+check_docker_version() {
+    local required_version="20.10.23"
+    
+    if ! command -v docker >/dev/null 2>&1; then
+        log "ERROR" "未找到 docker 命令，请安装 Docker"
+        exit 1
+    fi
+    
+    local docker_version=$(docker --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    
+    if [ -z "$docker_version" ]; then
+        log "ERROR" "无法获取 Docker 版本信息"
+        exit 1
+    fi
+    
+    log "INFO" "当前 Docker 版本: $docker_version"
+    
+    if version_compare "$docker_version" "$required_version"; then
+        log "SUCCESS" "Docker 版本满足要求 (>= $required_version)"
+    else
+        log "ERROR" "Docker 版本过低，要求版本 >= $required_version，当前版本: $docker_version"
+        log "ERROR" "请升级 Docker 到最新版本"
+        exit 1
+    fi
+}
+
+# Function to check Docker Compose version
+check_docker_compose_version() {
+    local required_version="2.27.0"
+    local compose_version=""
+    local cmd_type=""
+    
+    if command -v docker-compose >/dev/null 2>&1; then
+        compose_version=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        cmd_type="docker-compose"
+        DOCKER_COMPOSE_CMD="docker-compose"
+    elif docker compose version >/dev/null 2>&1; then
+        compose_version=$(docker compose version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        cmd_type="docker compose"
+        DOCKER_COMPOSE_CMD="docker compose"
+    else
+        log "ERROR" "未找到 docker-compose 或 docker compose 命令，请安装 docker-compose 或将 docker 升级到最新版本"
+        exit 1
+    fi
+    
+    if [ -z "$compose_version" ]; then
+        log "ERROR" "无法获取 Docker Compose 版本信息"
+        exit 1
+    fi
+    
+    log "INFO" "当前 Docker Compose 版本: $compose_version (使用 $cmd_type 命令)"
+    
+    if version_compare "$compose_version" "$required_version"; then
+        log "SUCCESS" "Docker Compose 版本满足要求 (>= $required_version)"
+    else
+        log "ERROR" "Docker Compose 版本过低，要求版本 >= $required_version，当前版本: $compose_version"
+        log "ERROR" "请升级 Docker Compose 到最新版本"
+        exit 1
+    fi
+}
+
+# Check Docker and Docker Compose versions
+log "INFO" "开始检查 Docker 和 Docker Compose 版本..."
+check_docker_version
+check_docker_compose_version
 
 # 检查是否添加--opspilot参数
 if [[ "$@" == *"--opspilot"* ]]; then
@@ -63,10 +147,10 @@ if [[ $OPSPILOT_ENABLED == "true" ]]; then
     export INSTALL_APPS="${INSTALL_APPS},opspilot"
     log "INFO" "启用 OpsPilot 功能，安装应用列表: ${INSTALL_APPS}"
     # 使用 compose/ops_pilot.yaml 文件
-    export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/ops_pilot.yaml config --no-interpolate"
+    export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/ops_pilot.yaml -f compose/log.yaml config --no-interpolate"
 else
     log "INFO" "禁用 OpsPilot 功能，安装应用列表: ${INSTALL_APPS}"
-    export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml config --no-interpolate"
+    export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/log.yaml config --no-interpolate"
 fi
 
 # Function to validate environment variables
@@ -247,6 +331,7 @@ DOCKER_IMAGE_NATS_EXECUTOR=$(add_mirror_prefix "bklite/nats-executor")
 DOCKER_IMAGE_FALKORDB=$(add_mirror_prefix "falkordb/falkordb:v4.12.4")
 DOCKER_IMAGE_PGVECTOR=$(add_mirror_prefix "pgvector/pgvector:pg15")
 DOCKER_IMAGE_TELEGRAF=$(add_mirror_prefix "bklite/telegraf:latest")
+DOCKER_IMAGE_VECTOR=$(add_mirror_prefix "timberio/vector:0.48.0-debian")
 # 采集器镜像
 # TODO: 不同OS/架构支持
 export DOCKER_IMAGE_FUSION_COLLECTOR=$(add_mirror_prefix "bklite/fusion-collector:latest")
@@ -309,7 +394,7 @@ authorization {
       user: "${NATS_MONITOR_USERNAME}"
       password: "${NATS_MONITOR_PASSWORD}"
       permissions: {
-        publish = ["metrics.>"]
+        publish = ["metrics.>","vector"]
         subscribe = []
       }
     }
@@ -360,6 +445,7 @@ DOCKER_IMAGE_MLFLOW=${DOCKER_IMAGE_MLFLOW}
 DOCKER_IMAGE_NATS_EXECUTOR=${DOCKER_IMAGE_NATS_EXECUTOR}
 DOCKER_IMAGE_FALKORDB=${DOCKER_IMAGE_FALKORDB}
 DOCKER_IMAGE_PGVECTOR=${DOCKER_IMAGE_PGVECTOR}
+DOCKER_IMAGE_VECTOR=${DOCKER_IMAGE_VECTOR}
 
 INSTALL_APPS="${INSTALL_APPS}"
 EOF
@@ -372,8 +458,8 @@ log "INFO" "拉取最新的镜像..."
 ${DOCKER_COMPOSE_CMD} pull
 
 # 按照特定顺序启动服务
-log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, FalkorDB, VictoriaLogs, MLFlow, NATS Executor)..."
-${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics falkordb victoria-logs mlflow nats-executor
+log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, FalkorDB, VictoriaLogs, Minio, MLFlow, NATS Executor, Vector)..."
+${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics falkordb victoria-logs minio mlflow nats-executor vector
 
 # 创建 JetStream - 使用正确的网络名称
 log "INFO" "创建JetStream..."
@@ -392,10 +478,10 @@ sleep 10
 
 log "INFO" "开始初始化内置插件"
 $DOCKER_COMPOSE_CMD exec -T server /bin/bash -s <<EOF
-python manage.py controller_package_init --pk_version latest --file_path /apps/pkgs/controller/fusion-collectors.zip
-python manage.py collector_package_init --os linux --object Telegraf --pk_version latest --file_path /apps/pkgs/collector/telegraf
-python manage.py collector_package_init --os linux --object Vector --pk_version latest --file_path /apps/pkgs/collector/vector
-python manage.py collector_package_init --os linux --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/nats-executor
+uv run manage.py controller_package_init --pk_version latest --file_path /apps/pkgs/controller/fusion-collectors.zip
+uv run manage.py collector_package_init --os linux --object Telegraf --pk_version latest --file_path /apps/pkgs/collector/telegraf
+uv run manage.py collector_package_init --os linux --object Vector --pk_version latest --file_path /apps/pkgs/collector/vector
+uv run manage.py collector_package_init --os linux --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/nats-executor
 EOF
 
 log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_WEB_PORT 访问系统"

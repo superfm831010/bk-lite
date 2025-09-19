@@ -174,10 +174,32 @@ def install_collector(task_id):
                 package_obj.name,
                 collector_install_dir,
             )
+
+            # 根据文件扩展名决定是否解压
+            if package_obj.name.lower().endswith('.zip'):
+                # 解压采集器包
+                action = "unzip"
+                unzip_name = unzip_file(
+                    node_obj.node_id,
+                    f"{collector_install_dir}/{package_obj.name}",
+                    collector_install_dir,
+                )
+                executable_name = unzip_name
+            else:
+                # 非zip包，直接使用原文件名（兼容旧逻辑）
+                executable_name = package_obj.name
+
             # Linux操作系统赋予执行权限
             if package_obj.os in LINUX_OS:
                 action = "set_exe"
-                exec_command_to_local(node_obj.node_id, f"chmod +x {collector_install_dir}/{package_obj.name}")
+                executable_path = f"{collector_install_dir}/{executable_name}"
+                # 检查是文件还是目录，并相应设置执行权限
+                # 如果是目录，递归设置目录内所有文件的执行权限
+                # 如果是文件，直接设置执行权限
+                exec_command_to_local(
+                    node_obj.node_id, 
+                    f"if [ -d '{executable_path}' ]; then find '{executable_path}' -type f -exec chmod +x {{}} \\; ; else chmod +x '{executable_path}'; fi"
+                )
             node_obj.status = "success"
         except Exception as e:
             message = str(e)
