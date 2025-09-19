@@ -162,7 +162,7 @@
     "score": "得分",
     "results": "结果",
     "returnQuanityTip": "候选数量必须大于返回数量",
-    "testingSuccess": "测试成功完成！",
+    "testingSuccess": "测试完成！",
     "testingFailed": "测试失败。",
     "applyFailed": "应用配置失败。",
     "embeddingModel": "Embed模型",
