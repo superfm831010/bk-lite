@@ -2,10 +2,17 @@
 
 import React, { useState } from 'react';
 import { Drawer, Form, Input, Select, InputNumber, Button, message, TimePicker, Upload, Radio } from 'antd';
-import { DeleteOutlined, InboxOutlined } from '@ant-design/icons';
+import { DeleteOutlined, InboxOutlined, CopyOutlined } from '@ant-design/icons';
 import { Node } from '@xyflow/react';
-import type { UploadProps, UploadFile } from 'antd';
+import type { UploadProps, UploadFile as AntdUploadFile } from 'antd';
+
+// Extend UploadFile to include the 'content' property
+interface UploadFile extends AntdUploadFile {
+  content?: string;
+}
 import { useSkillApi } from '@/app/opspilot/api/skill';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -49,6 +56,8 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   const [loadingSkills, setLoadingSkills] = useState(false);
 
   const { fetchSkill } = useSkillApi();
+  const searchParams = useSearchParams();
+  const botId = searchParams ? searchParams.get('id') : '1';
 
   // Load LLM model list
   const loadLlmModels = async () => {
@@ -61,6 +70,24 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       message.error('获取智能体列表失败');
     } finally {
       setLoadingSkills(false);
+    }
+  };
+
+  // 复制API URL到剪贴板
+  const copyApiUrl = async () => {
+    const apiUrl = `http://bklite.canwya.net/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`;
+    
+    try {
+      await navigator.clipboard.writeText(apiUrl);
+      message.success('API链接已复制到剪贴板');
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = apiUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      message.success('API链接已复制到剪贴板');
     }
   };
 
@@ -137,9 +164,28 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         }
       }
 
-      // Load LLM models for agent nodes
+      // Initialize uploaded files for agents nodes
       if (node.data.type === 'agents') {
+        if (config.uploadedFiles && Array.isArray(config.uploadedFiles)) {
+          // Convert saved file data back to upload file format
+          const convertedFiles = config.uploadedFiles.map((file: any, index: number) => ({
+            uid: file.uid || `file-${index}`,
+            name: file.name,
+            status: 'done' as const,
+            content: file.content,
+            response: {
+              fileId: file.uid || `file-${index}`,
+              fileName: file.name,
+              content: file.content
+            }
+          }));
+          setUploadedFiles(convertedFiles);
+        } else {
+          setUploadedFiles([]);
+        }
         loadLlmModels();
+      } else {
+        setUploadedFiles([]);
       }
     } else {
       // Reset all states when drawer closes
@@ -147,6 +193,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       setParamRows([]);
       setHeaderRows([]);
       setFrequency('daily');
+      setUploadedFiles([]);
     }
   }, [node, visible, form]);
 
@@ -160,6 +207,15 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         params: paramRows.filter(row => row.key && row.value),
         headers: headerRows.filter(row => row.key && row.value)
       };
+
+      // Save uploaded files for agents nodes
+      if (node.data.type === 'agents') {
+        // Only save name and content from uploaded files
+        configData.uploadedFiles = uploadedFiles.map(file => ({
+          name: file.name,
+          content: file.response?.content || file.content || ''
+        }));
+      }
 
       // Save time in HH:mm format for celery nodes
       if (node.data.type === 'celery' && configData.time) {
@@ -245,17 +301,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       return true;
     },
     onChange: (info) => {
-      const { status } = info.file;
-      
-      if (status === 'uploading') {
-        setUploadedFiles([...info.fileList]);
-      } else if (status === 'done') {
-        message.success(`${info.file.name} 文件上传成功`);
-        setUploadedFiles([...info.fileList]);
-      } else if (status === 'error') {
-        message.error(`${info.file.name} 文件上传失败`);
-        setUploadedFiles(info.fileList.filter(file => file.uid !== info.file.uid));
-      }
+      setUploadedFiles([...info.fileList]);
     },
     onRemove: (file) => {
       const newFileList = uploadedFiles.filter(item => item.uid !== file.uid);
@@ -264,25 +310,34 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     },
     customRequest: async ({ file, onSuccess, onError }) => {
       try {
-        // TODO: Replace with actual upload API
-        // const formData = new FormData();
-        // formData.append('file', file);
-        // const response = await fetch('/api/upload/knowledge', {
-        //   method: 'POST',
-        //   body: formData
-        // });
-        
-        // Simulate upload process
-        setTimeout(() => {
-          onSuccess && onSuccess({
-            fileId: Date.now().toString(),
+        // Read file content
+        const fileContent = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsText(file as File);
+        });
+
+        // Generate UID for the file
+        const fileUid = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        // Create file object with content
+        const fileWithContent = {
+          uid: fileUid,
+          name: (file as File).name,
+          content: fileContent,
+          status: 'done' as const,
+          response: {
+            fileId: fileUid,
             fileName: (file as File).name,
-            url: URL.createObjectURL(file as File)
-          });
-        }, 1000);
+            content: fileContent
+          }
+        };
+
+        onSuccess && onSuccess(fileWithContent.response);
       } catch (error) {
-        console.error('Upload error:', error);
-        onError && onError(new Error('上传失败'));
+        console.error('File read error:', error);
+        onError && onError(new Error('读取文件内容失败'));
       }
     }
   };
@@ -357,7 +412,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                       <TimePicker
                         format="HH:mm"
                         placeholder="选择时间"
-                        style={{ width: '100%' }}
+                        className="w-full"
                       />
                     </Form.Item>
                   )}
@@ -379,7 +434,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         <TimePicker
                           format="HH:mm"
                           placeholder="选择时间"
-                          style={{ width: '100%' }}
+                          className="w-full"
                         />
                       </Form.Item>
                     </>
@@ -398,7 +453,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         <TimePicker
                           format="HH:mm"
                           placeholder="选择时间"
-                          style={{ width: '100%' }}
+                          className="w-full"
                         />
                       </Form.Item>
                     </>
@@ -424,20 +479,20 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         </Select>
                       </Form.Item>
                       <Form.Item name="url" noStyle rules={[{ required: true }]}>
-                        <Input placeholder="输入URL" style={{ flex: 1 }} />
+                        <Input placeholder="输入URL" className="flex-1" />
                       </Form.Item>
                     </div>
                   </Form.Item>
 
                   <Form.Item label="请求参数">
                     <div className="space-y-2">
-                      <div className="grid gap-2 text-sm text-gray-500 mb-1" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                      <div className="grid gap-2 text-sm text-gray-500 mb-1 grid-cols-[1fr_1fr_60px]">
                         <span>变量名</span>
                         <span>变量值</span>
                         <span>操作</span>
                       </div>
                       {paramRows.map((row, index) => (
-                        <div key={index} className="grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                        <div key={index} className="grid gap-2 items-center grid-cols-[1fr_1fr_60px]">
                           <Input
                             placeholder="输入参数名"
                             value={row.key}
@@ -473,13 +528,13 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
 
                   <Form.Item label="请求头">
                     <div className="space-y-2">
-                      <div className="grid gap-2 text-sm text-gray-500 mb-1" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                      <div className="grid gap-2 text-sm text-gray-500 mb-1 grid-cols-[1fr_1fr_60px]">
                         <span>变量名</span>
                         <span>变量值</span>
                         <span>操作</span>
                       </div>
                       {headerRows.map((row, index) => (
-                        <div key={index} className="grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                        <div key={index} className="grid gap-2 items-center grid-cols-[1fr_1fr_60px]">
                           <Input
                             placeholder="输入参数名"
                             value={row.key}
@@ -514,14 +569,14 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                   </Form.Item>
 
                   <Form.Item name="requestBody" label="请求体">
-                    <Select defaultValue="JSON" style={{ width: '100%', marginBottom: 8 }}>
+                    <Select defaultValue="JSON" className="w-full mb-2">
                       <Option value="JSON">JSON</Option>
                     </Select>
                     <TextArea rows={6} placeholder="请输入JSON格式的请求体" />
                   </Form.Item>
 
                   <Form.Item name="timeout" label="超时设置（秒）">
-                    <InputNumber min={1} max={300} style={{ width: '100%' }} />
+                    <InputNumber min={1} max={300} className="w-full" />
                   </Form.Item>
 
                   <Form.Item name="outputMode" label="输出模式">
@@ -566,63 +621,22 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                     </Select>
                   </Form.Item>
                   {/* Hidden field to save agent name */}
-                  <Form.Item name="agentName" style={{ display: 'none' }}>
+                  <Form.Item name="agentName" className="hidden">
                     <Input />
                   </Form.Item>
-                </>
-              );
 
-            case 'restful':
-              return (
-                <>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-gray-600 mb-2">
-                      对外提供REST接口，适合以外部系统/应用进行调用，可指定&ldquo;接口文档&rdquo;查看具体步骤和参数
-                    </p>
-                    <a href="#" className="text-blue-500 text-sm hover:underline">
-                      查看接口文档 →
-                    </a>
-                  </div>
-                </>
-              );
-
-            case 'openai':
-              return (
-                <>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-gray-600 mb-2">
-                      对外提供的接口，可通过OpenAI的方式进行流程调用，支持SSE、流式设置完成后，可前往&ldquo;接口文档&rdquo;查看具体步骤和参数
-                    </p>
-                    <a href="#" className="text-blue-500 text-sm hover:underline">
-                      查看接口文档 →
-                    </a>
-                  </div>
-                </>
-              );
-
-            case 'prompt':
-              return (
-                <>
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-3">
-                      在流程流转过程中，需要追加更多的指令，让智能体的执行更符合预期和使用场景
-                    </p>
-                  </div>
-                  <Form.Item name="prompt" label="Prompt" rules={[{ required: true }]}>
-                    <TextArea rows={6} placeholder="请输入Prompt内容..." />
+                  {/* Prompt 追加功能 */}
+                  <Form.Item 
+                    name="prompt" 
+                    label="Prompt"
+                    tooltip="在流程流转过程中，需要追加更多的指令，让智能体的执行更符合预期和使用场景">
+                    <TextArea rows={4} placeholder="请输入Prompt内容..." />
                   </Form.Item>
-                </>
-              );
 
-            case 'knowledge':
-              return (
-                <>
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-3">
-                      在流程流转过程中，需要追加更多知识，这些知识会作为智能体执行的前提条件进行输入
-                    </p>
-                  </div>
-                  <Form.Item label="上传知识">
+                  {/* 知识追加功能 */}
+                  <Form.Item 
+                    label="上传知识"
+                    tooltip="在流程流转过程中，需要追加更多知识，这些知识会作为智能体执行的前提条件进行输入">
                     <Upload.Dragger {...uploadProps}>
                       <p className="ant-upload-drag-icon">
                         <InboxOutlined />
@@ -631,6 +645,68 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                       <p className="ant-upload-hint">支持单个或批量上传，仅支持 .md 格式文件</p>
                     </Upload.Dragger>
                   </Form.Item>
+                </>
+              );
+
+            case 'restful':
+              return (
+                <>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-xs leading-5">
+                    <p className="text-[var(--color-text-2)] mb-2">
+                      对外提供REST接口，适合以外部系统/应用进行调用。当画布保存后，可点击节点查询对应的调用参数如下
+                    </p>
+                    <div className="mt-2 mb-2 relative">
+                      <Input.TextArea
+                        readOnly
+                        value={`http://bklite.canwya.net/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`}
+                        autoSize={{ minRows: 2, maxRows: 4 }}
+                        className="font-mono text-xs text-[var(--color-text-2)] bg-white pr-10 border-none"
+                      />
+                      <Button
+                        type="text"
+                        icon={<CopyOutlined />}
+                        size="small"
+                        onClick={copyApiUrl}
+                        className="absolute top-2 right-2 z-10 text-[var(--color-text-3)] hover:text-[var(--color-primary)]"
+                        title="复制链接"
+                      />
+                    </div>
+                    <span className="text-[var(--color-text-2)]">更多详细介绍，可前往“接口文档”进行查看</span>
+                    <Link href="/opspilot/studio/detail/api" target="_blank" className="text-blue-500 hover:underline">
+                      查看接口文档 →
+                    </Link>
+                  </div>
+                </>
+              );
+
+            case 'openai':
+              return (
+                <>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-xs leading-5">
+                    <p className="text-[var(--color-text-2)] mb-2">
+                      对外提供的接口，可通过OpenAI的方式进行流程调用，支持SSE流式设置。当画布保存后，可点击节点查看对应调用参数如下
+                    </p>
+                    <div className="mt-2 mb-2 relative">
+                      <Input.TextArea
+                        readOnly
+                        value={`http://bklite.canwya.net/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`}
+                        autoSize={{ minRows: 2, maxRows: 4 }}
+                        className="font-mono text-xs text-[var(--color-text-2)] bg-white pr-10 border-none"
+                      />
+                      <Button
+                        type="text"
+                        icon={<CopyOutlined />}
+                        size="small"
+                        onClick={copyApiUrl}
+                        className="absolute top-2 right-2 z-10 text-[var(--color-text-3)] hover:text-[var(--color-primary)]"
+                        title="复制链接"
+                      />
+                    </div>
+                    <span className="text-[var(--color-text-2)]">更多详细介绍，可前往“接口文档”进行查看</span>
+                    <Link href="/opspilot/studio/detail/api" target="_blank" className="text-blue-500 hover:underline">
+                      查看接口文档 →
+                    </Link>
+                  </div>
                 </>
               );
 
