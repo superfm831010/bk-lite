@@ -3,7 +3,7 @@ import os
 install_apps = os.getenv("INSTALL_APPS", "")
 
 for app in os.listdir("apps"):
-    if app not in install_apps.split(","):
+    if install_apps and app not in install_apps.split(","):
         continue
     if app.endswith(".py") or app.startswith("__"):
         continue

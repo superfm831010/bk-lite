@@ -26,7 +26,6 @@ class NodeRegistry:
 
     def _register_builtin_nodes(self):
         """注册内置节点类型"""
-        # TODO: 根据需要注册具体的节点类型
         # 基础节点
         self.register_node_class("restful", EntryNode)
         self.register_node_class("openai", EntryNode)
