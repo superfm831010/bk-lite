@@ -127,7 +127,6 @@ const NodeFlow = ({
 
 
       if (!sourceChanged && !targetChanged) {
-        console.log('No connection changes detected');
         return;
       }
 
@@ -400,8 +399,6 @@ const NodeFlow = ({
       return item;
     });
 
-    // console.log(_nodes);
-    // console.log(_edges);
     setEdges(_edges);
     setNodes(_nodes);
   }, [currentNode, setNodes, setEdges]);
@@ -584,7 +581,6 @@ const NodeFlow = ({
                 }}
               />
             </Tooltip>
-
             {panel?.length > 0 && panel}
           </div>
         </Panel>

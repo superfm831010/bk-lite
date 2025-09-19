@@ -39,6 +39,7 @@ const TrainTaskDrawer = ({ open, onCancel, selectId }:
     } catch (e) {
       console.log(e);
       message.error(t(`traintask.getTrainStatusFailed`));
+      setHistoryData([]);
     } finally {
       setTableLoading(false);
     }

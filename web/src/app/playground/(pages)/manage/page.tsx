@@ -158,14 +158,14 @@ const PlaygroundManage = () => {
     getAllSampleFile();
   }, []);
 
-  const renderCapabilityNode = (categoryID: number, capabilityData: any[]) => {
+  const renderCapabilityNode = (categoryID: number, capabilityData: any[], categoryType: string) => {
     const filterData = capabilityData.filter(item => {
       const { id } = item.category;
       return categoryID === id;
     });
     return filterData.map((item: any) => ({
       key: item?.id,
-      title: renderCapabilityTitle(item),
+      title: renderCapabilityTitle({...item, categoryType}),
       ...item
     }));
   };
@@ -192,21 +192,21 @@ const PlaygroundManage = () => {
               name: 'anomaly_detection',
               selectable: false,
               title: renderTitle({ name: t(`manage.anomalyDetection`), categoryID: findIDByName('异常检测', categoryData), categoryType: 'anomaly' }),
-              children: renderCapabilityNode(findIDByName('异常检测', categoryData), capabilityData)
+              children: renderCapabilityNode(findIDByName('异常检测', categoryData), capabilityData, 'anomaly')
             },
             {
               key: 'timeseries_predict',
               name: 'timeseries_predict',
               selectable: false,
               title: renderTitle({ name: t(`manage.timeseriesPredict`), categoryID: findIDByName('时序预测', categoryData), categoryType: 'timeseries_predict' }),
-              children: renderCapabilityNode(findIDByName('时序预测', categoryData), capabilityData)
+              children: renderCapabilityNode(findIDByName('时序预测', categoryData), capabilityData, 'timeseries_predict')
             },
             {
               key: 'log_clustering',
               name: 'log_clustering',
               selectable: false,
               title: renderTitle({ name: t(`manage.logClustering`), categoryID: findIDByName('日志聚类', categoryData), categoryType: 'log_clustering' }),
-              children: renderCapabilityNode(findIDByName('日志聚类', categoryData), capabilityData)
+              children: renderCapabilityNode(findIDByName('日志聚类', categoryData), capabilityData, 'log_clustering')
             }
           ]
         },
