@@ -18,8 +18,8 @@ import { createNodeByType } from '../utils/registerNode';
 const serializeNodeConfig = (nodeData: any, nodeType: string) => {
   const styleConfigMapping: Record<string, string[]> = {
     'single-value': ['textColor', 'fontSize', 'backgroundColor', 'borderColor', 'nameColor', 'nameFontSize', 'thresholdColors'],
-    'basic-shape': ['width', 'height', 'backgroundColor', 'borderColor', 'borderWidth', 'lineType', 'shapeType'],
-    icon: ['width', 'height', 'backgroundColor', 'borderColor', 'fontSize', 'textColor'],
+    'basic-shape': ['width', 'height', 'backgroundColor', 'borderColor', 'borderWidth', 'lineType', 'shapeType', 'renderEffect'],
+    icon: ['width', 'height', 'backgroundColor', 'borderColor', 'fontSize', 'textColor', 'iconPadding', 'textDirection'],
     text: ['fontSize', 'fontWeight', 'textColor'],
     chart: ['width', 'height'],
   };
@@ -59,6 +59,7 @@ export const useGraphData = (
         type: nodeData.type,
         name: nodeData.name,
         unit: nodeData.unit,
+        conversionFactor: nodeData.conversionFactor,
         decimalPlaces: nodeData.decimalPlaces,
         description: nodeData.description || '',
         position,
@@ -213,17 +214,7 @@ export const useGraphData = (
         config: edgeConfig.config,
       };
 
-      const edgeStyle = getEdgeStyleWithLabel(edgeData, connectionType);
-
-      if (edgeConfig.styleConfig?.lineColor) {
-        edgeStyle.attrs = {
-          ...edgeStyle.attrs,
-          line: {
-            ...edgeStyle.attrs?.line,
-            stroke: edgeConfig.styleConfig.lineColor,
-          },
-        };
-      }
+      const edgeStyle = getEdgeStyleWithLabel(edgeData, connectionType, edgeConfig.styleConfig);
 
       const edge = graphInstance.createEdge({
         id: edgeConfig.id,

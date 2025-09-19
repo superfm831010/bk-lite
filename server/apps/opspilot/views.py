@@ -13,10 +13,11 @@ from django_minio_backend import MinioBackend
 from apps.base.models import UserAPISecret
 from apps.core.logger import opspilot_logger as logger
 from apps.core.utils.exempt import api_exempt
-from apps.opspilot.models import Bot, BotChannel, BotConversationHistory, LLMSkill, TokenConsumption
+from apps.opspilot.models import Bot, BotChannel, BotConversationHistory, BotWorkFlow, LLMSkill, TokenConsumption
 from apps.opspilot.services.llm_service import llm_service
 from apps.opspilot.services.skill_excute_service import SkillExecuteService
 from apps.opspilot.utils.bot_utils import get_client_ip, insert_skill_log, set_time_range
+from apps.opspilot.utils.chat_flow_utils.engine.factory import create_chat_flow_engine
 from apps.opspilot.utils.quota_utils import QuotaUtils
 from apps.opspilot.utils.sse_chat import generate_stream_error, stream_chat
 from apps.rpc.system_mgmt import SystemMgmt
@@ -430,3 +431,113 @@ def set_channel_type_line(end_time, queryset, start_time):
     }
     result["total"] = [{"time": date, "count": user_count} for date, user_count in sorted(total_user_count.items())]
     return result
+
+
+@api_exempt
+def execute_chat_flow(request):
+    """执行ChatFlow流程"""
+    bot_id = request.GET.get("bot_id", "")
+    node_id = request.GET.get("node_id", "")
+
+    if not bot_id or not node_id:
+        return JsonResponse({"result": False, "message": _("Bot ID and Node ID are required.")})
+
+    kwargs = json.loads(request.body)
+    message = kwargs.get("message", "")
+
+    if not message:
+        return JsonResponse({"result": False, "message": _("Message is required.")})
+
+    # 验证token
+    token = request.META.get("HTTP_AUTHORIZATION") or request.META.get(settings.API_TOKEN_HEADER_NAME)
+    is_valid, msg = validate_openai_token(token)
+    if not is_valid:
+        return JsonResponse(msg)
+
+    # 验证Bot
+    user = msg
+    bot_obj = Bot.objects.filter(id=bot_id, online=True, team__contains=int(user.team)).first()
+    if not bot_obj:
+        return JsonResponse({"result": False, "message": _("No bot online")})
+
+    # 获取Bot的工作流配置
+    bot_chat_flow = BotWorkFlow.objects.filter(bot_id=bot_obj.id).first()
+    if not bot_chat_flow:
+        return JsonResponse({"result": False, "message": _("No chat flow configured for this bot.")})
+
+    # 检查工作流是否有配置数据
+    if not bot_chat_flow.flow_json:
+        return JsonResponse({"result": False, "message": _("Chat flow configuration is empty.")})
+
+    try:
+        # 创建ChatFlow引擎 - 使用数据库中的工作流配置
+        engine = create_chat_flow_engine(bot_chat_flow, node_id)
+
+        # 准备输入数据
+        input_data = {
+            "last_message": message,
+            "user_id": user.username,
+            "bot_id": bot_id,
+            "node_id": node_id,
+        }
+
+        # 执行流程（使用数据库中存储的流程配置）
+        logger.info(f"开始执行ChatFlow流程，bot_id: {bot_id}, node_id: {node_id}, user: {user.username}")
+        result = engine.execute(input_data)
+        logger.info(f"ChatFlow流程执行完成，bot_id: {bot_id}, 最终输出: {result}")
+        return JsonResponse({"result": True, "data": {"content": result, "execution_time": time.time()}})
+    except Exception as e:
+        logger.error(f"ChatFlow流程执行失败，bot_id: {bot_id}, node_id: {node_id}, 错误: {str(e)}")
+        logger.exception(e)
+
+        return JsonResponse(
+            {
+                "result": False,
+                "message": f"ChatFlow流程执行失败: {str(e)}",
+            }
+        )
+
+
+@api_exempt
+def get_chat_flow_task_status(request):
+    """获取ChatFlow任务状态"""
+    task_id = request.GET.get("task_id", "")
+
+    if not task_id:
+        return JsonResponse({"result": False, "message": _("Task ID is required.")})
+
+    try:
+        from celery.result import AsyncResult
+
+        # 获取任务结果
+        task_result = AsyncResult(task_id)
+
+        response_data = {
+            "result": True,
+            "data": {
+                "task_id": task_id,
+                "status": task_result.status,
+                "ready": task_result.ready(),
+                "successful": task_result.successful() if task_result.ready() else None,
+            },
+        }
+
+        # 如果任务完成，返回结果
+        if task_result.ready():
+            if task_result.successful():
+                response_data["data"]["result"] = task_result.result
+            else:
+                response_data["data"]["error"] = str(task_result.result)
+
+        return JsonResponse(response_data)
+
+    except Exception as e:
+        logger.error(f"获取ChatFlow任务状态失败，task_id: {task_id}, 错误: {str(e)}")
+
+        return JsonResponse({"result": False, "message": f"获取任务状态失败: {str(e)}", "error_details": {"task_id": task_id, "error": str(e)}})
+
+
+@api_exempt
+def test(request):
+    kwargs = request.GET.dict()
+    return JsonResponse({"result": True, "data": kwargs})

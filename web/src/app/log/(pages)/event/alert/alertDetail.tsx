@@ -24,6 +24,7 @@ import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { useAlertDetailTabs } from '@/app/log/hooks/event';
 import useLogEventApi from '@/app/log/api/event';
 import Information from './information';
+import EventDetail from './eventDetail';
 import { LEVEL_MAP } from '@/app/log/constants';
 import { useLevelList, useStateMap } from '@/app/log/hooks/event';
 
@@ -34,6 +35,9 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const { convertToLocalizedTime } = useLocalizedTime();
     const STATE_MAP = useStateMap();
     const LEVEL_LIST = useLevelList();
+    const eventDetailRef = useRef<ModalRef>(null);
+    const timelineRef = useRef<HTMLDivElement>(null);
+    const isFetchingRef = useRef<boolean>(false); // 用于标记是否正在加载数据
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
     const [formData, setFormData] = useState<TableDataItem>({});
     const [title, setTitle] = useState<string>('');
@@ -48,8 +52,6 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const [tableLoading, setTableLoading] = useState<boolean>(false);
     const tabs: TabItem[] = useAlertDetailTabs();
     const [timeLineData, setTimeLineData] = useState<TimeLineItem[]>([]);
-    const timelineRef = useRef<HTMLDivElement>(null);
-    const isFetchingRef = useRef<boolean>(false); // 用于标记是否正在加载数据
 
     useImperativeHandle(ref, () => ({
       showModal: ({ title, form }) => {
@@ -92,6 +94,9 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
                   : '--'}
               </span>
               {`${formData.metric?.display_name || item.content}`}
+              <Button type="link" onClick={() => openEventDetail(item)}>
+                {t('common.detail')}
+              </Button>
             </>
           ),
         }));
@@ -176,6 +181,18 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
       onSuccess();
     };
 
+    const openEventDetail = (row: TableDataItem) => {
+      eventDetailRef.current?.showModal({
+        title: t('log.event.originalLog'),
+        type: 'add',
+        form: {
+          ...row,
+          alert_type: formData.alert_type,
+          show_fields: formData.show_fields || [],
+        },
+      });
+    };
+
     return (
       <div>
         <OperateModal
@@ -248,6 +265,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
             </Spin>
           </div>
         </OperateModal>
+        <EventDetail ref={eventDetailRef} />
       </div>
     );
   }

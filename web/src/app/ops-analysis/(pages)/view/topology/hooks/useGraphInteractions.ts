@@ -7,7 +7,7 @@ import { message } from 'antd';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from '@/utils/i18n';
 import { COLORS } from '../constants/nodeDefaults';
-import { createEdgeLabel, getEdgeStyle } from '../utils/topologyUtils';
+import { createEdgeLabel, getEdgeStyleWithConfig } from '../utils/topologyUtils';
 import { createEdgeByType } from '../utils/registerEdge';
 import {
   TopologyState,
@@ -43,7 +43,16 @@ export const useContextMenuAndModal = (
   } = state;
 
   const handleEdgeConfigConfirm = useCallback(
-    (values: { lineType: 'common_line' | 'network_line'; lineName?: string; styleConfig?: { lineColor?: string } }) => {
+    (values: {
+      lineType: 'common_line' | 'network_line';
+      lineName?: string;
+      styleConfig?: {
+        lineColor?: string;
+        lineWidth?: number;
+        lineStyle?: 'line' | 'dotted' | 'point';
+        enableAnimation?: boolean;
+      }
+    }) => {
       if (!currentEdgeData?.id || !graphInstance) return;
 
       const edge = graphInstance.getCellById(currentEdgeData.id) as Edge;
@@ -59,13 +68,39 @@ export const useContextMenuAndModal = (
         vertices: currentVertices
       });
 
-      if (values.styleConfig?.lineColor) {
-        edge.setAttrs({
-          line: {
-            ...edge.getAttrs().line,
-            stroke: values.styleConfig.lineColor,
-          },
-        });
+      if (values.styleConfig) {
+        const lineAttrs: any = {
+          ...edge.getAttrs().line,
+        };
+
+        if (values.styleConfig.lineColor) {
+          lineAttrs.stroke = values.styleConfig.lineColor;
+        }
+
+        if (values.styleConfig.lineWidth) {
+          lineAttrs.strokeWidth = values.styleConfig.lineWidth;
+        }
+
+        if (values.styleConfig.lineStyle === 'dotted') {
+          lineAttrs.strokeDasharray = '3 3';
+        } else if (values.styleConfig.lineStyle === 'point') {
+          lineAttrs.strokeDasharray = '1 3';
+        } else if (values.styleConfig.lineStyle === 'line') {
+          lineAttrs.strokeDasharray = null;
+        }
+
+        const arrowDirection = currentEdgeData.arrowDirection || 'single';
+        if (
+          arrowDirection === 'single' &&
+          values.styleConfig.enableAnimation &&
+          (values.styleConfig.lineStyle === 'dotted' || values.styleConfig.lineStyle === 'point')
+        ) {
+          lineAttrs.class = 'edge-flow-animation';
+        } else {
+          lineAttrs.class = null;
+        }
+
+        edge.setAttrs({ line: lineAttrs });
       }
 
       if (values.lineType === 'network_line') {
@@ -82,10 +117,7 @@ export const useContextMenuAndModal = (
         ...currentEdgeData,
         lineType: values.lineType,
         lineName: values.lineName,
-        styleConfig: {
-          ...currentEdgeData.styleConfig,
-          lineColor: values.styleConfig?.lineColor
-        }
+        styleConfig: values.styleConfig
       });
     },
     [currentEdgeData, graphInstance, setCurrentEdgeData]
@@ -113,6 +145,7 @@ export const useContextMenuAndModal = (
           id: edge.id,
           lineType: edgeData.lineType || 'common_line',
           lineName: edgeData.lineName || '',
+          arrowDirection: edgeData.arrowDirection,
           styleConfig: edgeData.styleConfig || { lineColor: COLORS.EDGE.DEFAULT, },
           sourceNode: {
             id: sourceNode.id,
@@ -311,10 +344,18 @@ export const useContextMenuAndModal = (
         const currentPoint = getCurrentMousePosition(e);
 
         if (!tempEdge) {
+          // 临时边的默认样式配置
+          const tempEdgeStyleConfig = {
+            lineColor: COLORS.EDGE.DEFAULT,
+            lineWidth: 1,
+            lineStyle: 'line' as const,
+            enableAnimation: false,
+          };
+
           tempEdge = graphInstance.addEdge({
             source: { cell: contextMenuNodeId },
             target: currentPoint,
-            ...getEdgeStyle(connectionType),
+            ...getEdgeStyleWithConfig(connectionType, tempEdgeStyleConfig),
             data: { connectionType, isTemporary: true },
             zIndex: 1000,
           });

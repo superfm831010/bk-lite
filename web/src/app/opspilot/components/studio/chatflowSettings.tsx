@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Form, Input, Select, Collapse } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
-import ChatflowEditor from '@/app/opspilot/components/chatflow/ChatflowEditor';
+import ChatflowEditor, { ChatflowEditorRef } from '@/app/opspilot/components/chatflow/ChatflowEditor';
 import Icon from '@/components/icon';
 
 const { Option } = Select;
@@ -39,9 +39,7 @@ const nodeCategories = [
     key: 'actions',
     labelKey: 'chatflow.actionNodes',
     items: [
-      { type: 'http', icon: 'HTTP', labelKey: 'chatflow.http' },
-      { type: 'prompt', icon: 'prompt_o', labelKey: 'chatflow.prompt' },
-      { type: 'knowledge', icon: 'zhishiku2', labelKey: 'chatflow.knowledge' }
+      { type: 'http', icon: 'HTTP', labelKey: 'chatflow.http' }
     ]
   }
 ];
@@ -54,7 +52,6 @@ const NodeLibraryItem = ({ type, icon, label, onDragStart }: {
   onDragStart: (event: React.DragEvent, nodeType: string) => void;
 }) => {
   const handleDragStart = (event: React.DragEvent<HTMLDivElement>) => {
-    console.log('开始拖拽节点:', type);
     event.dataTransfer.setData('application/reactflow', type);
     event.dataTransfer.effectAllowed = 'move';
     
@@ -67,7 +64,6 @@ const NodeLibraryItem = ({ type, icon, label, onDragStart }: {
   };
 
   const handleDragEnd = (event: React.DragEvent<HTMLDivElement>) => {
-    console.log('拖拽结束:', type);
     const target = event.currentTarget as HTMLDivElement;
     target.style.opacity = '1';
   };
@@ -102,7 +98,8 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({
 }) => {
   const { t } = useTranslation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeAccordionKeys, setActiveAccordionKeys] = useState<string[]>(['nodes']); // 默认只展开节点，信息不展开
+  const [activeAccordionKeys, setActiveAccordionKeys] = useState<string[]>(['nodes']);
+  const chatflowEditorRef = useRef<ChatflowEditorRef>(null);
 
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
@@ -113,7 +110,6 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({
     setActiveAccordionKeys(Array.isArray(keys) ? keys : [keys]);
   };
 
-  // 处理工作流数据变化的回调
   const handleWorkflowChange = (nodes: any[], edges: any[]) => {
     console.log('ChatflowSettings: 工作流数据变化', { nodes: nodes.length, edges: edges.length });
     if (onSaveWorkflow) {
@@ -121,8 +117,18 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({
     }
   };
 
-  // 添加调试日志
-  console.log('ChatflowSettings: 接收到的workflowData', workflowData);
+  // 处理清空画布的回调
+  const handleClearClick = () => {
+    // Clear the editor directly using ref
+    if (chatflowEditorRef.current) {
+      chatflowEditorRef.current.clearCanvas();
+    }
+    
+    // Notify parent component to clear workflow data
+    if (onClear) {
+      onClear();
+    }
+  };
 
   return (
     <div className="w-full flex h-full">
@@ -245,20 +251,19 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({
       <div className={`flex-1 transition-all duration-300 ease-in-out ${
         isSidebarCollapsed ? 'pl-8' : 'pl-4'
       }`}>
-        <div className="flex items-center justify-between mb-2 px-2">
+        <div className="flex items-center mb-2 px-2">
           <h2 className="font-semibold text-sm text-[var(--color-text-1)]">{t('chatflow.canvas')}</h2>
-          {onClear && (
-            <button
-              onClick={onClear}
-              className="text-gray-500 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
-              title={t('chatflow.clear')}
-            >
-              <Icon type="shanchu" className="text-lg" />
-            </button>
-          )}
+          <button
+            onClick={handleClearClick}
+            className="text-gray-500 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50 ml-2"
+            title={t('chatflow.clear')}
+          >
+            <Icon type="shanchu" className="text-lg" />
+          </button>
         </div>
         <div className="border rounded-md shadow-sm bg-white h-[calc(100vh-230px)] mx-2">
           <ChatflowEditor 
+            ref={chatflowEditorRef}
             onSave={handleWorkflowChange} 
             initialData={workflowData}
           />

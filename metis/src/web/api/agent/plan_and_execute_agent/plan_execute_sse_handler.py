@@ -38,8 +38,6 @@ async def stream_plan_execute_response(
         stream_iter = await workflow.stream(body)
 
         async for chunk in stream_iter:
-            logger.debug(f"[Plan Execute SSE] 收到 chunk: {type(chunk)}")
-
             # 增强的空值检查
             if not chunk or chunk is None:
                 logger.debug(f"[Plan Execute SSE] 跳过空的或None的chunk")
@@ -55,7 +53,6 @@ async def stream_plan_execute_response(
                     continue
 
                 message_type = type(message).__name__
-                logger.debug(f"[Plan Execute SSE] 处理消息类型: {message_type}")
 
                 # 明确处理不同类型的消息
                 if message_type == "AIMessageChunk":

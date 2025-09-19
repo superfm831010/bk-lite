@@ -17,7 +17,7 @@ import { updateNodeAttributes, registerNodes, createNodeByType } from '../utils/
 import { registerEdges } from '../utils/registerEdge';
 import { useGraphData } from './useGraphData';
 import {
-  getEdgeStyle,
+  getEdgeStyleWithConfig,
   hideAllPorts,
   hideAllEdgeTools,
   showPorts,
@@ -336,10 +336,14 @@ export const useGraphOperations = (
         const numericValue = typeof value === 'string' ? parseFloat(value) : value;
 
         if (typeof numericValue === 'number' && !isNaN(numericValue)) {
+          // 应用换算系数
+          const conversionFactor = nodeConfig.conversionFactor !== undefined ? nodeConfig.conversionFactor : 1;
+          const convertedValue = numericValue * conversionFactor;
+
           const decimalPlaces = nodeConfig.decimalPlaces !== undefined ? nodeConfig.decimalPlaces : 2;
-          displayValue = parseFloat(numericValue.toFixed(decimalPlaces)).toString();
+          displayValue = parseFloat(convertedValue.toFixed(decimalPlaces)).toString();
         } else {
-          displayValue = formatDisplayValue(value);
+          displayValue = formatDisplayValue(value, undefined, undefined, nodeConfig.conversionFactor);
         }
         if (nodeConfig.unit && nodeConfig.unit.trim()) {
           displayValue = `${displayValue} ${nodeConfig.unit}`;
@@ -715,16 +719,20 @@ export const useGraphOperations = (
 
       const edgeData = edge.getData() || {};
       const arrowDirection = edgeData.arrowDirection || 'single';
+      const defaultStyleConfig = {
+        lineColor: COLORS.EDGE.DEFAULT,
+        lineWidth: 1,
+        lineStyle: 'line' as const,
+        enableAnimation: false,
+      };
 
-      edge.setAttrs(getEdgeStyle(arrowDirection).attrs);
+      edge.setAttrs(getEdgeStyleWithConfig(arrowDirection, defaultStyleConfig).attrs);
       addEdgeTools(edge);
       edge.setData({
         lineType: 'common_line',
         lineName: '',
         arrowDirection: arrowDirection,
-        styleConfig: {
-          lineColor: COLORS.EDGE.DEFAULT,
-        }
+        styleConfig: defaultStyleConfig
       });
     });
 
@@ -981,7 +989,12 @@ export const useGraphOperations = (
         createEdge: () =>
           graph.createEdge({
             shape: 'edge',
-            ...getEdgeStyle('single')
+            ...getEdgeStyleWithConfig('single', {
+              lineColor: COLORS.EDGE.DEFAULT,
+              lineWidth: 1,
+              lineStyle: 'line',
+              enableAnimation: false
+            })
           }),
         validateMagnet: ({ magnet }) => {
           return (
@@ -1125,6 +1138,7 @@ export const useGraphOperations = (
         type: editingNode.type,
         name: values.name,
         unit: values.unit,
+        conversionFactor: values.conversionFactor,
         decimalPlaces: values.decimalPlaces,
         description: values.description,
         position: editingNode.position,
@@ -1143,12 +1157,14 @@ export const useGraphOperations = (
           backgroundColor: values.backgroundColor !== undefined ? values.backgroundColor : styleConfig?.backgroundColor,
           borderColor: values.borderColor !== undefined ? values.borderColor : styleConfig?.borderColor,
           borderWidth: values.borderWidth !== undefined ? values.borderWidth : styleConfig?.borderWidth,
+          iconPadding: values.iconPadding !== undefined ? values.iconPadding : styleConfig?.iconPadding,
           width: values.width !== undefined ? values.width : styleConfig?.width,
           height: values.height !== undefined ? values.height : styleConfig?.height,
           lineType: values.lineType !== undefined ? values.lineType : styleConfig?.lineType,
           shapeType: values.shapeType !== undefined ? values.shapeType : styleConfig?.shapeType,
           nameColor: values.nameColor !== undefined ? values.nameColor : styleConfig?.nameColor,
           nameFontSize: values.nameFontSize !== undefined ? values.nameFontSize : styleConfig?.nameFontSize,
+          textDirection: values.textDirection !== undefined ? values.textDirection : styleConfig?.textDirection,
           thresholdColors: values.thresholdColors !== undefined ? values.thresholdColors : styleConfig?.thresholdColors,
         },
       };
@@ -1271,65 +1287,7 @@ export const useGraphOperations = (
     }
   }, [state, graphInstance]);
 
-  const getEditNodeInitialValues = useCallback(() => {
-    if (!state.editingNodeData) return {};
 
-    const editingNodeData = state.editingNodeData;
-    const baseValues = {
-      name: editingNodeData.name
-    };
-
-    const styleConfig = editingNodeData.styleConfig || {};
-    const valueConfig = editingNodeData.valueConfig || {};
-    switch (editingNodeData.type) {
-      case 'single-value':
-        return {
-          ...baseValues,
-          fontSize: styleConfig.fontSize,
-          textColor: styleConfig.textColor,
-          backgroundColor: styleConfig.backgroundColor,
-          borderColor: styleConfig.borderColor,
-          selectedFields: valueConfig.selectedFields || [],
-          dataSource: valueConfig.dataSource,
-          dataSourceParams: valueConfig.dataSourceParams || {},
-          nameColor: styleConfig.nameColor,
-          nameFontSize: styleConfig.nameFontSize,
-          unit: editingNodeData.unit,
-          decimalPlaces: editingNodeData.decimalPlaces,
-          thresholdColors: styleConfig.thresholdColors,
-        };
-
-      case 'icon':
-        return {
-          ...baseValues,
-          logoType: editingNodeData.logoType || 'default',
-          logoIcon: editingNodeData.logoType === 'default' ? editingNodeData.logoIcon : 'cc-host',
-          logoUrl: editingNodeData.logoType === 'custom' ? editingNodeData.logoUrl : undefined,
-          width: styleConfig.width,
-          height: styleConfig.height,
-          fontSize: styleConfig.fontSize,
-          textColor: styleConfig.textColor,
-          backgroundColor: styleConfig.backgroundColor,
-          borderColor: styleConfig.borderColor,
-          borderWidth: styleConfig.borderWidth,
-        };
-
-      case 'basic-shape':
-        return {
-          ...baseValues,
-          width: styleConfig.width,
-          height: styleConfig.height,
-          backgroundColor: styleConfig.backgroundColor,
-          borderColor: styleConfig.borderColor,
-          borderWidth: styleConfig.borderWidth,
-          lineType: styleConfig.lineType,
-          shapeType: styleConfig.shapeType,
-        };
-
-      default:
-        return baseValues;
-    }
-  }, [state.editingNodeData]);
 
   const handleNodeEditClose = useCallback(() => {
     state.setNodeEditVisible(false);
@@ -1365,7 +1323,6 @@ export const useGraphOperations = (
     handleAddChartNode,
     resizeCanvas,
     toggleEditMode,
-    getEditNodeInitialValues,
     handleNodeEditClose,
     undo,
     redo,

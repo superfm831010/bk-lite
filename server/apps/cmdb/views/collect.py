@@ -158,6 +158,11 @@ class CollectModelViewSet(ModelViewSet):
             "page": int(params.get("page", 1)),
             "page_size": int(params.get("page_size", 10)),
             "name": params.get("name", ""),
+            "permission_data": {
+                "username": request.user.username,
+                "domain": request.user.domain,
+                "current_team": request.COOKIES.get("current_team"),
+            },
         }
         node = NodeMgmt()
         data = node.node_list(query_data)

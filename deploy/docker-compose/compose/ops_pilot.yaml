@@ -38,6 +38,7 @@ services:
       KNOWLEDGE_GRAPH_PORT: 6379
       GRAPHITI_TELEMETRY_ENABLED: "false"
       OPENAI_API_KEY: ""
+      UV_OFFLINE: true
     networks:
       - prod
     depends_on:
