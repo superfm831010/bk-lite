@@ -10,6 +10,8 @@ from tqdm import tqdm
 from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.enum import DocumentStatus
 from apps.opspilot.models import (
+    Bot,
+    BotWorkFlow,
     FileKnowledge,
     KnowledgeBase,
     KnowledgeDocument,
@@ -21,6 +23,7 @@ from apps.opspilot.models import (
     WebPageKnowledge,
 )
 from apps.opspilot.services.knowledge_search_service import KnowledgeSearchService
+from apps.opspilot.utils.chat_flow_utils.engine.factory import create_chat_flow_engine
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 from apps.opspilot.utils.chunk_helper import ChunkHelper
 from apps.opspilot.utils.graph_utils import GraphUtils
@@ -676,3 +679,29 @@ def create_qa_pairs_by_chunk(qa_pairs_id, kwargs):
     qa_pairs_obj.status = "completed"
     qa_pairs_obj.save()
     task_obj.delete()
+
+
+@shared_task
+def chat_flow_celery_task(bot_id, node_id, message):
+    """ChatFlow周期性任务"""
+    logger.info(f"开始执行ChatFlow周期任务: bot_id={bot_id}, node_id={node_id}")
+    bot_obj = Bot.objects.filter(id=bot_id, online=True).first()
+    if not bot_obj:
+        logger.error(f"Bot {bot_id} 不存在或已下线")
+        return
+    bot_chat_flow = BotWorkFlow.objects.filter(bot_id=bot_obj.id).first()
+    if not bot_chat_flow:
+        logger.error(f"Bot {bot_id} 没有配置ChatFlow")
+        return
+    try:
+        engine = create_chat_flow_engine(bot_chat_flow, node_id)
+        input_data = {
+            "last_message": message,
+            "user_id": bot_obj.created_by,
+            "bot_id": bot_id,
+            "node_id": node_id,
+        }
+        result = engine.execute(input_data)
+        logger.info(f"ChatFlow周期任务执行完成: bot_id={bot_id}, node_id={node_id}, 执行结果为{result}")
+    except Exception as e:
+        logger.error(f"ChatFlow周期任务执行失败: bot_id={bot_id}, node_id={node_id}, error={str(e)}")
