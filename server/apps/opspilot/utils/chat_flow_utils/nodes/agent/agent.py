@@ -106,6 +106,7 @@ class AgentNode(BaseNodeExecutor):
             "enable_km_route": skill_obj.enable_km_route,
             "km_llm_model": skill_obj.km_llm_model,
             "enable_suggest": skill_obj.enable_suggest,
+            "enable_query_rewrite": skill_obj.enable_query_rewrite,
         }
 
         data, _, _ = llm_service.invoke_chat(llm_params)

@@ -140,6 +140,10 @@ def get_skill_and_params(kwargs, team, bot_id=None):
         "tools": skill_obj.tools,
         "skill_type": skill_obj.skill_type,
         "group": skill_obj.team[0],
+        "enable_km_route": skill_obj.enable_km_route,
+        "km_llm_model": skill_obj.km_llm_model,
+        "enable_suggest": skill_obj.enable_suggest,
+        "enable_query_rewrite": skill_obj.enable_query_rewrite,
     }
 
     return skill_obj, params, None
@@ -226,6 +230,7 @@ def openai_completions(request):
     params["enable_km_route"] = skill_obj.enable_km_route
     params["km_llm_model"] = skill_obj.km_llm_model
     params["enable_suggest"] = skill_obj.enable_suggest
+    params["enable_query_rewrite"] = skill_obj.enable_query_rewrite
     user_message = params.get("user_message")
     if not stream_mode:
         return invoke_chat(params, skill_obj, kwargs, current_ip, user_message)
@@ -266,6 +271,7 @@ def lobe_skill_execute(request):
     params["enable_km_route"] = skill_obj.enable_km_route
     params["km_llm_model"] = skill_obj.km_llm_model
     params["enable_suggest"] = skill_obj.enable_suggest
+    params["enable_query_rewrite"] = skill_obj.enable_query_rewrite
     user_message = params.get("user_message")
     if not stream_mode:
         return invoke_chat(params, skill_obj, kwargs, current_ip, user_message)
