@@ -4,7 +4,12 @@ import React, { useState } from 'react';
 import { Drawer, Form, Input, Select, InputNumber, Button, message, TimePicker, Upload, Radio } from 'antd';
 import { DeleteOutlined, InboxOutlined, CopyOutlined } from '@ant-design/icons';
 import { Node } from '@xyflow/react';
-import type { UploadProps, UploadFile } from 'antd';
+import type { UploadProps, UploadFile as AntdUploadFile } from 'antd';
+
+// Extend UploadFile to include the 'content' property
+interface UploadFile extends AntdUploadFile {
+  content?: string;
+}
 import { useSkillApi } from '@/app/opspilot/api/skill';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -159,9 +164,28 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         }
       }
 
-      // Load LLM models for agent nodes
+      // Initialize uploaded files for agents nodes
       if (node.data.type === 'agents') {
+        if (config.uploadedFiles && Array.isArray(config.uploadedFiles)) {
+          // Convert saved file data back to upload file format
+          const convertedFiles = config.uploadedFiles.map((file: any, index: number) => ({
+            uid: file.uid || `file-${index}`,
+            name: file.name,
+            status: 'done' as const,
+            content: file.content,
+            response: {
+              fileId: file.uid || `file-${index}`,
+              fileName: file.name,
+              content: file.content
+            }
+          }));
+          setUploadedFiles(convertedFiles);
+        } else {
+          setUploadedFiles([]);
+        }
         loadLlmModels();
+      } else {
+        setUploadedFiles([]);
       }
     } else {
       // Reset all states when drawer closes
@@ -169,6 +193,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       setParamRows([]);
       setHeaderRows([]);
       setFrequency('daily');
+      setUploadedFiles([]);
     }
   }, [node, visible, form]);
 
@@ -182,6 +207,15 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         params: paramRows.filter(row => row.key && row.value),
         headers: headerRows.filter(row => row.key && row.value)
       };
+
+      // Save uploaded files for agents nodes
+      if (node.data.type === 'agents') {
+        // Only save name and content from uploaded files
+        configData.uploadedFiles = uploadedFiles.map(file => ({
+          name: file.name,
+          content: file.response?.content || file.content || ''
+        }));
+      }
 
       // Save time in HH:mm format for celery nodes
       if (node.data.type === 'celery' && configData.time) {
@@ -267,17 +301,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       return true;
     },
     onChange: (info) => {
-      const { status } = info.file;
-      
-      if (status === 'uploading') {
-        setUploadedFiles([...info.fileList]);
-      } else if (status === 'done') {
-        message.success(`${info.file.name} 文件上传成功`);
-        setUploadedFiles([...info.fileList]);
-      } else if (status === 'error') {
-        message.error(`${info.file.name} 文件上传失败`);
-        setUploadedFiles(info.fileList.filter(file => file.uid !== info.file.uid));
-      }
+      setUploadedFiles([...info.fileList]);
     },
     onRemove: (file) => {
       const newFileList = uploadedFiles.filter(item => item.uid !== file.uid);
@@ -286,25 +310,34 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     },
     customRequest: async ({ file, onSuccess, onError }) => {
       try {
-        // TODO: Replace with actual upload API
-        // const formData = new FormData();
-        // formData.append('file', file);
-        // const response = await fetch('/api/upload/knowledge', {
-        //   method: 'POST',
-        //   body: formData
-        // });
-        
-        // Simulate upload process
-        setTimeout(() => {
-          onSuccess && onSuccess({
-            fileId: Date.now().toString(),
+        // Read file content
+        const fileContent = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsText(file as File);
+        });
+
+        // Generate UID for the file
+        const fileUid = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        // Create file object with content
+        const fileWithContent = {
+          uid: fileUid,
+          name: (file as File).name,
+          content: fileContent,
+          status: 'done' as const,
+          response: {
+            fileId: fileUid,
             fileName: (file as File).name,
-            url: URL.createObjectURL(file as File)
-          });
-        }, 1000);
+            content: fileContent
+          }
+        };
+
+        onSuccess && onSuccess(fileWithContent.response);
       } catch (error) {
-        console.error('Upload error:', error);
-        onError && onError(new Error('上传失败'));
+        console.error('File read error:', error);
+        onError && onError(new Error('读取文件内容失败'));
       }
     }
   };
@@ -591,6 +624,27 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                   <Form.Item name="agentName" className="hidden">
                     <Input />
                   </Form.Item>
+
+                  {/* Prompt 追加功能 */}
+                  <Form.Item 
+                    name="prompt" 
+                    label="Prompt"
+                    tooltip="在流程流转过程中，需要追加更多的指令，让智能体的执行更符合预期和使用场景">
+                    <TextArea rows={4} placeholder="请输入Prompt内容..." />
+                  </Form.Item>
+
+                  {/* 知识追加功能 */}
+                  <Form.Item 
+                    label="上传知识"
+                    tooltip="在流程流转过程中，需要追加更多知识，这些知识会作为智能体执行的前提条件进行输入">
+                    <Upload.Dragger {...uploadProps}>
+                      <p className="ant-upload-drag-icon">
+                        <InboxOutlined />
+                      </p>
+                      <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+                      <p className="ant-upload-hint">支持单个或批量上传，仅支持 .md 格式文件</p>
+                    </Upload.Dragger>
+                  </Form.Item>
                 </>
               );
 
@@ -653,40 +707,6 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                       查看接口文档 →
                     </Link>
                   </div>
-                </>
-              );
-
-            case 'prompt':
-              return (
-                <>
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-3">
-                      在流程流转过程中，需要追加更多的指令，让智能体的执行更符合预期和使用场景
-                    </p>
-                  </div>
-                  <Form.Item name="prompt" label="Prompt" rules={[{ required: true }]}>
-                    <TextArea rows={6} placeholder="请输入Prompt内容..." />
-                  </Form.Item>
-                </>
-              );
-
-            case 'knowledge':
-              return (
-                <>
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-3">
-                      在流程流转过程中，需要追加更多知识，这些知识会作为智能体执行的前提条件进行输入
-                    </p>
-                  </div>
-                  <Form.Item label="上传知识">
-                    <Upload.Dragger {...uploadProps}>
-                      <p className="ant-upload-drag-icon">
-                        <InboxOutlined />
-                      </p>
-                      <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-                      <p className="ant-upload-hint">支持单个或批量上传，仅支持 .md 格式文件</p>
-                    </Upload.Dragger>
-                  </Form.Item>
                 </>
               );
 
