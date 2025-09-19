@@ -20,6 +20,49 @@ const NODE_TYPE_MAP = {
 
 const DEFAULT_ICON_PATH = '/app/assets/assetModelIcon/cc-default_默认.svg';
 
+const getBasicShapeAttrs = (nodeConfig: TopologyNodeData, shapeType?: string): Record<string, any> => {
+  const { BASIC_SHAPE_NODE } = NODE_DEFAULTS;
+  const backgroundColor = nodeConfig.styleConfig?.backgroundColor;
+  const borderColor = nodeConfig.styleConfig?.borderColor;
+  const borderWidth = nodeConfig.styleConfig?.borderWidth;
+  const lineType = nodeConfig.styleConfig?.lineType;
+
+  const isTransparent = !backgroundColor ||
+    backgroundColor === 'transparent' ||
+    backgroundColor === 'none' ||
+    backgroundColor === '' ||
+    backgroundColor === 'rgba(0,0,0,0)';
+
+  const baseAttrs: any = {
+    body: {
+      fill: isTransparent ? BASIC_SHAPE_NODE.backgroundColor : backgroundColor,
+      stroke: borderColor || BASIC_SHAPE_NODE.borderColor,
+      strokeWidth: borderWidth || BASIC_SHAPE_NODE.borderWidth,
+      rx: 16,
+      ry: 16,
+      opacity: 1
+    }
+  };
+
+  // 处理线型
+  if (lineType === 'dashed') {
+    baseAttrs.body.strokeDasharray = '8,4';
+  } else if (lineType === 'dotted') {
+    baseAttrs.body.strokeDasharray = '2,2';
+  }
+
+  // 处理形状类型
+  if (shapeType === 'circle') {
+    baseAttrs.body.rx = '50%';
+    baseAttrs.body.ry = '50%';
+  } else if (shapeType === 'polygon') {
+    baseAttrs.body.rx = 0;
+    baseAttrs.body.ry = 0;
+  }
+
+  return baseAttrs;
+};
+
 const getLabelAttrsByDirection = (direction: 'top' | 'bottom' | 'left' | 'right' = 'bottom') => {
   switch (direction) {
     case 'top':
@@ -213,6 +256,7 @@ const registerBasicShapeNode = () => {
         strokeWidth: BASIC_SHAPE_NODE.borderWidth,
         rx: BASIC_SHAPE_NODE.borderRadius,
         ry: BASIC_SHAPE_NODE.borderRadius,
+        opacity: 1
       }
     },
     ports: createPortConfig()
@@ -327,7 +371,9 @@ const createIconNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData
     },
     ports: createPortConfig()
   };
-}; const createSingleValueNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
+};
+
+const createSingleValueNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
   const valueConfig = nodeConfig.valueConfig || {};
   const hasDataSource = !!(valueConfig.dataSource && (valueConfig.selectedFields?.length ?? 0) > 0);
   const hasName = !!(nodeConfig.name && nodeConfig.name.trim());
@@ -383,54 +429,6 @@ const createTextNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData
 };
 
 const createBasicShapeNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
-  const { BASIC_SHAPE_NODE } = NODE_DEFAULTS;
-
-  const getShapeSpecificAttrs = (shapeType?: string): Record<string, any> => {
-    // 直接使用配置对象中的值
-    const backgroundColor = nodeConfig.styleConfig?.backgroundColor;
-    const borderColor = nodeConfig.styleConfig?.borderColor;
-    const borderWidth = nodeConfig.styleConfig?.borderWidth;
-    const lineType = nodeConfig.styleConfig?.lineType;
-
-    // 支持透明背景 - 处理ColorPicker的透明值
-    const isTransparent = !backgroundColor ||
-      backgroundColor === 'transparent' ||
-      backgroundColor === 'none' ||
-      backgroundColor === '' ||
-      backgroundColor === 'rgba(0,0,0,0)';
-
-    const baseAttrs: any = {
-      fill: isTransparent ? BASIC_SHAPE_NODE.backgroundColor : backgroundColor,
-      fillOpacity: isTransparent ? 0 : 1,
-      stroke: borderColor,
-      strokeWidth: borderWidth,
-    };
-
-    if (lineType === 'dashed') {
-      baseAttrs.strokeDasharray = '5,5';
-    } else if (lineType === 'dotted') {
-      baseAttrs.strokeDasharray = '2,2';
-    } else {
-      baseAttrs.strokeDasharray = 'none';
-    }
-
-    switch (shapeType) {
-      case 'circle':
-        return {
-          ...baseAttrs,
-          rx: '50%',
-          ry: '50%'
-        };
-      case 'rectangle':
-      default:
-        return {
-          ...baseAttrs,
-          rx: BASIC_SHAPE_NODE.borderRadius,
-          ry: BASIC_SHAPE_NODE.borderRadius
-        };
-    }
-  };
-
   const shapeType = nodeConfig.styleConfig?.shapeType;
   const width = nodeConfig.styleConfig?.width;
   const height = nodeConfig.styleConfig?.height;
@@ -439,9 +437,7 @@ const createBasicShapeNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNo
     ...baseNodeData,
     width: width,
     height: height,
-    attrs: {
-      body: getShapeSpecificAttrs(shapeType)
-    },
+    attrs: getBasicShapeAttrs(nodeConfig, shapeType),
     ports: createPortConfig()
   };
 };
@@ -465,7 +461,6 @@ const createChartNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeDat
 export const createNodeByType = (nodeConfig: TopologyNodeData): CreatedNodeConfig => {
   const shape = getRegisteredNodeShape(nodeConfig.type);
 
-  // 兼容旧数据格式：优先使用 position 对象，如果不存在则使用直接在 nodeConfig 上的 x, y
   const x = nodeConfig.position?.x ?? (nodeConfig as any).x ?? 0;
   const y = nodeConfig.position?.y ?? (nodeConfig as any).y ?? 0;
 
@@ -578,7 +573,9 @@ const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   }
 
   node.setAttrs(attrs);
-}; const updateTextNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
+};
+
+const updateTextNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   node.setAttrs({
     body: {
       fill: nodeConfig.styleConfig?.backgroundColor,
@@ -593,61 +590,9 @@ const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
 };
 
 const updateBasicShapeNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
-  const { BASIC_SHAPE_NODE } = NODE_DEFAULTS;
-
-  const getShapeSpecificAttrs = (shapeType?: string): Record<string, any> => {
-    // 直接使用配置对象中的值
-    const backgroundColor = nodeConfig.styleConfig?.backgroundColor;
-    const borderColor = nodeConfig.styleConfig?.borderColor;
-    const borderWidth = nodeConfig.styleConfig?.borderWidth;
-    const lineType = nodeConfig.styleConfig?.lineType;
-
-    // 支持透明背景 - 处理ColorPicker的透明值
-    const isTransparent = !backgroundColor ||
-      backgroundColor === 'transparent' ||
-      backgroundColor === 'none' ||
-      backgroundColor === '' ||
-      backgroundColor === 'rgba(0,0,0,0)';
-
-    const baseAttrs: any = {
-      fill: isTransparent ? BASIC_SHAPE_NODE.backgroundColor : backgroundColor,
-      fillOpacity: isTransparent ? 0 : 1,
-      stroke: borderColor,
-      strokeWidth: borderWidth,
-    };
-
-    // 根据线条类型设置 strokeDasharray
-    if (lineType === 'dashed') {
-      baseAttrs.strokeDasharray = '5,5';
-    } else if (lineType === 'dotted') {
-      baseAttrs.strokeDasharray = '2,2';
-    } else {
-      // 实线类型，确保清除 strokeDasharray
-      baseAttrs.strokeDasharray = 'none';
-    }
-
-    switch (shapeType) {
-      case 'circle':
-        return {
-          ...baseAttrs,
-          rx: '50%',
-          ry: '50%'
-        };
-      case 'rectangle':
-      default:
-        return {
-          ...baseAttrs,
-          rx: BASIC_SHAPE_NODE.borderRadius,
-          ry: BASIC_SHAPE_NODE.borderRadius
-        };
-    }
-  };
-
   const shapeType = nodeConfig.styleConfig?.shapeType;
-
-  node.setAttrs({
-    body: getShapeSpecificAttrs(shapeType)
-  });
+  const attrs = getBasicShapeAttrs(nodeConfig, shapeType);
+  node.setAttrs(attrs);
 
   const width = nodeConfig.styleConfig?.width;
   const height = nodeConfig.styleConfig?.height;

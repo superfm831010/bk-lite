@@ -77,6 +77,7 @@ export interface TopologyNodeData {
     backgroundColor?: string;
     borderColor?: string;
     borderWidth?: number;
+    renderEffect?: 'normal' | 'glass';
     iconPadding?: number;
     lineType?: 'solid' | 'dashed' | 'dotted';
     shapeType?: 'rectangle' | 'circle';
