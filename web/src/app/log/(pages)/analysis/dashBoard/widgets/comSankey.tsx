@@ -280,7 +280,7 @@ const Sankey: React.FC<SankeyProps> = ({
         lineStyle: {
           color: 'gradient',
           curveness: 0.5,
-          opacity: 0.5,
+          opacity: 0.3,
         },
         label: {
           position: 'right',
