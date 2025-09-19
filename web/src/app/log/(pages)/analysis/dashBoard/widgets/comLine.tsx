@@ -75,7 +75,10 @@ const TrendLine: React.FC<TrendLineProps> = ({
 
         params.forEach((param: any) => {
           const displayName = param.seriesName || tooltipFieldName;
-          const value = param.value !== null && param.value !== undefined ? param.value : '--';
+          const value =
+            param.value !== null && param.value !== undefined
+              ? param.value
+              : '--';
           content += `
             <div style="display: flex; align-items: center; margin-bottom: 2px;">
               <span style="display: inline-block; width: 10px; height: 10px; background-color: ${param.color}; border-radius: 50%; margin-right: 6px;"></span>
@@ -157,7 +160,7 @@ const TrendLine: React.FC<TrendLineProps> = ({
 
   // 根据数据类型设置 series
   if (chartData && chartData.series) {
-    option.series = chartData.series.map((item: any) => ({
+    option.series = chartData.series.map((item: any, index: number) => ({
       name: item.name,
       type: 'line',
       data: item.data,
@@ -165,6 +168,26 @@ const TrendLine: React.FC<TrendLineProps> = ({
       symbol: 'none',
       lineStyle: {
         width: 1,
+      },
+      areaStyle: {
+        opacity: 0.1,
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            {
+              offset: 0,
+              color: chartColors[index % chartColors.length] || '#1890ff',
+            },
+            {
+              offset: 1,
+              color: 'rgba(255, 255, 255, 0)',
+            },
+          ],
+        },
       },
       emphasis: {
         focus: 'series',
@@ -180,6 +203,26 @@ const TrendLine: React.FC<TrendLineProps> = ({
         symbol: 'none',
         lineStyle: {
           width: 1,
+        },
+        areaStyle: {
+          opacity: 0.1,
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              {
+                offset: 0,
+                color: chartColors[0] || '#1890ff',
+              },
+              {
+                offset: 1,
+                color: 'rgba(255, 255, 255, 0)',
+              },
+            ],
+          },
         },
         emphasis: {
           focus: 'series',
