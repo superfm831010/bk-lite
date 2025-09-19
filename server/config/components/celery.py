@@ -14,7 +14,7 @@ if IS_USE_CELERY:
         "django_celery_beat",
         "django_celery_results",
     )
-    CELERY_ENABLE_UTC = False
+    CELERY_ENABLE_UTC = True
     CELERY_WORKER_CONCURRENCY = 2  # 并发数
     CELERY_MAX_TASKS_PER_CHILD = 5  # worker最多执行5个任务便自我销毁释放内存
     CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers.DatabaseScheduler"
@@ -23,4 +23,4 @@ if IS_USE_CELERY:
     CELERY_TASK_SERIALIZER = "json"
     CELERY_RESULT_SERIALIZER = "json"
     CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
-    DJANGO_CELERY_BEAT_TZ_AWARE = False
+    DJANGO_CELERY_BEAT_TZ_AWARE = True
