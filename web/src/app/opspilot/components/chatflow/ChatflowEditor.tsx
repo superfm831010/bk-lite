@@ -411,17 +411,21 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
       const hasEdges = selectedEdges.length > 0;
       
       if (hasNodes) {
+        // 保存当前选中的节点和连线状态，防止状态变化
+        const currentSelectedNodes = [...selectedNodes];
+        const currentSelectedEdges = [...selectedEdges];
+        
         // 节点删除需要确认对话框
         let title = '';
         let content = '';
         
-        if (selectedNodes.length === 1) {
-          const nodeToDelete = selectedNodes[0];
+        if (currentSelectedNodes.length === 1) {
+          const nodeToDelete = currentSelectedNodes[0];
           title = t('chatflow.messages.deleteConfirm');
           content = `${t('chatflow.messages.deleteNodeContent')} ${nodeToDelete.data.label}`;
         } else {
           title = t('chatflow.messages.deleteMultipleConfirm');
-          content = `${t('chatflow.messages.deleteMultipleContent')} ${selectedNodes.length}`;
+          content = `${t('chatflow.messages.deleteMultipleContent')} ${currentSelectedNodes.length}`;
         }
 
         Modal.confirm({
@@ -431,15 +435,15 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
           cancelText: t('common.cancel'),
           okButtonProps: { danger: true },
           onOk: () => {
-            // 删除选中的节点
-            const selectedNodeIds = selectedNodes.map(node => node.id);
+            // 使用保存的状态进行删除，确保删除操作基于确认时的状态
+            const selectedNodeIds = currentSelectedNodes.map(node => node.id);
             setNodes((nds) => nds.filter((n) => !selectedNodeIds.includes(n.id)));
             // 删除与节点相关的连线
             setEdges((eds) => eds.filter((e) => !selectedNodeIds.includes(e.source) && !selectedNodeIds.includes(e.target)));
             
             // 同时删除选中的连线（如果有）
-            if (hasEdges) {
-              const selectedEdgeIds = selectedEdges.map(edge => edge.id);
+            if (currentSelectedEdges.length > 0) {
+              const selectedEdgeIds = currentSelectedEdges.map(edge => edge.id);
               setEdges((eds) => eds.filter((e) => !selectedEdgeIds.includes(e.id)));
             }
             
@@ -449,11 +453,15 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
             setIsConfigDrawerVisible(false);
             
             // 显示删除成功消息
-            if (hasEdges) {
-              message.success(`${t('chatflow.messages.itemsDeleted')} ${selectedNodes.length} ${t('chatflow.messages.nodes')} ${selectedEdges.length} ${t('chatflow.messages.edges')}`);
+            if (currentSelectedEdges.length > 0) {
+              message.success(`${t('chatflow.messages.itemsDeleted')} ${currentSelectedNodes.length} ${t('chatflow.messages.nodes')} ${currentSelectedEdges.length} ${t('chatflow.messages.edges')}`);
             } else {
-              message.success(`${t('chatflow.messages.multipleNodesDeleted')} ${selectedNodes.length}`);
+              message.success(`${t('chatflow.messages.multipleNodesDeleted')} ${currentSelectedNodes.length}`);
             }
+          },
+          onCancel: () => {
+            // 用户取消删除时，不做任何操作
+            console.log('User cancelled deletion');
           }
         });
       } else if (hasEdges) {
@@ -677,6 +685,9 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
               padding: 0.2,
               includeHiddenNodes: false,
             }}
+            deleteKeyCode={null}
+            selectionKeyCode={null}
+            multiSelectionKeyCode={null}
           >
             <MiniMap 
               nodeColor="#1890ff"
