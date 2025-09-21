@@ -39,9 +39,7 @@ const nodeCategories = [
     key: 'actions',
     labelKey: 'chatflow.actionNodes',
     items: [
-      { type: 'http', icon: 'HTTP', labelKey: 'chatflow.http' },
-      { type: 'prompt', icon: 'prompt_o', labelKey: 'chatflow.prompt' },
-      { type: 'knowledge', icon: 'zhishiku2', labelKey: 'chatflow.knowledge' }
+      { type: 'http', icon: 'HTTP', labelKey: 'chatflow.http' }
     ]
   }
 ];

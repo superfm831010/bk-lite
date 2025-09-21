@@ -10,7 +10,6 @@ from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.enum import BotTypeChoice, ChannelChoices
 from apps.opspilot.models import Bot, BotChannel, BotWorkFlow, Channel, LLMSkill
 from apps.opspilot.serializers import BotSerializer
-from apps.opspilot.utils.chat_flow_utils.chat_flow_client import ChatFlowClient
 from apps.opspilot.utils.pilot_client import PilotClient
 from apps.opspilot.utils.quota_utils import get_quota_client
 
@@ -107,19 +106,23 @@ class BotViewSet(AuthViewSet):
         if is_publish and not obj.api_token:
             obj.api_token = obj.get_api_token()
         if workflow_data:
-            chat_json = ChatFlowClient.parse_chat_flow_json(workflow_data)
-            BotWorkFlow.objects.filter(bot_id=obj.id).update(flow_json=chat_json, web_json=workflow_data)
+            # 直接使用 workflow_data 作为 flow_json
+            BotWorkFlow.objects.filter(bot_id=obj.id).update(flow_json=workflow_data, web_json=workflow_data)
         obj.updated_by = request.user.username
         obj.save()
         if is_publish:
-            client = PilotClient()
-            try:
-                client.start_pilot(obj)
-            except Exception as e:
-                logger.exception(e)
-                return JsonResponse({"result": False, "message": _("Pilot start failed.")})
+            if obj.bot_type != BotTypeChoice.CHAT_FLOW:
+                client = PilotClient()
+                try:
+                    client.start_pilot(obj)
+                except Exception as e:
+                    logger.exception(e)
+                    return JsonResponse({"result": False, "message": _("Pilot start failed.")})
+            else:
+                BotWorkFlow.create_celery_task(obj.id, workflow_data)
             obj.online = is_publish
             obj.save()
+
         return JsonResponse({"result": True})
 
     @HasPermission("bot_channel-View")
@@ -167,9 +170,11 @@ class BotViewSet(AuthViewSet):
     @HasPermission("bot_list-Delete")
     def destroy(self, request, *args, **kwargs):
         obj = self.get_object()
-        if obj.online:
+        if obj.online and obj.bot_type != BotTypeChoice.CHAT_FLOW:
             client = PilotClient()
             client.stop_pilot(obj)
+        else:
+            BotWorkFlow.delete_celery_task(obj.id)
         return super().destroy(request, *args, **kwargs)
 
     @action(methods=["POST"], detail=False)
@@ -192,7 +197,12 @@ class BotViewSet(AuthViewSet):
             if not bot.api_token:
                 bot.api_token = bot.get_api_token()
             bot.save()
-            client.start_pilot(bot)
+            if bot.bot_type != BotTypeChoice.CHAT_FLOW:
+                client.start_pilot(bot)
+            else:
+                workflow_data = BotWorkFlow.objects.filter(bot_id=bot.id).first()
+                if workflow_data:
+                    BotWorkFlow.create_celery_task(bot.id, workflow_data.web_json)
             bot.online = True
             bot.save()
         return JsonResponse({"result": True})
@@ -215,7 +225,10 @@ class BotViewSet(AuthViewSet):
 
         client = PilotClient()
         for bot in bots:
-            client.stop_pilot(bot)
+            if bot.bot_type != BotTypeChoice.CHAT_FLOW:
+                client.stop_pilot(bot)
+            else:
+                BotWorkFlow.delete_celery_task(bot.id)
             bot.api_token = ""
             bot.online = False
             bot.save()

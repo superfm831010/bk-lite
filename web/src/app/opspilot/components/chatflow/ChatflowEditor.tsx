@@ -28,7 +28,7 @@ import styles from './ChatflowEditor.module.scss';
 // 节点类型定义 - 使用索引签名使其兼容 ReactFlow 的 Node 类型
 interface ChatflowNodeData {
   label: string;
-  type: 'celery' | 'restful' | 'openai' | 'agents' | 'condition' | 'http' | 'prompt' | 'knowledge';
+  type: 'celery' | 'restful' | 'openai' | 'agents' | 'condition' | 'http';
   config?: any;
   description?: string;
   [key: string]: unknown; // 添加索引签名以兼容 Record<string, unknown>
@@ -53,8 +53,6 @@ const nodeConfig = {
   agents: { icon: 'zhinengti', color: 'orange' },
   condition: { icon: 'tiaojianfenzhi', color: 'yellow' },
   http: { icon: 'HTTP', color: 'cyan' },
-  prompt: { icon: 'prompt_o', color: 'purple' },
-  knowledge: { icon: 'zhishiku2', color: 'green' },
 };
 
 // 通用节点组件
@@ -143,19 +141,6 @@ const BaseNode = ({
           return `${config.conditionField} ${config.conditionOperator} ${config.conditionValue}`;
         }
         return t('chatflow.condition') + ': --';
-
-      case 'prompt':
-        if (config.prompt) {
-          const previewText = config.prompt.length > 20 ? 
-            config.prompt.substring(0, 20) + '...' : 
-            config.prompt;
-          return `Prompt: ${previewText}`;
-        }
-        return 'Prompt: --';
-
-      case 'knowledge':
-        // 这里可以显示上传的文件数量或知识库信息
-        return t('chatflow.knowledgeBase') + ': --';
 
       case 'restful':
       case 'openai':
@@ -257,14 +242,6 @@ const IfConditionNode = (props: any) => (
     hasOutput={false}
     hasMultipleOutputs={true} 
   />
-);
-
-const PromptAppendNode = (props: any) => (
-  <BaseNode {...props} icon={nodeConfig.prompt.icon} color={nodeConfig.prompt.color} hasInput={true} hasOutput={true} />
-);
-
-const KnowledgeAppendNode = (props: any) => (
-  <BaseNode {...props} icon={nodeConfig.knowledge.icon} color={nodeConfig.knowledge.color} hasInput={true} hasOutput={true} />
 );
 
 interface ChatflowEditorRef {
@@ -394,8 +371,6 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
       agents: createNodeComponent(AgentsNode),
       condition: createNodeComponent(IfConditionNode),
       http: createNodeComponent(HttpRequestNode),
-      prompt: createNodeComponent(PromptAppendNode),
-      knowledge: createNodeComponent(KnowledgeAppendNode),
     };
   }, [handleDeleteNode, handleConfigNode]);
 
@@ -436,17 +411,21 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
       const hasEdges = selectedEdges.length > 0;
       
       if (hasNodes) {
+        // 保存当前选中的节点和连线状态，防止状态变化
+        const currentSelectedNodes = [...selectedNodes];
+        const currentSelectedEdges = [...selectedEdges];
+        
         // 节点删除需要确认对话框
         let title = '';
         let content = '';
         
-        if (selectedNodes.length === 1) {
-          const nodeToDelete = selectedNodes[0];
+        if (currentSelectedNodes.length === 1) {
+          const nodeToDelete = currentSelectedNodes[0];
           title = t('chatflow.messages.deleteConfirm');
           content = `${t('chatflow.messages.deleteNodeContent')} ${nodeToDelete.data.label}`;
         } else {
           title = t('chatflow.messages.deleteMultipleConfirm');
-          content = `${t('chatflow.messages.deleteMultipleContent')} ${selectedNodes.length}`;
+          content = `${t('chatflow.messages.deleteMultipleContent')} ${currentSelectedNodes.length}`;
         }
 
         Modal.confirm({
@@ -456,15 +435,15 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
           cancelText: t('common.cancel'),
           okButtonProps: { danger: true },
           onOk: () => {
-            // 删除选中的节点
-            const selectedNodeIds = selectedNodes.map(node => node.id);
+            // 使用保存的状态进行删除，确保删除操作基于确认时的状态
+            const selectedNodeIds = currentSelectedNodes.map(node => node.id);
             setNodes((nds) => nds.filter((n) => !selectedNodeIds.includes(n.id)));
             // 删除与节点相关的连线
             setEdges((eds) => eds.filter((e) => !selectedNodeIds.includes(e.source) && !selectedNodeIds.includes(e.target)));
             
             // 同时删除选中的连线（如果有）
-            if (hasEdges) {
-              const selectedEdgeIds = selectedEdges.map(edge => edge.id);
+            if (currentSelectedEdges.length > 0) {
+              const selectedEdgeIds = currentSelectedEdges.map(edge => edge.id);
               setEdges((eds) => eds.filter((e) => !selectedEdgeIds.includes(e.id)));
             }
             
@@ -474,11 +453,15 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
             setIsConfigDrawerVisible(false);
             
             // 显示删除成功消息
-            if (hasEdges) {
-              message.success(`${t('chatflow.messages.itemsDeleted')} ${selectedNodes.length} ${t('chatflow.messages.nodes')} ${selectedEdges.length} ${t('chatflow.messages.edges')}`);
+            if (currentSelectedEdges.length > 0) {
+              message.success(`${t('chatflow.messages.itemsDeleted')} ${currentSelectedNodes.length} ${t('chatflow.messages.nodes')} ${currentSelectedEdges.length} ${t('chatflow.messages.edges')}`);
             } else {
-              message.success(`${t('chatflow.messages.multipleNodesDeleted')} ${selectedNodes.length}`);
+              message.success(`${t('chatflow.messages.multipleNodesDeleted')} ${currentSelectedNodes.length}`);
             }
+          },
+          onCancel: () => {
+            // 用户取消删除时，不做任何操作
+            console.log('User cancelled deletion');
           }
         });
       } else if (hasEdges) {
@@ -593,7 +576,9 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
               return {
                 ...baseConfig,
                 agent: null,
-                agentName: ''
+                agentName: '',
+                prompt: '',
+                uploadedFiles: []
               };
             case 'condition':
               return {
@@ -601,16 +586,6 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
                 conditionField: '',
                 conditionOperator: 'equals',
                 conditionValue: ''
-              };
-            case 'prompt':
-              return {
-                ...baseConfig,
-                prompt: ''
-              };
-            case 'knowledge':
-              return {
-                ...baseConfig,
-                uploadedFiles: []
               };
             case 'restful':
             case 'openai':
@@ -710,6 +685,9 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
               padding: 0.2,
               includeHiddenNodes: false,
             }}
+            deleteKeyCode={null}
+            selectionKeyCode={null}
+            multiSelectionKeyCode={null}
           >
             <MiniMap 
               nodeColor="#1890ff"

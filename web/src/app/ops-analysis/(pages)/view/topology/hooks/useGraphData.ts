@@ -18,7 +18,7 @@ import { createNodeByType } from '../utils/registerNode';
 const serializeNodeConfig = (nodeData: any, nodeType: string) => {
   const styleConfigMapping: Record<string, string[]> = {
     'single-value': ['textColor', 'fontSize', 'backgroundColor', 'borderColor', 'nameColor', 'nameFontSize', 'thresholdColors'],
-    'basic-shape': ['width', 'height', 'backgroundColor', 'borderColor', 'borderWidth', 'lineType', 'shapeType'],
+    'basic-shape': ['width', 'height', 'backgroundColor', 'borderColor', 'borderWidth', 'lineType', 'shapeType', 'renderEffect'],
     icon: ['width', 'height', 'backgroundColor', 'borderColor', 'fontSize', 'textColor', 'iconPadding', 'textDirection'],
     text: ['fontSize', 'fontWeight', 'textColor'],
     chart: ['width', 'height'],

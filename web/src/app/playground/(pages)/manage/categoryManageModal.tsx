@@ -59,7 +59,7 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
 
   const initForm = useCallback(async () => {
     if (!formRef.current) return;
-    if (!formData?.categoryID) return;
+    // if (!formData?.categoryID) return;
     formRef.current?.resetFields();
     if (type.trim().startsWith('update')) {
       formRef.current?.setFieldsValue({
