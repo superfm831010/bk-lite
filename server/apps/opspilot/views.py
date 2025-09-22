@@ -447,9 +447,6 @@ def execute_chat_flow(request):
     kwargs = json.loads(request.body)
     message = kwargs.get("message", "")
 
-    if not message:
-        return JsonResponse({"result": False, "message": _("Message is required.")})
-
     # 验证token
     token = request.META.get("HTTP_AUTHORIZATION") or request.META.get(settings.API_TOKEN_HEADER_NAME)
     is_valid, msg = validate_openai_token(token)
