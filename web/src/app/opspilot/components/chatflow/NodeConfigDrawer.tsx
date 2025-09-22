@@ -75,7 +75,8 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
 
   // 复制API URL到剪贴板
   const copyApiUrl = async () => {
-    const apiUrl = `http://bklite.canwya.net/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`;
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    const apiUrl = `${currentOrigin}/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`;
     
     try {
       await navigator.clipboard.writeText(apiUrl);
@@ -126,8 +127,9 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
           formValues.time = undefined;
         }
       }
-      
-      form.setFieldsValue(formValues);
+      setTimeout(() => {
+        form.setFieldsValue(formValues);
+      }, 0);
 
       if (config.frequency) {
         setFrequency(config.frequency);
@@ -569,9 +571,6 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                   </Form.Item>
 
                   <Form.Item name="requestBody" label="请求体">
-                    <Select defaultValue="JSON" className="w-full mb-2">
-                      <Option value="JSON">JSON</Option>
-                    </Select>
                     <TextArea rows={6} placeholder="请输入JSON格式的请求体" />
                   </Form.Item>
 
@@ -649,6 +648,9 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
               );
 
             case 'restful':
+              const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+              const restfulApiUrl = `${currentOrigin}/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`;
+              
               return (
                 <>
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-xs leading-5">
@@ -658,7 +660,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                     <div className="mt-2 mb-2 relative">
                       <Input.TextArea
                         readOnly
-                        value={`http://bklite.canwya.net/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`}
+                        value={restfulApiUrl}
                         autoSize={{ minRows: 2, maxRows: 4 }}
                         className="font-mono text-xs text-[var(--color-text-2)] bg-white pr-10 border-none"
                       />
@@ -680,6 +682,9 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
               );
 
             case 'openai':
+              const currentOriginForOpenai = typeof window !== 'undefined' ? window.location.origin : '';
+              const openaiApiUrl = `${currentOriginForOpenai}/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`;
+              
               return (
                 <>
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-xs leading-5">
@@ -689,7 +694,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                     <div className="mt-2 mb-2 relative">
                       <Input.TextArea
                         readOnly
-                        value={`http://bklite.canwya.net/api/v1/opspilot/bot_mgmt/execute_chat_flow/?bot_id=${botId || '1'}&node_id=${node?.id || 'abcdef'}`}
+                        value={openaiApiUrl}
                         autoSize={{ minRows: 2, maxRows: 4 }}
                         className="font-mono text-xs text-[var(--color-text-2)] bg-white pr-10 border-none"
                       />
