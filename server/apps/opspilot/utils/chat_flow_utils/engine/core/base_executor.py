@@ -7,14 +7,12 @@ from .variable_manager import VariableManager
 
 
 class BaseNodeExecutor:
-    def sse_execute(self, node_id: str, node_config: Dict[str, Any], input_data: Dict[str, Any]):
-        """流式执行节点，子类可实现此方法，默认抛异常"""
-        raise NotImplementedError("子类必须实现sse_execute方法")
-
-    """节点执行器基类"""
-
     def __init__(self, variable_manager: VariableManager):
         self.variable_manager = variable_manager
+
+    def sse_execute(self, node_id: str, node_config: Dict[str, Any], input_data: Dict[str, Any]):
+        """流式执行节点，子类可实现此方法，默认抛异常"""
+        return
 
     def execute(self, node_id: str, node_config: Dict[str, Any], input_data: Dict[str, Any]) -> Any:
         """执行节点，子类必须实现此方法"""
