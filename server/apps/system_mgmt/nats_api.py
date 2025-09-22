@@ -503,11 +503,11 @@ def wechat_user_register(user_id, nick_name):
         user.group_list = [default_group.id]
     default_role = list(
         Role.objects.filter(
-            Q(name="normal", app__in=["opspilot", "ops-console"]) | Q(name="guest", app__in=["opspilot", "cmdb", "monitor", "log"])
+            Q(name="normal", app__in=["opspilot", "ops-console"]) | Q(name="guest", app__in=["opspilot", "cmdb", "monitor", "log", "alarm"])
         ).values_list("id", flat=True)
     )
-    role_list = list(set(user.role_list + default_role))
-    user.role_list = role_list
+    default_role.extend(user.role_list)
+    user.role_list = list(set(default_role))
     user.last_login = timezone.now()
     user.save()
     try:
