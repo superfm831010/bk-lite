@@ -203,7 +203,7 @@ def search_users(query_params):
 @nats_client.register
 def init_user_default_attributes(user_id, group_name, default_group_id):
     try:
-        role_ids = list(Role.objects.filter(name="guest", app__in=["opspilot", "cmdb", "monitor"]).values_list("id", flat=True))
+        role_ids = list(Role.objects.filter(name="guest", app__in=["opspilot", "cmdb", "monitor", "alarm"]).values_list("id", flat=True))
         normal_role = Role.objects.get(name="normal", app="opspilot")
         user = User.objects.get(id=user_id)
         top_group, _ = Group.objects.get_or_create(name=os.getenv("DEFAULT_GROUP_NAME", "Guest"), parent_id=0, defaults={"description": ""})

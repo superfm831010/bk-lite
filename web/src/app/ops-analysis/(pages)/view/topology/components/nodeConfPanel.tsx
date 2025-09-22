@@ -232,6 +232,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       textColor: nodeDefaults.textColor,
       backgroundColor: nodeDefaults.backgroundColor,
       borderColor: nodeDefaults.borderColor,
+      renderEffect: 'glass',
       selectedFields: [],
       name: '',
       width: nodeDefaults.width,
@@ -297,12 +298,13 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         backgroundColor: styleConfig.backgroundColor,
         borderColor: styleConfig.borderColor,
         borderWidth: styleConfig.borderWidth,
+        renderEffect: styleConfig.renderEffect || 'glass',
         iconPadding: styleConfig.iconPadding,
         lineType: styleConfig.lineType,
         shapeType: styleConfig.shapeType,
         nameFontSize: styleConfig.nameFontSize,
         nameColor: styleConfig.nameColor,
-        textDirection: styleConfig.textDirection ,
+        textDirection: styleConfig.textDirection,
         unit: editingNodeData.unit,
         conversionFactor: editingNodeData.conversionFactor,
         decimalPlaces: editingNodeData.decimalPlaces,
@@ -1022,6 +1024,13 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
 
         {nodeType === 'basic-shape' && (
           <>
+            <Form.Item label="渲染效果" name="renderEffect">
+              <Radio.Group disabled={readonly}>
+                <Radio value="normal">普通</Radio>
+                <Radio value="glass">液态玻璃</Radio>
+              </Radio.Group>
+            </Form.Item>
+
             <Form.Item
               label={t('topology.nodeConfig.backgroundColor')}
               name="backgroundColor"

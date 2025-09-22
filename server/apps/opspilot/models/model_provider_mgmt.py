@@ -169,17 +169,14 @@ class LLMSkill(MaintainerInfo):
     tools = models.JSONField(default=list)
 
     temperature = models.FloatField(default=0.7, verbose_name="温度")
-    skill_type = models.IntegerField(
-        choices=SkillTypeChoices.choices, default=SkillTypeChoices.BASIC_TOOL, verbose_name="技能类型"
-    )
+    skill_type = models.IntegerField(choices=SkillTypeChoices.choices, default=SkillTypeChoices.BASIC_TOOL, verbose_name="技能类型")
     enable_rag_strict_mode = models.BooleanField(default=False, verbose_name="启用RAG严格模式")
     is_template = models.BooleanField(default=False, verbose_name="是否模板")
     enable_km_route = models.BooleanField(default=False, verbose_name="启用知识库路由")
-    km_llm_model = models.ForeignKey(
-        "LLMModel", on_delete=models.CASCADE, blank=True, null=True, related_name="km_llm_model"
-    )
+    km_llm_model = models.ForeignKey("LLMModel", on_delete=models.CASCADE, blank=True, null=True, related_name="km_llm_model")
     guide = models.TextField(default="", verbose_name="技能引导", blank=True, null=True)
     enable_suggest = models.BooleanField(default=False, verbose_name="启用建议")
+    enable_query_rewrite = models.BooleanField(default=False, verbose_name="问题优化")
 
     def __str__(self):
         return self.name
