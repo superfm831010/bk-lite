@@ -570,7 +570,7 @@ def kubectl_get_all_resources(namespace=None, config: RunnableConfig = None):
 
         for resource_type in resource_types:
             try:
-                resource_data = kubectl_get_resources(
+                resource_data = kubectl_get_resources.__wrapped__(
                     resource_type, namespace, config=config)
                 if resource_data and not resource_data.startswith('{"error"'):
                     resource_json = json.loads(resource_data)
