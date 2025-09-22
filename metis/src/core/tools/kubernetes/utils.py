@@ -9,10 +9,21 @@ def prepare_context(cfg):
     Args:
         cfg: RunnableConfig配置对象
     """
-    if cfg and cfg.get('configurable', {}).get('kubeconfig_path'):
-        config.load_kube_config(cfg['configurable']['kubeconfig_path'])
-    else:
-        config.load_incluster_config()
+    try:
+        if cfg and cfg.get('configurable', {}).get('kubeconfig_path'):
+            # 使用指定的 kubeconfig 路径
+            config.load_kube_config(
+                config_file=cfg['configurable']['kubeconfig_path'])
+        else:
+            # 首先尝试默认的 kubeconfig 路径 (~/.kube/config)
+            try:
+                config.load_kube_config()
+            except Exception:
+                # 如果默认路径失败，尝试集群内配置
+                config.load_incluster_config()
+    except Exception as e:
+        raise Exception(
+            f"无法加载 Kubernetes 配置: {str(e)}. 请检查 kubeconfig 文件路径或集群连接。")
 
 
 def format_bytes(size):
