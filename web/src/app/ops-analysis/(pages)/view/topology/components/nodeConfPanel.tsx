@@ -232,7 +232,6 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       textColor: nodeDefaults.textColor,
       backgroundColor: nodeDefaults.backgroundColor,
       borderColor: nodeDefaults.borderColor,
-      renderEffect: 'glass',
       selectedFields: [],
       name: '',
       width: nodeDefaults.width,
@@ -253,6 +252,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       defaultValues.borderWidth = basicShapeDefaults.borderWidth;
       defaultValues.lineType = basicShapeDefaults.lineType;
       defaultValues.shapeType = basicShapeDefaults.shapeType;
+      defaultValues.renderEffect = 'glass';
     }
 
     if (nodeType === 'icon') {

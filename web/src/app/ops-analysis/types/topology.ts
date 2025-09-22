@@ -301,6 +301,7 @@ export interface NodeConfigFormValues {
   textColor?: string;
   fontSize?: number;
   iconPadding?: number;
+  renderEffect?: 'normal' | 'glass';
   lineType?: string;
   shapeType?: string;
   nameColor?: string;
