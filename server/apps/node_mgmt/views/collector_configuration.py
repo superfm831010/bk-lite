@@ -3,7 +3,9 @@ from rest_framework.decorators import action
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.core.utils.permission_utils import get_permission_rules, permission_filter
 from apps.core.utils.web_utils import WebUtils
+from apps.node_mgmt.constants import NODE_MODULE
 from apps.node_mgmt.models.sidecar import CollectorConfiguration, Node
 from apps.node_mgmt.serializers.collector_configuration import (
     CollectorConfigurationSerializer,
@@ -55,7 +57,24 @@ class CollectorConfigurationViewSet(ModelViewSet):
     )
     @action(detail=False, methods=["post"], url_path="config_node_asso")
     def get_config_node_asso(self, request):
-        qs = CollectorConfiguration.objects.select_related("collector").prefetch_related("nodes").filter(cloud_region_id=request.data["cloud_region_id"])
+
+        # 获取用户节点权限列表
+        permission = get_permission_rules(
+            request.user,
+            request.COOKIES.get("current_team"),
+            "node_mgmt",
+            NODE_MODULE,
+        )
+        queryset = permission_filter(Node, permission, team_key="nodeorganization__organization__in", id_key="id__in")
+        node_ids = list(queryset.values_list("id", flat=True).distinct())
+        if not node_ids:
+            return WebUtils.response_success([])
+
+        qs = CollectorConfiguration.objects.select_related("collector").prefetch_related("nodes").filter(
+            cloud_region_id=request.data["cloud_region_id"],
+            nodes__id__in=node_ids,     # 权限
+        )
+
         if request.data.get("ids"):
             qs = qs.filter(id__in=request.data["ids"])
         if request.data.get("node_id"):
