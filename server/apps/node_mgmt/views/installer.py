@@ -156,6 +156,7 @@ class InstallerViewSet(ViewSet):
                             type=openapi.TYPE_ARRAY,
                             items=openapi.Schema(type=openapi.TYPE_STRING,description="所属组织id"),
                         ),
+                'ip': openapi.Schema(type=openapi.TYPE_STRING, description="节点名称"),
                 'node_name': openapi.Schema(type=openapi.TYPE_STRING, description="节点名称"),
             }
         ),
@@ -164,6 +165,8 @@ class InstallerViewSet(ViewSet):
     @action(detail=False, methods=["post"], url_path="get_install_command")
     def get_install_command(self, request):
         data = InstallerService.get_install_command(
+            request.user.username,
+            request.data["ip"],
             request.data["os"],
             request.data["package_name"],
             request.data["cloud_region_id"],

@@ -1,11 +1,9 @@
-import uuid
-
 from apps.node_mgmt.constants import RUN_COMMAND, UNINSTALL_COMMAND
 from apps.rpc.executor import Executor
 
 
 # 获取安装命令
-def get_install_command(os, package_name, cloud_region_id, sidecar_token, server_url, groups, node_name):
+def get_install_command(os, package_name, cloud_region_id, sidecar_token, server_url, groups, node_name, node_id):
     """获取安装命令"""
     unzip_run_command = RUN_COMMAND.get(os)
     unzip_run_command = unzip_run_command.format(
@@ -15,7 +13,7 @@ def get_install_command(os, package_name, cloud_region_id, sidecar_token, server
         cloud=cloud_region_id,
         group=groups,
         node_name=node_name,
-        node_id=str(uuid.uuid4()),
+        node_id=node_id,
     )
     return unzip_run_command
 
