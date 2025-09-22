@@ -20,7 +20,7 @@ async def invoke_plan_and_execute_agent(request, body: PlanAndExecuteAgentReques
     """
     Plan and Execute Agent 同步执行接口
 
-    返回格式化后的执行结果，包含执行摘要和清晰的最终答案
+    返回格式化后的执行结果，包含消息内容和Token统计信息
     """
     graph = PlanAndExecuteAgentGraph()
     AgentService.set_naive_rag_search_query(body)
@@ -33,7 +33,7 @@ async def invoke_plan_and_execute_agent(request, body: PlanAndExecuteAgentReques
 
     logger.info(
         f"执行PlanAndExecuteAgentGraph成功，用户的问题：[{body.user_message}]，"
-        f"执行步骤：{formatted_response.get('execution_summary', {}).get('completed_steps', 0)}步"
+        f"响应Token数：{formatted_response.get('total_tokens', 0)}个"
     )
     return json(formatted_response)
 
