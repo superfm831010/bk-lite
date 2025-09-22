@@ -1,6 +1,7 @@
 """
 聊天流程执行引擎 - ChatFlowEngine
 """
+import json
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from graphlib import CycleError, TopologicalSorter
@@ -17,6 +18,36 @@ from .node_registry import node_registry
 
 
 class ChatFlowEngine:
+    def sse_execute(self, input_data: Dict[str, Any] = None, timeout: int = None):
+        """流程流式执行，仅支持最后节点为agent且首节点为openai时"""
+        if input_data is None:
+            input_data = {}
+        if timeout is None:
+            timeout = self.execution_timeout
+        # 验证流程
+        validation_errors = self.validate_flow()
+        if validation_errors:
+
+            def err_gen():
+                yield f"data: {json.dumps({'result': False, 'error': '流程验证失败'})}\n\n"
+                yield "data: [DONE]\n\n"
+
+            return err_gen()
+        # 获取首节点和最后节点
+        last_node = self.nodes[-1] if self.nodes else None
+        if last_node.get("type") == "agents":
+            # 只执行最后一个节点，走sse_execute
+            executor = self._get_node_executor(last_node.get("type"))
+            if hasattr(executor, "sse_execute"):
+                return executor.sse_execute(last_node.get("id"), last_node, input_data)
+
+        # 其他情况不支持流式，直接抛异常
+        def err_gen():
+            yield f"data: {json.dumps({'result': False, 'error': '当前流程不支持SSE'})}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return err_gen()
+
     """聊天流程执行引擎"""
 
     def __init__(self, instance: BotWorkFlow, start_node_id: str = None):
