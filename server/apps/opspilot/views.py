@@ -485,36 +485,24 @@ def execute_chat_flow(request):
         }
 
         logger.info(f"开始执行ChatFlow流程，bot_id: {bot_id}, node_id: {node_id}, user: {user.username}, node_type: {node_type}")
+        result = engine.execute(input_data)
 
         # 仅区分 openai 类型，其余类型统一走原有逻辑
         if node_type == "openai":
-            last_node_type = engine.nodes[-1].get("type") if engine.nodes else None
-            if last_node_type == "agents":
-                return engine.sse_execute(input_data)
-                # response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
-                # response["Cache-Control"] = "no-cache, no-store, must-revalidate"
-                # response["X-Accel-Buffering"] = "no"
-                # response["Access-Control-Allow-Origin"] = "*"
-                # response["Access-Control-Allow-Headers"] = "Cache-Control"
-                # return response
-            else:
-                result = engine.execute(input_data)
 
-                def sse_generator():
-                    yield f"data: {result}\n\n"
-                    yield "data: [DONE]\n\n"
+            def sse_generator():
+                yield f"data: {result}\n\n"
+                yield "data: [DONE]\n\n"
 
-                async_generator = create_async_compatible_generator(sse_generator())
-                response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
-                response["Cache-Control"] = "no-cache, no-store, must-revalidate"
-                response["X-Accel-Buffering"] = "no"
-                response["Access-Control-Allow-Origin"] = "*"
-                response["Access-Control-Allow-Headers"] = "Cache-Control"
-                return response
-        else:
-            result = engine.execute(input_data)
-            logger.info(f"ChatFlow流程执行完成，bot_id: {bot_id}, 最终输出: {result}")
-            return JsonResponse({"result": True, "data": {"content": result, "execution_time": time.time()}})
+            async_generator = create_async_compatible_generator(sse_generator())
+            response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
+            response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response["X-Accel-Buffering"] = "no"
+            response["Access-Control-Allow-Origin"] = "*"
+            response["Access-Control-Allow-Headers"] = "Cache-Control"
+            return response
+        logger.info(f"ChatFlow流程执行完成，bot_id: {bot_id}, 最终输出: {result}")
+        return JsonResponse({"result": True, "data": {"content": result, "execution_time": time.time()}})
 
     except Exception as e:
         logger.error(f"ChatFlow流程执行失败，bot_id: {bot_id}, node_id: {node_id}, 错误: {str(e)}")
@@ -567,4 +555,6 @@ def get_chat_flow_task_status(request):
 @api_exempt
 def test(request):
     kwargs = request.GET.dict()
+    data = json.loads(request.body) if request.body else {}
+    kwargs.update(data)
     return JsonResponse({"result": True, "data": kwargs})
