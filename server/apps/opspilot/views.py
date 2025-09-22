@@ -6,12 +6,13 @@ import time
 from django.conf import settings
 from django.db.models import Count, Sum
 from django.db.models.functions import TruncDate
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse, JsonResponse, StreamingHttpResponse
 from django.utils.translation import gettext as _
 from django_minio_backend import MinioBackend
 
 from apps.base.models import UserAPISecret
 from apps.core.logger import opspilot_logger as logger
+from apps.core.utils.async_utils import create_async_compatible_generator
 from apps.core.utils.exempt import api_exempt
 from apps.opspilot.models import Bot, BotChannel, BotConversationHistory, BotWorkFlow, LLMSkill, TokenConsumption
 from apps.opspilot.services.llm_service import llm_service
@@ -140,10 +141,6 @@ def get_skill_and_params(kwargs, team, bot_id=None):
         "tools": skill_obj.tools,
         "skill_type": skill_obj.skill_type,
         "group": skill_obj.team[0],
-        "enable_km_route": skill_obj.enable_km_route,
-        "km_llm_model": skill_obj.km_llm_model,
-        "enable_suggest": skill_obj.enable_suggest,
-        "enable_query_rewrite": skill_obj.enable_query_rewrite,
     }
 
     return skill_obj, params, None
@@ -447,12 +444,8 @@ def execute_chat_flow(request):
 
     if not bot_id or not node_id:
         return JsonResponse({"result": False, "message": _("Bot ID and Node ID are required.")})
-
     kwargs = json.loads(request.body)
     message = kwargs.get("message", "")
-
-    if not message:
-        return JsonResponse({"result": False, "message": _("Message is required.")})
 
     # 验证token
     token = request.META.get("HTTP_AUTHORIZATION") or request.META.get(settings.API_TOKEN_HEADER_NAME)
@@ -479,6 +472,10 @@ def execute_chat_flow(request):
         # 创建ChatFlow引擎 - 使用数据库中的工作流配置
         engine = create_chat_flow_engine(bot_chat_flow, node_id)
 
+        # 获取当前节点类型
+        node_obj = engine._get_node_by_id(node_id)
+        node_type = node_obj.get("type") if node_obj else None
+
         # 准备输入数据
         input_data = {
             "last_message": message,
@@ -487,21 +484,45 @@ def execute_chat_flow(request):
             "node_id": node_id,
         }
 
-        # 执行流程（使用数据库中存储的流程配置）
-        logger.info(f"开始执行ChatFlow流程，bot_id: {bot_id}, node_id: {node_id}, user: {user.username}")
-        result = engine.execute(input_data)
-        logger.info(f"ChatFlow流程执行完成，bot_id: {bot_id}, 最终输出: {result}")
-        return JsonResponse({"result": True, "data": {"content": result, "execution_time": time.time()}})
+        logger.info(f"开始执行ChatFlow流程，bot_id: {bot_id}, node_id: {node_id}, user: {user.username}, node_type: {node_type}")
+
+        # 仅区分 openai 类型，其余类型统一走原有逻辑
+        if node_type == "openai":
+            last_node_type = engine.nodes[-1].get("type") if engine.nodes else None
+            if last_node_type == "agents":
+                return engine.sse_execute(input_data)
+                # response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
+                # response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                # response["X-Accel-Buffering"] = "no"
+                # response["Access-Control-Allow-Origin"] = "*"
+                # response["Access-Control-Allow-Headers"] = "Cache-Control"
+                # return response
+            else:
+                result = engine.execute(input_data)
+
+                def sse_generator():
+                    yield f"data: {result}\n\n"
+                    yield "data: [DONE]\n\n"
+
+                async_generator = create_async_compatible_generator(sse_generator())
+                response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
+                response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                response["X-Accel-Buffering"] = "no"
+                response["Access-Control-Allow-Origin"] = "*"
+                response["Access-Control-Allow-Headers"] = "Cache-Control"
+                return response
+        else:
+            result = engine.execute(input_data)
+            logger.info(f"ChatFlow流程执行完成，bot_id: {bot_id}, 最终输出: {result}")
+            return JsonResponse({"result": True, "data": {"content": result, "execution_time": time.time()}})
+
     except Exception as e:
         logger.error(f"ChatFlow流程执行失败，bot_id: {bot_id}, node_id: {node_id}, 错误: {str(e)}")
         logger.exception(e)
+        # 流式错误响应，参考 llm_view.py
+        from apps.opspilot.viewsets.llm_view import LLMViewSet
 
-        return JsonResponse(
-            {
-                "result": False,
-                "message": f"ChatFlow流程执行失败: {str(e)}",
-            }
-        )
+        return LLMViewSet._create_error_stream_response(str(e))
 
 
 @api_exempt

@@ -9,19 +9,24 @@ from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.models import LLMSkill
 from apps.opspilot.services.llm_service import llm_service
 from apps.opspilot.utils.chat_flow_utils.engine.core.base_executor import BaseNodeExecutor
+from apps.opspilot.utils.sse_chat import stream_chat
 
 
 class AgentNode(BaseNodeExecutor):
-    """智能体节点"""
-
     def __init__(self, variable_manager, workflow_instance=None):
         super().__init__(variable_manager)
         self.workflow_instance = workflow_instance
 
-    def execute(self, node_id: str, node_config: Dict[str, Any], input_data: Dict[str, Any]) -> Dict[str, Any]:
+    def sse_execute(self, node_id: str, node_config: Dict[str, Any], input_data: Dict[str, Any]):
+        """流式执行agent节点，yield SSE格式数据"""
         config = node_config["data"].get("config", {})
         input_key = config.get("inputParams", "last_message")
-        output_key = config.get("outputParams", "last_message")
+        skill_id = config.get("agent")
+        llm_params, skill_name = self.set_llm_params(node_id, config, input_data)
+        return stream_chat(llm_params, skill_name, {}, None, input_data.get(input_key), skill_id)
+
+    def set_llm_params(self, node_id, config, input_data):
+        input_key = config.get("inputParams", "last_message")
         skill_id = config.get("agent")
 
         if not skill_id:
@@ -54,10 +59,10 @@ class AgentNode(BaseNodeExecutor):
             if file_contents:
                 contents = "\n".join(file_contents)
                 files_content = f"""
-### 补充内容:
-{contents}
+        ### 补充内容:
+        {contents}
 
-"""
+        """
 
         if node_prompt or files_content:
             try:
@@ -108,6 +113,12 @@ class AgentNode(BaseNodeExecutor):
             "enable_suggest": skill_obj.enable_suggest,
             "enable_query_rewrite": skill_obj.enable_query_rewrite,
         }
+        return llm_params, skill_obj.name
+
+    def execute(self, node_id: str, node_config: Dict[str, Any], input_data: Dict[str, Any]) -> Dict[str, Any]:
+        config = node_config["data"].get("config", {})
+        output_key = config.get("outputParams", "last_message")
+        llm_params, _ = self.set_llm_params(node_id, config, input_data)
 
         data, _, _ = llm_service.invoke_chat(llm_params)
         result = data["message"]

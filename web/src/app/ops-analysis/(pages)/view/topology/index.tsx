@@ -214,6 +214,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
             borderWidth: values.borderWidth,
             textColor: values.textColor,
             fontSize: values.fontSize,
+            renderEffect: values.renderEffect,
             iconPadding: values.iconPadding,
             lineType: values.lineType,
             shapeType: values.shapeType,

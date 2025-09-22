@@ -26,6 +26,7 @@ const getBasicShapeAttrs = (nodeConfig: TopologyNodeData, shapeType?: string): R
   const borderColor = nodeConfig.styleConfig?.borderColor;
   const borderWidth = nodeConfig.styleConfig?.borderWidth;
   const lineType = nodeConfig.styleConfig?.lineType;
+  const renderEffect = nodeConfig.styleConfig?.renderEffect;
 
   const isTransparent = !backgroundColor ||
     backgroundColor === 'transparent' ||
@@ -37,18 +38,26 @@ const getBasicShapeAttrs = (nodeConfig: TopologyNodeData, shapeType?: string): R
     body: {
       fill: isTransparent ? BASIC_SHAPE_NODE.backgroundColor : backgroundColor,
       stroke: borderColor || BASIC_SHAPE_NODE.borderColor,
-      strokeWidth: borderWidth || BASIC_SHAPE_NODE.borderWidth,
+      strokeWidth: borderWidth || 0,
       rx: 16,
       ry: 16,
       opacity: 1
     }
   };
 
-  // 处理线型
+  if (['glass', undefined].includes(renderEffect)) {
+    baseAttrs.body.filter = 'drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.25))';
+    baseAttrs.body.stroke = `rgba(${parseInt((borderColor || BASIC_SHAPE_NODE.borderColor).slice(1, 3), 16)}, ${parseInt((borderColor || BASIC_SHAPE_NODE.borderColor).slice(3, 5), 16)}, ${parseInt((borderColor || BASIC_SHAPE_NODE.borderColor).slice(5, 7), 16)}, 0.8)`;
+  } else {
+    baseAttrs.body.filter = '';
+  }
+
   if (lineType === 'dashed') {
     baseAttrs.body.strokeDasharray = '8,4';
   } else if (lineType === 'dotted') {
     baseAttrs.body.strokeDasharray = '2,2';
+  } else {
+    baseAttrs.body.strokeDasharray = '';
   }
 
   // 处理形状类型

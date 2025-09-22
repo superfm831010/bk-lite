@@ -17,7 +17,6 @@ from apps.lab.serializers import (
     InfraInstanceListSerializer,
     InfraInstanceCreateSerializer,
 )
-from apps.lab.services.simple_docker import SimpleDockerService
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +61,7 @@ class InfraInstanceViewSet(viewsets.ModelViewSet):
         
     def get_docker_service(self):
         """获取 Docker 服务实例"""
-        return SimpleDockerService()
+        return None
         
     @action(detail=True, methods=['post'])
     def start(self, request, pk=None):
