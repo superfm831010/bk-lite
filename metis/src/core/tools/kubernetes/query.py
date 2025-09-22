@@ -25,6 +25,11 @@ def kubectl_get_resources(resource_type, namespace=None, label_selector=None, fi
     Returns:
         str: 查询结果
     """
+    return _query_resources_internal(resource_type, namespace, label_selector, field_selector, output_format, config)
+
+
+def _query_resources_internal(resource_type, namespace=None, label_selector=None, field_selector=None, output_format="json", config=None):
+    """内部资源查询函数，供多个工具复用"""
     try:
         prepare_context(config)
 
@@ -55,7 +60,9 @@ def kubectl_get_resources(resource_type, namespace=None, label_selector=None, fi
             "ing": "ingresses",
             "ingress": "ingresses",
             "ep": "endpoints",
-            "endpoint": "endpoints"
+            "endpoint": "endpoints",
+            "events": "events",
+            "event": "events"
         }
 
         resource_type = resource_aliases.get(resource_type, resource_type)
@@ -79,6 +86,14 @@ def kubectl_get_resources(resource_type, namespace=None, label_selector=None, fi
             return _get_persistent_volumes(output_format)
         elif resource_type == "persistentvolumeclaims":
             return _get_persistent_volume_claims(namespace, label_selector, output_format)
+        elif resource_type == "events":
+            return _get_events(namespace, label_selector, output_format)
+        elif resource_type == "replicasets":
+            return _get_replicasets(namespace, label_selector, output_format)
+        elif resource_type == "daemonsets":
+            return _get_daemonsets(namespace, label_selector, output_format)
+        elif resource_type == "statefulsets":
+            return _get_statefulsets(namespace, label_selector, output_format)
         else:
             return json.dumps({
                 "error": f"暂不支持的资源类型: {resource_type}",
@@ -380,6 +395,126 @@ def _get_persistent_volume_claims(namespace, label_selector, output_format):
     return json.dumps({"items": pvc_list, "total": len(pvc_list)})
 
 
+def _get_events(namespace, label_selector, output_format):
+    """获取Event列表"""
+    core_v1 = client.CoreV1Api()
+
+    if namespace:
+        events = core_v1.list_namespaced_event(
+            namespace=namespace,
+            label_selector=label_selector
+        )
+    else:
+        events = core_v1.list_event_for_all_namespaces(
+            label_selector=label_selector
+        )
+
+    event_list = []
+    for event in events.items:
+        event_info = {
+            "name": event.metadata.name,
+            "namespace": event.metadata.namespace,
+            "type": event.type,
+            "reason": event.reason,
+            "message": event.message,
+            "source": event.source.component if event.source else "",
+            "first_timestamp": event.first_timestamp.isoformat() if event.first_timestamp else "",
+            "last_timestamp": event.last_timestamp.isoformat() if event.last_timestamp else "",
+            "count": event.count or 1,
+            "age": _calculate_age(event.metadata.creation_timestamp)
+        }
+        event_list.append(event_info)
+
+    return json.dumps({"items": event_list, "total": len(event_list)})
+
+
+def _get_replicasets(namespace, label_selector, output_format):
+    """获取ReplicaSet列表"""
+    apps_v1 = client.AppsV1Api()
+
+    if namespace:
+        replicasets = apps_v1.list_namespaced_replica_set(
+            namespace=namespace,
+            label_selector=label_selector
+        )
+    else:
+        replicasets = apps_v1.list_replica_set_for_all_namespaces(
+            label_selector=label_selector
+        )
+
+    rs_list = []
+    for rs in replicasets.items:
+        rs_info = {
+            "name": rs.metadata.name,
+            "namespace": rs.metadata.namespace,
+            "desired": rs.spec.replicas or 0,
+            "current": rs.status.replicas or 0,
+            "ready": rs.status.ready_replicas or 0,
+            "age": _calculate_age(rs.metadata.creation_timestamp)
+        }
+        rs_list.append(rs_info)
+
+    return json.dumps({"items": rs_list, "total": len(rs_list)})
+
+
+def _get_daemonsets(namespace, label_selector, output_format):
+    """获取DaemonSet列表"""
+    apps_v1 = client.AppsV1Api()
+
+    if namespace:
+        daemonsets = apps_v1.list_namespaced_daemon_set(
+            namespace=namespace,
+            label_selector=label_selector
+        )
+    else:
+        daemonsets = apps_v1.list_daemon_set_for_all_namespaces(
+            label_selector=label_selector
+        )
+
+    ds_list = []
+    for ds in daemonsets.items:
+        ds_info = {
+            "name": ds.metadata.name,
+            "namespace": ds.metadata.namespace,
+            "desired": ds.status.desired_number_scheduled or 0,
+            "current": ds.status.current_number_scheduled or 0,
+            "ready": ds.status.number_ready or 0,
+            "up_to_date": ds.status.updated_number_scheduled or 0,
+            "available": ds.status.number_available or 0,
+            "age": _calculate_age(ds.metadata.creation_timestamp)
+        }
+        ds_list.append(ds_info)
+
+    return json.dumps({"items": ds_list, "total": len(ds_list)})
+
+
+def _get_statefulsets(namespace, label_selector, output_format):
+    """获取StatefulSet列表"""
+    apps_v1 = client.AppsV1Api()
+
+    if namespace:
+        statefulsets = apps_v1.list_namespaced_stateful_set(
+            namespace=namespace,
+            label_selector=label_selector
+        )
+    else:
+        statefulsets = apps_v1.list_stateful_set_for_all_namespaces(
+            label_selector=label_selector
+        )
+
+    sts_list = []
+    for sts in statefulsets.items:
+        sts_info = {
+            "name": sts.metadata.name,
+            "namespace": sts.metadata.namespace,
+            "ready": f"{sts.status.ready_replicas or 0}/{sts.spec.replicas or 0}",
+            "age": _calculate_age(sts.metadata.creation_timestamp)
+        }
+        sts_list.append(sts_info)
+
+    return json.dumps({"items": sts_list, "total": len(sts_list)})
+
+
 # 辅助函数
 def _get_pod_ready_status(pod):
     """获取Pod的就绪状态"""
@@ -564,13 +699,13 @@ def kubectl_get_all_resources(namespace=None, config: RunnableConfig = None):
             "resources": {}
         }
 
-        # 查询各种资源类型
-        resource_types = ["pods", "services", "deployments",
-                          "replicasets", "configmaps", "secrets"]
+        # 查询各种资源类型 - 按照kubectl get all的标准顺序
+        resource_types = ["pods", "services", "deployments", "replicasets",
+                          "daemonsets", "statefulsets", "configmaps", "secrets"]
 
         for resource_type in resource_types:
             try:
-                resource_data = kubectl_get_resources.__wrapped__(
+                resource_data = _query_resources_internal(
                     resource_type, namespace, config=config)
                 if resource_data and not resource_data.startswith('{"error"'):
                     resource_json = json.loads(resource_data)
