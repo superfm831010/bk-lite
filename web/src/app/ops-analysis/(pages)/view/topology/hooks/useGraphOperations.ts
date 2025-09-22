@@ -415,19 +415,6 @@ export const useGraphOperations = (
       hideAllPorts(graphInstance);
       hideAllEdgeTools(graphInstance);
 
-      graphInstance.getEdges().forEach((edge: any) => {
-        const edgeData = edge.getData();
-        const customColor = edgeData?.styleConfig?.lineColor;
-
-        edge.setAttrs({
-          line: {
-            ...edge.getAttrs().line,
-            stroke: customColor || COLORS.EDGE.DEFAULT,
-            strokeWidth: 1,
-          },
-        });
-      });
-
       if (isEditingText) {
         setIsEditingText(false);
         setEditingNodeId(null);
@@ -443,7 +430,6 @@ export const useGraphOperations = (
     }
   }, [graphInstance, isEditingText, setIsEditMode]);
 
-  // 缩略图插件初始化函数
   const initMiniMap = useCallback((graph: X6Graph) => {
     if (minimapContainerRef?.current && minimapVisible) {
       graph.disposePlugins(['minimap']);
@@ -666,6 +652,9 @@ export const useGraphOperations = (
 
     graph.on('node:contextmenu', ({ e, node }) => {
       e.preventDefault();
+      if (!isEditModeRef.current) {
+        return;
+      }
       setContextMenuVisible(true);
       setContextMenuPosition({ x: e.clientX, y: e.clientY });
       setContextMenuNodeId(node.id);
@@ -676,7 +665,6 @@ export const useGraphOperations = (
       if (e.shiftKey) {
         return;
       }
-      // 移除直接打开配置面板的逻辑，改为通过右键菜单的"编辑"选项
     });
 
     graph.on('edge:contextmenu', ({ e, edge }) => {
@@ -1126,72 +1114,64 @@ export const useGraphOperations = (
     return addedNode.id;
   }, [graphInstance, updateSingleNodeData, startLoadingAnimation]);
 
-  const handleNodeUpdate = useCallback(async (values: any) => {
-    if (!values) {
-      return;
-    }
-    const editingNode = state.editingNodeData;
+  function getUpdatedNodeConfig(editingNode: any, values: any) {
     const { valueConfig, styleConfig } = editingNode || {};
+    return {
+      id: editingNode.id,
+      type: editingNode.type,
+      name: values.name,
+      unit: values.unit,
+      conversionFactor: values.conversionFactor,
+      decimalPlaces: values.decimalPlaces,
+      description: values.description,
+      position: editingNode.position,
+      logoType: values.logoType || editingNode.logoType,
+      logoIcon: values.logoIcon || editingNode.logoIcon,
+      logoUrl: values.logoUrl || editingNode.logoUrl,
+      valueConfig: {
+        selectedFields: values.selectedFields || valueConfig?.selectedFields,
+        chartType: values.chartType || valueConfig?.chartType,
+        dataSource: values.dataSource || valueConfig?.dataSource,
+        dataSourceParams: values.dataSourceParams || valueConfig?.dataSourceParams,
+      },
+      styleConfig: {
+        textColor: values.textColor !== undefined ? values.textColor : styleConfig?.textColor,
+        fontSize: values.fontSize !== undefined ? values.fontSize : styleConfig?.fontSize,
+        backgroundColor: values.backgroundColor !== undefined ? values.backgroundColor : styleConfig?.backgroundColor,
+        borderColor: values.borderColor !== undefined ? values.borderColor : styleConfig?.borderColor,
+        borderWidth: values.borderWidth !== undefined ? values.borderWidth : styleConfig?.borderWidth,
+        iconPadding: values.iconPadding !== undefined ? values.iconPadding : styleConfig?.iconPadding,
+        renderEffect: values.renderEffect !== undefined ? values.renderEffect : styleConfig?.renderEffect,
+        width: values.width !== undefined ? values.width : styleConfig?.width,
+        height: values.height !== undefined ? values.height : styleConfig?.height,
+        lineType: values.lineType !== undefined ? values.lineType : styleConfig?.lineType,
+        shapeType: values.shapeType !== undefined ? values.shapeType : styleConfig?.shapeType,
+        nameColor: values.nameColor !== undefined ? values.nameColor : styleConfig?.nameColor,
+        nameFontSize: values.nameFontSize !== undefined ? values.nameFontSize : styleConfig?.nameFontSize,
+        textDirection: values.textDirection !== undefined ? values.textDirection : styleConfig?.textDirection,
+        thresholdColors: values.thresholdColors !== undefined ? values.thresholdColors : styleConfig?.thresholdColors,
+      },
+    };
+  }
+
+  const handleNodeUpdate = useCallback(async (values: any) => {
+    if (!values) return;
+    const editingNode = state.editingNodeData;
+    if (!editingNode || !graphInstance) return;
     try {
-      const updatedConfig = {
-        id: editingNode.id,
-        type: editingNode.type,
-        name: values.name,
-        unit: values.unit,
-        conversionFactor: values.conversionFactor,
-        decimalPlaces: values.decimalPlaces,
-        description: values.description,
-        position: editingNode.position,
-        logoType: values.logoType || editingNode.logoType,
-        logoIcon: values.logoIcon || editingNode.logoIcon,
-        logoUrl: values.logoUrl || editingNode.logoUrl,
-        valueConfig: {
-          selectedFields: values.selectedFields || valueConfig?.selectedFields,
-          chartType: values.chartType || valueConfig?.chartType,
-          dataSource: values.dataSource || valueConfig?.dataSource,
-          dataSourceParams: values.dataSourceParams || valueConfig?.dataSourceParams,
-        },
-        styleConfig: {
-          textColor: values.textColor !== undefined ? values.textColor : styleConfig?.textColor,
-          fontSize: values.fontSize !== undefined ? values.fontSize : styleConfig?.fontSize,
-          backgroundColor: values.backgroundColor !== undefined ? values.backgroundColor : styleConfig?.backgroundColor,
-          borderColor: values.borderColor !== undefined ? values.borderColor : styleConfig?.borderColor,
-          borderWidth: values.borderWidth !== undefined ? values.borderWidth : styleConfig?.borderWidth,
-          iconPadding: values.iconPadding !== undefined ? values.iconPadding : styleConfig?.iconPadding,
-          width: values.width !== undefined ? values.width : styleConfig?.width,
-          height: values.height !== undefined ? values.height : styleConfig?.height,
-          lineType: values.lineType !== undefined ? values.lineType : styleConfig?.lineType,
-          shapeType: values.shapeType !== undefined ? values.shapeType : styleConfig?.shapeType,
-          nameColor: values.nameColor !== undefined ? values.nameColor : styleConfig?.nameColor,
-          nameFontSize: values.nameFontSize !== undefined ? values.nameFontSize : styleConfig?.nameFontSize,
-          textDirection: values.textDirection !== undefined ? values.textDirection : styleConfig?.textDirection,
-          thresholdColors: values.thresholdColors !== undefined ? values.thresholdColors : styleConfig?.thresholdColors,
-        },
-      };
-
-      if (!graphInstance) {
-        return;
-      }
-
+      const updatedConfig = getUpdatedNodeConfig(editingNode, values);
       const node = graphInstance.getCellById(updatedConfig.id);
-      if (!node) {
-        return;
-      }
-
+      if (!node) return;
       updateNodeAttributes(node, updatedConfig);
-
-      if (updatedConfig.type === 'single-value' && updatedConfig.valueConfig?.dataSource && updatedConfig.valueConfig?.selectedFields?.length) {
-        // 先设置loading状态
-        const nodeData = node.getData();
-        node.setData({
-          ...nodeData,
-          isLoading: true,
-          hasError: false
-        });
+      if (
+        updatedConfig.type === 'single-value' &&
+        updatedConfig.valueConfig?.dataSource &&
+        updatedConfig.valueConfig?.selectedFields?.length
+      ) {
+        node.setData({ ...node.getData(), isLoading: true, hasError: false });
         startLoadingAnimation(node);
         updateSingleNodeData(updatedConfig);
       }
-
       state.setNodeEditVisible(false);
       state.setEditingNodeData(null);
     } catch (error) {
@@ -1304,7 +1284,6 @@ export const useGraphOperations = (
     isInitializing.current = true;
   }, []);
 
-  // 清空操作历史记录
   const clearOperationHistory = useCallback(() => {
     setOperationHistory([]);
     setOperationIndex(-1);

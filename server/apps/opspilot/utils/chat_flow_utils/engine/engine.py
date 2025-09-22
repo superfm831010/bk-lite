@@ -1,6 +1,7 @@
 """
 聊天流程执行引擎 - ChatFlowEngine
 """
+import json
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from graphlib import CycleError, TopologicalSorter
@@ -17,6 +18,63 @@ from .node_registry import node_registry
 
 
 class ChatFlowEngine:
+    def sse_execute(self, input_data: Dict[str, Any] = None, timeout: int = None):
+        """流程流式执行，仅支持最后节点为agent且首节点为openai时"""
+        if input_data is None:
+            input_data = {}
+        if timeout is None:
+            timeout = self.execution_timeout
+        # 验证流程
+        validation_errors = self.validate_flow()
+        if validation_errors:
+
+            def err_gen():
+                yield f"data: {json.dumps({'result': False, 'error': '流程验证失败'})}\n\n"
+                yield "data: [DONE]\n\n"
+
+            return err_gen()
+
+        # 获取最后节点
+        last_node = self.nodes[-1] if self.nodes else None
+        if last_node.get("type") == "agents":
+            # 先执行前置所有节点（非流式）
+            if len(self.nodes) > 1:
+                # 执行除最后一个节点外的所有节点
+                previous_nodes = self.nodes[:-1]
+                temp_engine_data = input_data.copy()
+
+                # 按顺序执行前置节点
+                for i, node in enumerate(previous_nodes):
+                    node_id = node.get("id")
+                    executor = self._get_node_executor(node.get("type"))
+
+                    logger.info(f"执行前置节点 {node_id} (类型: {node.get('type')})")
+                    result = executor.execute(node_id, node, temp_engine_data)
+
+                    # 更新变量管理器和输入数据
+                    self.variable_manager.set_variable(f"node_{node_id}_output", result)
+
+                    # 将结果传递给下一个节点（使用最后输出的key作为下一个节点的输入）
+                    if isinstance(result, dict):
+                        temp_engine_data.update(result)
+
+                # 用前置节点的执行结果作为最后节点的输入
+                final_input_data = temp_engine_data
+            else:
+                final_input_data = input_data
+
+            # 最后一个节点走sse_execute
+            executor = self._get_node_executor(last_node.get("type"))
+            if hasattr(executor, "sse_execute"):
+                return executor.sse_execute(last_node.get("id"), last_node, final_input_data)
+
+        # 其他情况不支持流式，直接抛异常
+        def err_gen():
+            yield f"data: {json.dumps({'result': False, 'error': '当前流程不支持SSE'})}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return err_gen()
+
     """聊天流程执行引擎"""
 
     def __init__(self, instance: BotWorkFlow, start_node_id: str = None):
