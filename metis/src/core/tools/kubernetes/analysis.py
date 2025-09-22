@@ -294,7 +294,6 @@ def check_kubernetes_jobs(namespace=None, config: RunnableConfig = None):
     prepare_context(config)
     try:
         batch_v1 = client.BatchV1Api()
-        batch_v1beta1 = client.BatchV1beta1Api()
 
         result = {"jobs": [], "cronjobs": []}
 
@@ -317,12 +316,13 @@ def check_kubernetes_jobs(namespace=None, config: RunnableConfig = None):
                 "completion_time": job.status.completion_time.isoformat() if job.status.completion_time else None
             })
 
-        # 检查CronJobs
+        # 检查CronJobs - 尝试多个API版本以兼容不同的Kubernetes版本
         try:
+            # 首先尝试v1 API (Kubernetes 1.21+)
             if namespace:
-                cronjobs = batch_v1beta1.list_namespaced_cron_job(namespace)
+                cronjobs = batch_v1.list_namespaced_cron_job(namespace)
             else:
-                cronjobs = batch_v1beta1.list_cron_job_for_all_namespaces()
+                cronjobs = batch_v1.list_cron_job_for_all_namespaces()
 
             for cronjob in cronjobs.items:
                 result["cronjobs"].append({
@@ -333,9 +333,31 @@ def check_kubernetes_jobs(namespace=None, config: RunnableConfig = None):
                     "active_jobs": len(cronjob.status.active) if cronjob.status.active else 0,
                     "last_schedule_time": cronjob.status.last_schedule_time.isoformat() if cronjob.status.last_schedule_time else None
                 })
-        except:
-            # Fallback to v1 API if v1beta1 is not available
-            pass
+        except AttributeError:
+            # 如果v1 API不支持CronJob，尝试使用v1beta1 API
+            try:
+                # 动态导入以避免在不支持的版本中出错
+                from kubernetes.client.apis import batch_v1beta1_api
+                batch_v1beta1 = batch_v1beta1_api.BatchV1beta1Api()
+
+                if namespace:
+                    cronjobs = batch_v1beta1.list_namespaced_cron_job(
+                        namespace)
+                else:
+                    cronjobs = batch_v1beta1.list_cron_job_for_all_namespaces()
+
+                for cronjob in cronjobs.items:
+                    result["cronjobs"].append({
+                        "name": cronjob.metadata.name,
+                        "namespace": cronjob.metadata.namespace,
+                        "schedule": cronjob.spec.schedule,
+                        "suspend": cronjob.spec.suspend or False,
+                        "active_jobs": len(cronjob.status.active) if cronjob.status.active else 0,
+                        "last_schedule_time": cronjob.status.last_schedule_time.isoformat() if cronjob.status.last_schedule_time else None
+                    })
+            except (ImportError, AttributeError, ApiException):
+                # 如果都不支持，添加说明信息
+                result["cronjobs_note"] = "CronJob API不可用于当前Kubernetes版本"
 
         return json.dumps(result)
     except ApiException as e:
