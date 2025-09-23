@@ -14,7 +14,7 @@ class UserAPISecretViewSet(viewsets.ModelViewSet):
     serializer_class = UserAPISecretSerializer
     ordering = ("-id",)
 
-    @HasPermission("api_secret_key-View")
+    @HasPermission("api_secret_key-View", "opspilot")
     def list(self, request, *args, **kwargs):
         current_team = request.COOKIES.get("current_team")
         query = self.get_queryset().filter(username=request.user.username, team=current_team)
