@@ -21,7 +21,6 @@ class LLMModel(models.Model, EncryptMixin):
     team = models.JSONField(default=list)
     is_build_in = models.BooleanField(default=True, verbose_name="是否内置")
     is_demo = models.BooleanField(default=False)
-    consumer_team = models.CharField(default="", blank=True, null=True, max_length=64)
     model_type = models.ForeignKey("ModelType", on_delete=models.SET_NULL, verbose_name="模型类型", blank=True, null=True)
     label = models.CharField(max_length=100, verbose_name="标签", blank=True, null=True)
 

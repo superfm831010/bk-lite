@@ -11,7 +11,7 @@ from django.http import StreamingHttpResponse
 from apps.core.logger import opspilot_logger as logger
 from apps.core.utils.async_utils import create_async_compatible_generator
 from apps.opspilot.enum import SkillTypeChoices
-from apps.opspilot.models import LLMModel, TeamTokenUseInfo
+from apps.opspilot.models import LLMModel
 from apps.opspilot.services.llm_service import llm_service
 from apps.opspilot.utils.bot_utils import insert_skill_log
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
@@ -354,16 +354,10 @@ def _log_and_update_tokens_sync(
 
         insert_skill_log(current_ip, skill_id, log_data, kwargs, user_message=user_message)
 
-        # 更新token使用量
-        used_token = final_stats["prompt_tokens"] + final_stats["completion_tokens"]
-
-        team_info, is_created = TeamTokenUseInfo.objects.get_or_create(group=group, llm_model=llm_model.name, defaults={"used_token": used_token})
-        if not is_created:
-            team_info.used_token += used_token
-            team_info.save()
+        # 更新token使用量 (已移除TeamTokenUseInfo相关逻辑)
 
     except Exception as e:
-        logger.error(f"Log and token update error: {e}")
+        logger.error(f"Log update error: {e}")
 
 
 def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=None):

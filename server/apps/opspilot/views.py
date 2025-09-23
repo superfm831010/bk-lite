@@ -19,7 +19,6 @@ from apps.opspilot.services.llm_service import llm_service
 from apps.opspilot.services.skill_excute_service import SkillExecuteService
 from apps.opspilot.utils.bot_utils import get_client_ip, insert_skill_log, set_time_range
 from apps.opspilot.utils.chat_flow_utils.engine.factory import create_chat_flow_engine
-from apps.opspilot.utils.quota_utils import QuotaUtils
 from apps.opspilot.utils.sse_chat import generate_stream_error, stream_chat
 from apps.rpc.system_mgmt import SystemMgmt
 
@@ -98,17 +97,6 @@ def validate_header_token(token, bot_id):
     return True, {"username": res["data"]["username"]}
 
 
-def validate_remaining_token(skill_obj: LLMSkill):
-    try:
-        current_team = skill_obj.team[0]
-        remaining_token = QuotaUtils.get_remaining_token(current_team, skill_obj.llm_model.name)
-    except Exception as e:
-        logger.exception(e)
-        remaining_token = 1
-    if remaining_token <= 0:
-        raise Exception(_("Token used up"))
-
-
 def get_skill_and_params(kwargs, team, bot_id=None):
     """Get skill object and prepare parameters for LLM invocation"""
     skill_id = kwargs.get("model")
@@ -123,7 +111,6 @@ def get_skill_and_params(kwargs, team, bot_id=None):
             None,
             {"choices": [{"message": {"role": "assistant", "content": "No skill"}}]},
         )
-    validate_remaining_token(skill_obj)
     num = kwargs.get("conversation_window_size") or skill_obj.conversation_window_size
     chat_history = [{"message": i["content"], "event": i["role"]} for i in kwargs.get("messages", [])[-1 * num :]]
 
