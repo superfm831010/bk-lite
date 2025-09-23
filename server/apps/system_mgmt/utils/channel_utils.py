@@ -63,8 +63,8 @@ def send_email(channel_obj: Channel, title, content, user_list):
 
 def send_by_bot(channel_obj: Channel, content, receivers: list):
     if receivers:
-        to_user = ["@" + user for user in receivers] # 企业微信机器人@用户
-        content = content +  "\n" + "To: " + " ".join(to_user)
+        to_user_mentions = " ".join(f"@{user}" for user in receivers)
+        content = f"{content}\nTo: {to_user_mentions}"
     channel_config = channel_obj.config
     channel_obj.decrypt_field("bot_key", channel_config)
     bot_key = channel_config["bot_key"]
