@@ -92,6 +92,7 @@ class NodeMgmtView(ViewSet):
         logger.info(f"batch_setting_node_child_config: {request.data}")
 
         InstanceConfigService.create_monitor_instance_by_node_mgmt(request.data)
+
         return WebUtils.response_success()
 
     @swagger_auto_schema(

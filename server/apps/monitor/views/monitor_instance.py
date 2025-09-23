@@ -149,7 +149,7 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
         )
     )
     @action(methods=['post'], detail=False, url_path='(?P<monitor_object_id>[^/.]+)/check_monitor_instance')
-    def create_monitor_instance(self, request, monitor_object_id):
+    def check_monitor_instance(self, request, monitor_object_id):
         MonitorObjectService.check_monitor_instance(
             int(monitor_object_id),
             request.data
