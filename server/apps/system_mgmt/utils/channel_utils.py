@@ -40,7 +40,7 @@ def send_email(channel_obj: Channel, title, content, user_list):
         msg["To"] = ",".join(receivers)
         msg["Subject"] = title
 
-        msg.attach(MIMEText(content, "plain", "utf-8"))
+        msg.attach(MIMEText(content, "html", "utf-8"))
 
         # 根据配置决定使用 SSL 还是普通连接
         if channel_config.get("smtp_usessl", False):
@@ -69,7 +69,7 @@ def send_by_bot(channel_obj: Channel, content, receivers: list):
     channel_obj.decrypt_field("bot_key", channel_config)
     bot_key = channel_config["bot_key"]
     url = f"https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={bot_key}"
-    res = requests.post(url, json={"msgtype": "text", "text": {"content": content}})
+    res = requests.post(url, json={"msgtype": "markdown", "markdown": {"content": content}})
     try:
         res = res.json()
         return res

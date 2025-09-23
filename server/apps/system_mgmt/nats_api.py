@@ -203,7 +203,7 @@ def search_users(query_params):
 @nats_client.register
 def init_user_default_attributes(user_id, group_name, default_group_id):
     try:
-        role_ids = list(Role.objects.filter(name="guest", app__in=["opspilot", "cmdb", "monitor", "alarm"]).values_list("id", flat=True))
+        role_ids = list(Role.objects.filter(name="guest", app__in=["opspilot", "cmdb", "monitor", "alarm", "node"]).values_list("id", flat=True))
         normal_role = Role.objects.get(name="normal", app="opspilot")
         user = User.objects.get(id=user_id)
         top_group, _ = Group.objects.get_or_create(name=os.getenv("DEFAULT_GROUP_NAME", "Guest"), parent_id=0, defaults={"description": ""})
@@ -222,12 +222,7 @@ def init_user_default_attributes(user_id, group_name, default_group_id):
         user.group_list.append(guest_group.id)
         user.group_list.append(group_obj.id)
         user.save()
-        default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", app="opspilot", group_id=guest_group.id)
-        monitor_rule = GroupDataRule.objects.get(name="OpsPilotGuest数据权限", app="monitor", group_id=guest_group.id)
-        cmdb_rule = GroupDataRule.objects.get(name="游客数据权限", app="cmdb", group_id=guest_group.id)
-        UserRule.objects.create(username=user.username, group_rule_id=default_rule.id)
-        UserRule.objects.create(username=user.username, group_rule_id=monitor_rule.id)
-        UserRule.objects.create(username=user.username, group_rule_id=cmdb_rule.id)
+        set_opspilot_guest_group_default_rule(guest_group, user)
         cache.delete(f"group_{user.username}")
         return {"result": True, "data": {"group_id": group_obj.id}}
     except Exception as e:
@@ -498,12 +493,12 @@ def reset_pwd(username, password):
 @nats_client.register
 def wechat_user_register(user_id, nick_name):
     user, is_first_login = User.objects.update_or_create(username=user_id, defaults={"display_name": nick_name})
-    default_group = Group.objects.get(name="OpsPilotGuest", parent_id=0)
-    if not user.group_list:
+    default_group = Group.objects.filter(name="OpsPilotGuest", parent_id=0).first()
+    if not user.group_list and default_group:
         user.group_list = [default_group.id]
     default_role = list(
         Role.objects.filter(
-            Q(name="normal", app__in=["opspilot", "ops-console"]) | Q(name="guest", app__in=["opspilot", "cmdb", "monitor", "log", "alarm"])
+            Q(name="normal", app__in=["opspilot", "ops-console"]) | Q(name="guest", app__in=["opspilot", "cmdb", "monitor", "log", "alarm", "node"])
         ).values_list("id", flat=True)
     )
     default_role.extend(user.role_list)
@@ -511,14 +506,8 @@ def wechat_user_register(user_id, nick_name):
     user.last_login = timezone.now()
     user.save()
     try:
-        default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", app="opspilot", group_id=default_group.id)
-        monitor_rule = GroupDataRule.objects.get(name="OpsPilotGuest数据权限", app="monitor", group_id=default_group.id)
-        cmdb_rule = GroupDataRule.objects.get(name="游客数据权限", app="cmdb", group_id=default_group.id)
-        log_rule = GroupDataRule.objects.get(name="log内置规则", app="log", group_id=default_group.id)
-        UserRule.objects.get_or_create(username=user.username, group_rule_id=cmdb_rule.id)
-        UserRule.objects.get_or_create(username=user.username, group_rule_id=default_rule.id)
-        UserRule.objects.get_or_create(username=user.username, group_rule_id=monitor_rule.id)
-        UserRule.objects.get_or_create(username=user.username, group_rule_id=log_rule.id)
+        if default_group:
+            set_opspilot_guest_group_default_rule(default_group, user)
     except Exception:  # noqa
         pass
     secret_key = os.getenv("SECRET_KEY")
@@ -536,6 +525,19 @@ def wechat_user_register(user_id, nick_name):
             "token": token,
         },
     }
+
+
+def set_opspilot_guest_group_default_rule(default_group, user):
+    default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", app="opspilot", group_id=default_group.id)
+    monitor_rule = GroupDataRule.objects.get(name="OpsPilotGuest数据权限", app="monitor", group_id=default_group.id)
+    cmdb_rule = GroupDataRule.objects.get(name="游客数据权限", app="cmdb", group_id=default_group.id)
+    log_rule = GroupDataRule.objects.get(name="log内置规则", app="log", group_id=default_group.id)
+    node_rule = GroupDataRule.objects.get(name="节点管理内置数据权限", app="node", group_id=default_group.id)
+    UserRule.objects.get_or_create(username=user.username, group_rule_id=cmdb_rule.id)
+    UserRule.objects.get_or_create(username=user.username, group_rule_id=default_rule.id)
+    UserRule.objects.get_or_create(username=user.username, group_rule_id=monitor_rule.id)
+    UserRule.objects.get_or_create(username=user.username, group_rule_id=log_rule.id)
+    UserRule.objects.get_or_create(username=user.username, group_rule_id=node_rule.id)
 
 
 @nats_client.register
