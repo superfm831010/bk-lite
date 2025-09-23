@@ -1,18 +1,23 @@
 "use client";
 import { Segmented, Menu, Button } from 'antd';
 import stlyes from '@/app/lab/styles/index.module.scss';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import EntityList from '@/components/entity-list';
 import useLabManage from '@/app/lab/api/manage';
+import LabImageModal from './labImageModal';
+import { ModalRef } from '@/app/lab/types';
+import { useTranslation } from '@/utils/i18n';
 
 const MirrorManage = () => {
+  const { t } = useTranslation();
+  const modalRef = useRef<ModalRef>(null);
   const [activeTab, setActiveTab] = useState<string>('ide');
   const tabOptions = [
-    { label: 'IDE 镜像', value: 'ide' },
-    { label: '基础设施镜像', value: 'infra' }
+    { label: t(`lab.manage.ide`), value: 'ide' },
+    { label: t(`lab.manage.infra`), value: 'infra' }
   ];
 
-  const { getIdeImages, getInfraImages } = useLabManage();
+  const { getIdeImages, getInfraImages, deleteImage } = useLabManage();
   const [tableData, setTableData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +31,14 @@ const MirrorManage = () => {
       } else {
         res = await getInfraImages();
       }
-      setTableData(res || []);
+      const _res = res?.map((item: any) => {
+        return {
+          ...item,
+          icon: 'tucengshuju',
+          creator: item?.created_by || '--',
+        }
+      })
+      setTableData(_res || []);
     } catch (e) {
       console.log(e);
       setTableData([]);
@@ -39,22 +51,36 @@ const MirrorManage = () => {
     fetchImages(activeTab);
   }, [activeTab]);
 
-  // 菜单操作
-  const menuActions = (item: any) => (
-    <Menu>
-      <Menu.Item onClick={() => {console.log(item)}}>
-        <Button type="text">编辑</Button>
-      </Menu.Item>
-      <Menu.Item onClick={() => {/* 删除逻辑 */}}>
-        <Button type="text" danger>删除</Button>
-      </Menu.Item>
-    </Menu>
-  );
+  const menuActions = (item: any) => {
+    return (
+      <Menu onClick={(e) => e.domEvent.preventDefault()}>
+        <Menu.Item
+          className="!p-0"
+          onClick={() => handleEdit({ type: 'edit', form: item })}
+        >
+          {/* <PermissionWrapper requiredPermissions={['Edit']} className="!block" > */}
+          <Button type="text" className="w-full">
+            {t(`common.edit`)}
+          </Button>
+          {/* </PermissionWrapper> */}
+        </Menu.Item>
+        {item?.name !== "default" && (
+          <Menu.Item className="!p-0" onClick={() => handleDel(item.id)}>
+            {/* <PermissionWrapper requiredPermissions={['Delete']} className="!block" > */}
+            <Button type="text" className="w-full">
+              {t(`common.delete`)}
+            </Button>
+            {/* </PermissionWrapper> */}
+          </Menu.Item>
+        )}
+      </Menu>
+    )
+  };
 
   // 描述区域
   const descSlot = (item: any) => (
     <p className="text-right font-mini text-[var(--color-text-3)]">
-      {`创建人: ${item.created_by || '--'}`}
+      {`creator: ${item.created_by || '--'}`}
     </p>
   );
 
@@ -67,6 +93,24 @@ const MirrorManage = () => {
   // 新增
   const handleAdd = () => {
     // 新增逻辑
+    modalRef.current?.showModal({ type: 'add' });
+  };
+
+  // 编辑
+  const handleEdit = (data: any) => {
+    modalRef.current?.showModal(data)
+  };
+
+  // 删除
+  const handleDel = async (id: string | number) => {
+    setLoading(true);
+    try {
+      await deleteImage(id);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 搜索
@@ -75,20 +119,23 @@ const MirrorManage = () => {
   };
 
   return (
-    <div className={`w-full h-full ${stlyes.segmented}`}>
-      <Segmented options={tabOptions} value={activeTab} onChange={(value) => setActiveTab(value)} />
-      <div className='flex h-full w-full mt-4'>
-        <EntityList
-          data={tableData}
-          menuActions={menuActions}
-          loading={loading}
-          onCardClick={handleCardClick}
-          openModal={handleAdd}
-          onSearch={handleSearch}
-          descSlot={descSlot}
-        />
+    <>
+      <div className={`w-full h-full ${stlyes.segmented}`}>
+        <Segmented options={tabOptions} value={activeTab} onChange={(value) => setActiveTab(value)} />
+        <div className='flex h-full w-full mt-4'>
+          <EntityList
+            data={tableData}
+            menuActions={menuActions}
+            loading={loading}
+            onCardClick={handleCardClick}
+            openModal={handleAdd}
+            onSearch={handleSearch}
+            descSlot={descSlot}
+          />
+        </div>
       </div>
-    </div>
+      <LabImageModal ref={modalRef} onSuccess={() => fetchImages(activeTab)} />
+    </>
   )
 };
 
