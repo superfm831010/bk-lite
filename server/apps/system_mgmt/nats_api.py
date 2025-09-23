@@ -293,11 +293,11 @@ def send_msg_with_channel(channel_id, title, content, receivers):
     channel_obj = Channel.objects.filter(id=channel_id).first()
     if not channel_obj:
         return {"result": False, "message": "Channel not found"}
-    user_list = User.objects.filter(id__in=receivers)
     if channel_obj.channel_type == ChannelChoices.EMAIL:
+        user_list = User.objects.filter(id__in=receivers)
         return send_email(channel_obj, title, content, user_list)
     elif channel_obj.channel_type == ChannelChoices.ENTERPRISE_WECHAT_BOT:
-        return send_by_bot(channel_obj, content)
+        return send_by_bot(channel_obj, content, receivers)
     return {"result": False, "message": "Unsupported channel type"}
     # return send_wechat(channel_obj, content, user_list)
 
