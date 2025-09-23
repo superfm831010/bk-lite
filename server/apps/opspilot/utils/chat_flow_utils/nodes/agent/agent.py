@@ -43,7 +43,7 @@ class AgentNode(BaseNodeExecutor):
         # 处理节点中的 prompt 参数和上传文件
         node_prompt = config.get("prompt", "")
         uploaded_files = config.get("uploadedFiles", [])
-        final_skill_prompt = skill_obj.skill_prompt
+        final_message = ""
 
         # 处理上传的文件内容
         files_content = ""
@@ -59,7 +59,7 @@ class AgentNode(BaseNodeExecutor):
             if file_contents:
                 contents = "\n".join(file_contents)
                 files_content = f"""
-        ### 补充内容:
+        ### 补充背景知识:
         {contents}
 
         """
@@ -71,18 +71,17 @@ class AgentNode(BaseNodeExecutor):
 
                 # 组合完整的节点prompt
                 combined_prompt = ""
+                # 添加文件内容
+                if files_content:
+                    combined_prompt += files_content
                 if node_prompt:
                     # 使用 Jinja2 渲染 prompt
                     template = jinja2.Template(node_prompt)
                     rendered_prompt = template.render(**template_context)
                     combined_prompt += rendered_prompt
 
-                # 添加文件内容
-                if files_content:
-                    combined_prompt += files_content
-
                 # 将组合后的 prompt 追加到技能的 prompt 后面
-                final_skill_prompt = f"{skill_obj.skill_prompt}\n{combined_prompt}"
+                final_message = f"{combined_prompt}\n{message}"
 
                 logger.info(f"智能体节点 {node_id}: 追加了自定义prompt和{len(uploaded_files)}个文件内容")
 
@@ -90,15 +89,15 @@ class AgentNode(BaseNodeExecutor):
                 logger.error(f"智能体节点 {node_id} prompt渲染失败: {str(e)}")
                 # 如果渲染失败，使用原始内容
                 combined_prompt = node_prompt + files_content
-                final_skill_prompt = f"{skill_obj.skill_prompt}\n{combined_prompt}"
+                final_message = f"{combined_prompt}\n{message}"
 
         # 构建LLM调用参数
         llm_params = {
             "llm_model": skill_obj.llm_model_id,
-            "skill_prompt": final_skill_prompt,  # 使用处理后的prompt
+            "skill_prompt": skill_obj.skill_prompt,  # 使用处理后的prompt
             "temperature": skill_obj.temperature,
-            "chat_history": [{"event": "user", "message": message}],
-            "user_message": message,
+            "chat_history": [{"event": "user", "message": final_message}],
+            "user_message": final_message,
             "conversation_window_size": skill_obj.conversation_window_size,
             "enable_rag": skill_obj.enable_rag,
             "rag_score_threshold": [{"knowledge_base": int(key), "score": float(value)} for key, value in skill_obj.rag_score_threshold_map.items()],
