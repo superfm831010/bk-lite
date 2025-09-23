@@ -52,7 +52,7 @@ class MonitorAlertVieSet(
             return []
 
         # 一次性获取所有策略及其关联组织，减少SQL查询
-        all_policies = MonitorPolicy.objects.select_related('collect_type').prefetch_related(
+        all_policies = MonitorPolicy.objects.select_related('monitor_object').prefetch_related(
             'policyorganization_set'
         ).all()
 
