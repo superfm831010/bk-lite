@@ -3,23 +3,21 @@
     {
       "title": "镜像管理",
       "icon": "Gc_103_face-Data",
-      "url": "/lab/manage",
-      "name": "Datasets",
-      "children": [
-        {
-          "title": "镜像仓库",
-          "icon": "Gc_103_face-Data",
-          "url": "/lab/manage/mirror",
-          "name": "anomaly_detection_datasets"
-        }
-      ]
+      "url": "/lab/mirror",
+      "name": "anomaly_detection_datasets"
+    },
+    {
+      "title": "环境管理",
+      "icon": "Gc_103_face-Data",
+      "url": "/lab/env",
+      "name": "train_tasks"
     }
   ],
   "en": [
     {
       "title": "DataSet",
       "icon": "Gc_103_face-Data",
-      "url": "/mlops/manage",
+      "url": "/lab/",
       "name": "Datasets",
       "children": [
         {

@@ -15,7 +15,7 @@ import {
 } from "antd";
 import { PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import OperateModal from "@/components/operate-modal";
-import useLabManage from "@/app/lab/api/manage";
+import useLabManage from "@/app/lab/api/mirror";
 import { useTranslation } from "@/utils/i18n";
 
 const { TextArea } = Input;

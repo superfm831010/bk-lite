@@ -3,7 +3,7 @@ import { Segmented, Menu, Button } from 'antd';
 import stlyes from '@/app/lab/styles/index.module.scss';
 import { useState, useEffect, useRef } from 'react';
 import EntityList from '@/components/entity-list';
-import useLabManage from '@/app/lab/api/manage';
+import useLabManage from '@/app/lab/api/mirror';
 import LabImageModal from './labImageModal';
 import { ModalRef } from '@/app/lab/types';
 import { useTranslation } from '@/utils/i18n';
