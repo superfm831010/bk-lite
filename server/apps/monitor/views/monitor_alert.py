@@ -11,7 +11,7 @@ from rest_framework.viewsets import GenericViewSet
 from apps.core.utils.permission_utils import get_permission_rules, permission_filter, get_permissions_rules, \
     check_instance_permission
 from apps.core.utils.web_utils import WebUtils
-from apps.monitor.constants import DEFAULT_PERMISSION, POLICY_MODULE
+from apps.monitor.constants import POLICY_MODULE
 from apps.monitor.models import MonitorAlert, MonitorEvent, MonitorPolicy, MonitorEventRawData
 from apps.monitor.models.monitor_policy import MonitorAlertMetricSnapshot
 from apps.monitor.filters.monitor_alert import MonitorAlertFilter

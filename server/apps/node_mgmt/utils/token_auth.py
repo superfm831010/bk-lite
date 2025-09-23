@@ -15,7 +15,7 @@ from apps.core.logger import node_logger as logger
 def get_client_token(request):
     try:
         # token格式"Basic BASE64(YWRtaW46YWR:token)"
-        base64_token = request.request.META.get(AUTH_TOKEN_HEADER_NAME).split("Basic ")[-1]
+        base64_token = request.META.get(AUTH_TOKEN_HEADER_NAME).split("Basic ")[-1]
         token = base64.b64decode(base64_token).decode('utf-8')
         token = token.split(':', 1)[0]
         return token

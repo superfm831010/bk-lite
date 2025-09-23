@@ -10,10 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
 from apps.lab.models import LabImage
-from apps.lab.serializers import (
-    LabImageSerializer,
-    LabImageListSerializer,
-)
+from apps.lab.serializers import LabImageSerializer
 
 
 class LabImageViewSet(viewsets.ModelViewSet):
@@ -31,12 +28,6 @@ class LabImageViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'version', 'description', 'image']
     ordering_fields = ['created_at', 'updated_at', 'name']
     ordering = ['-created_at']
-    
-    def get_serializer_class(self):
-        """根据动作选择不同的序列化器"""
-        if self.action == 'list':
-            return LabImageListSerializer
-        return LabImageSerializer
         
     def perform_create(self, serializer):
         """创建时设置创建者"""
@@ -55,14 +46,14 @@ class LabImageViewSet(viewsets.ModelViewSet):
     def ide_images(self, request):
         """获取 IDE 镜像列表"""
         ide_images = self.queryset.filter(image_type='ide')
-        serializer = LabImageListSerializer(ide_images, many=True)
+        serializer = LabImageSerializer(ide_images, many=True)
         return Response(serializer.data)
         
     @action(detail=False, methods=['get'])
     def infra_images(self, request):
         """获取基础设施镜像列表"""
         infra_images = self.queryset.filter(image_type='infra')
-        serializer = LabImageListSerializer(infra_images, many=True)
+        serializer = LabImageSerializer(infra_images, many=True)
         return Response(serializer.data)
         
     @action(detail=True, methods=['get'])

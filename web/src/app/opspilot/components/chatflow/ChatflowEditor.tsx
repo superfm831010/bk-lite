@@ -25,27 +25,26 @@ import Icon from '@/components/icon';
 import NodeConfigDrawer from './NodeConfigDrawer';
 import styles from './ChatflowEditor.module.scss';
 
-// 节点类型定义 - 使用索引签名使其兼容 ReactFlow 的 Node 类型
 interface ChatflowNodeData {
   label: string;
   type: 'celery' | 'restful' | 'openai' | 'agents' | 'condition' | 'http';
   config?: any;
   description?: string;
-  [key: string]: unknown; // 添加索引签名以兼容 Record<string, unknown>
+  [key: string]: unknown;
 }
 
-// 类型守卫函数，用于检查节点是否为 ChatflowNode
+// Type guard to check if a node is a valid ChatflowNode
 const isChatflowNode = (node: Node): node is ChatflowNode => {
   return node.data && 
          typeof (node.data as any).label === 'string' && 
          typeof (node.data as any).type === 'string';
 }
 
-// 扩展Node类型以包含具体的data类型
 interface ChatflowNode extends Node {
   data: ChatflowNodeData;
 }
 
+// Node configuration mapping for icons and colors
 const nodeConfig = {
   celery: { icon: 'a-icon-dingshichufa1x', color: 'green' },
   restful: { icon: 'RESTfulAPI', color: 'purple' },
@@ -55,7 +54,7 @@ const nodeConfig = {
   http: { icon: 'HTTP', color: 'cyan' },
 };
 
-// 通用节点组件
+// Base node component with configurable input/output handles
 const BaseNode = ({ 
   data, 
   id, 
@@ -79,6 +78,7 @@ const BaseNode = ({
 }) => {
   const { t } = useTranslation();
   
+  // Tailwind classes for handle colors
   const handleColorClasses = {
     green: '!bg-green-500',
     purple: '!bg-purple-500',
@@ -88,13 +88,12 @@ const BaseNode = ({
     cyan: '!bg-cyan-500',
   };
 
-  // 点击节点处理函数
   const handleNodeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onConfig(id);
   };
 
-  // 格式化配置信息显示
+  // Format node configuration information for display
   const formatConfigInfo = () => {
     const config = data.config;
     
@@ -130,7 +129,6 @@ const BaseNode = ({
 
       case 'agents':
         if (config.agent) {
-          // 优先使用保存的智能体名称，如果没有则显示ID
           const agentDisplayName = config.agentName || config.agent;
           return t('chatflow.selectedAgent') + `: ${agentDisplayName}`;
         }
@@ -156,6 +154,7 @@ const BaseNode = ({
       className={`${styles.nodeContainer} ${selected ? styles.selected : ''} group relative cursor-pointer`}
       onClick={handleNodeClick}
     >
+      {/* Input handle - appears on the left side */}
       {hasInput && (
         <Handle 
           type="target" 
@@ -180,6 +179,7 @@ const BaseNode = ({
         )}
       </div>
       
+      {/* Single output handle - appears on the right side */}
       {hasOutput && !hasMultipleOutputs && (
         <Handle 
           type="source" 
@@ -188,9 +188,9 @@ const BaseNode = ({
         />
       )}
       
+      {/* Multiple output handles - for condition nodes (true/false branches) */}
       {hasMultipleOutputs && (
         <>
-          {/* True 输出点 - 右侧上方，绿色 */}
           <Handle 
             type="source" 
             position={Position.Right} 
@@ -198,7 +198,6 @@ const BaseNode = ({
             id="true"
             style={{ top: '30%' }}
           />
-          {/* False 输出点 - 右侧下方，红色 */}
           <Handle 
             type="source" 
             position={Position.Right} 
@@ -212,7 +211,7 @@ const BaseNode = ({
   );
 };
 
-// 具体节点组件
+// Specific node type components
 const TimeTriggerNode = (props: any) => (
   <BaseNode {...props} icon={nodeConfig.celery.icon} color={nodeConfig.celery.color} hasOutput={true} />
 );
@@ -261,9 +260,8 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
   const [isConfigDrawerVisible, setIsConfigDrawerVisible] = useState(false);
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
   const [selectedEdges, setSelectedEdges] = useState<Edge[]>([]);
-  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 0.8 });
+  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 0.6 });
 
-  // 使用外部传入的 initialData 或默认数据
   const [nodes, setNodes, onNodesChange] = useNodesState(
     initialData?.nodes && Array.isArray(initialData.nodes) ? initialData.nodes : []
   );
@@ -271,32 +269,30 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
     initialData?.edges && Array.isArray(initialData.edges) ? initialData.edges : []
   );
 
-  // 当 nodes 或 edges 发生变化时，自动调用 onSave 同步数据
+  // Auto-save functionality: save changes automatically when nodes or edges change
   const [isInitialized, setIsInitialized] = useState(false);
   const lastSaveData = useRef<string>('');
   
   useEffect(() => {
-    // 首次加载时标记为已初始化，但不触发保存
+    // Skip auto-save on initial load
     if (!isInitialized) {
       setIsInitialized(true);
       return;
     }
     
-    // 只有在有实际数据变化时才调用 onSave
     if (isInitialized && onSave) {
-      // 使用数据指纹避免重复保存相同数据
       const currentData = JSON.stringify({ 
         nodes: nodes.map(n => ({ id: n.id, type: n.type, position: n.position, data: n.data })), 
         edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target }))
       });
       
-      // 无论数据是否为空都可以保存（包括清空操作）
+      // Only save if data has actually changed
       if (currentData !== lastSaveData.current) {
         lastSaveData.current = currentData;
         
-        // 立即保存数据变化
+        // Debounce save operation to avoid excessive saves
         const timeoutId = setTimeout(() => {
-          console.log('ChatflowEditor: 保存数据变化', { 
+          console.log('ChatflowEditor: Saving data changes', { 
             nodes: nodes.length, 
             edges: edges.length,
             actualNodes: nodes,
@@ -310,7 +306,6 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
     }
   }, [nodes, edges, onSave, isInitialized]);
 
-  // 清空画布的方法
   const clearCanvas = useCallback(() => {
     setNodes([]);
     setEdges([]);
@@ -321,12 +316,10 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
     lastSaveData.current = JSON.stringify({ nodes: [], edges: [] });
   }, [setNodes, setEdges]);
 
-  // 暴露清空方法给外部组件
   useImperativeHandle(ref, () => ({
     clearCanvas
   }), [clearCanvas]);
 
-  // 节点删除处理 - 提前声明
   const handleDeleteNode = useCallback((nodeId: string) => {
     Modal.confirm({
       title: t('chatflow.messages.deleteConfirm'),
@@ -339,18 +332,17 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
     });
   }, [setNodes, setEdges, t]);
 
-  // 节点配置处理 - 提前声明
   const handleConfigNode = useCallback((nodeId: string) => {
     const node = nodes.find(n => n.id === nodeId);
     if (node && isChatflowNode(node)) {
       setSelectedNode(node);
       setIsConfigDrawerVisible(true);
     } else {
-      console.log('未找到节点或节点类型不匹配:', nodeId); // 添加调试日志
+      console.log('Node not found or type mismatch:', nodeId);
     }
   }, [nodes]);
 
-  // 自定义节点类型
+  // Create node type mapping with wrapped components that include event handlers
   const nodeTypes: NodeTypes = useMemo(() => {
     const createNodeComponent = (Component: React.ComponentType<any>) => {
       const NodeComponentWithProps = (props: any) => (
@@ -374,48 +366,39 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
     };
   }, [handleDeleteNode, handleConfigNode]);
 
-  // ReactFlow 实例初始化
   const onInit = useCallback((instance: any) => {
     setReactFlowInstance(instance);
-    // 初始化时设置视窗状态
     const currentViewport = instance.getViewport();
     setViewport(currentViewport);
   }, []);
 
-  // 视窗变化处理
   const onMove = useCallback((event: any, newViewport: any) => {
     setViewport(newViewport);
   }, []);
 
-  // 处理连接
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
-  // 处理节点和连线选择变化
   const onSelectionChange = useCallback((params: { nodes: Node[]; edges: Edge[] }) => {
     setSelectedNodes(params.nodes);
     setSelectedEdges(params.edges);
   }, []);
 
-  // 键盘事件处理
+  // Handle Delete/Backspace key press for removing selected nodes and edges
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    // 检查是否按下了Delete键或Backspace键
     if ((event.key === 'Delete' || event.key === 'Backspace') && (selectedNodes.length > 0 || selectedEdges.length > 0)) {
-      // 阻止默认行为（避免浏览器返回上一页）
       event.preventDefault();
       
-      // 处理节点和连线删除
       const hasNodes = selectedNodes.length > 0;
       const hasEdges = selectedEdges.length > 0;
       
       if (hasNodes) {
-        // 保存当前选中的节点和连线状态，防止状态变化
+        // Save current selection state to prevent changes during confirmation dialog
         const currentSelectedNodes = [...selectedNodes];
         const currentSelectedEdges = [...selectedEdges];
         
-        // 节点删除需要确认对话框
         let title = '';
         let content = '';
         
@@ -435,24 +418,19 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
           cancelText: t('common.cancel'),
           okButtonProps: { danger: true },
           onOk: () => {
-            // 使用保存的状态进行删除，确保删除操作基于确认时的状态
             const selectedNodeIds = currentSelectedNodes.map(node => node.id);
             setNodes((nds) => nds.filter((n) => !selectedNodeIds.includes(n.id)));
-            // 删除与节点相关的连线
             setEdges((eds) => eds.filter((e) => !selectedNodeIds.includes(e.source) && !selectedNodeIds.includes(e.target)));
             
-            // 同时删除选中的连线（如果有）
             if (currentSelectedEdges.length > 0) {
               const selectedEdgeIds = currentSelectedEdges.map(edge => edge.id);
               setEdges((eds) => eds.filter((e) => !selectedEdgeIds.includes(e.id)));
             }
             
-            // 清空选择状态
             setSelectedNodes([]);
             setSelectedEdges([]);
             setIsConfigDrawerVisible(false);
             
-            // 显示删除成功消息
             if (currentSelectedEdges.length > 0) {
               message.success(`${t('chatflow.messages.itemsDeleted')} ${currentSelectedNodes.length} ${t('chatflow.messages.nodes')} ${currentSelectedEdges.length} ${t('chatflow.messages.edges')}`);
             } else {
@@ -460,31 +438,25 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
             }
           },
           onCancel: () => {
-            // 用户取消删除时，不做任何操作
             console.log('User cancelled deletion');
           }
         });
       } else if (hasEdges) {
-        // 只有连线的情况，直接删除不需要确认
         const selectedEdgeIds = selectedEdges.map(edge => edge.id);
         setEdges((eds) => eds.filter((e) => !selectedEdgeIds.includes(e.id)));
         
-        // 清空选择状态
         setSelectedEdges([]);
         
-        // 显示删除成功消息
         message.success(`${t('chatflow.messages.edgesDeleted')} ${selectedEdges.length}`);
       }
     }
   }, [selectedNodes, selectedEdges, setNodes, setEdges, t]);
 
-  // 监听键盘事件
+  // Set up keyboard event listeners for the flow container
   useEffect(() => {
-    // 确保组件聚焦时才监听键盘事件
     const flowContainer = reactFlowWrapper.current;
     if (flowContainer) {
-      // 设置tabIndex使div可以接收键盘事件
-      flowContainer.tabIndex = 0;
+      flowContainer.tabIndex = 0; // Make container focusable
       flowContainer.addEventListener('keydown', handleKeyDown);
       
       return () => {
@@ -493,13 +465,12 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
     }
   }, [handleKeyDown]);
 
-  // 拖拽处理
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // Handle drag and drop operations
+  // Handle drag and drop operations for adding new nodes to the canvas
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
@@ -528,8 +499,8 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
         });
 
         // Node dimensions for positioning adjustment
-        const nodeWidth = 160;
-        const nodeHeight = 80;
+        const nodeWidth = 240;
+        const nodeHeight = 120;
         
         // Adjust position to center node on mouse position
         const adjustedPosition = {
@@ -545,7 +516,7 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
           }
         };
 
-        // Set default input/output parameters for all node types
+        // Set default input/output parameters and node-specific configurations
         const getDefaultConfig = (nodeType: string) => {
           const baseConfig = {
             inputParams: 'last_message',
@@ -629,7 +600,6 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
     [reactFlowInstance, setNodes, edges, onSave, t]
   );
 
-  // 保存配置
   const handleSaveConfig = useCallback((nodeId: string, values: any) => {
     const { name, ...config } = values;
     
@@ -656,12 +626,11 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
         className={styles.flowContainer} 
         ref={reactFlowWrapper}
         onFocus={() => {
-          // 当容器获得焦点时，确保可以接收键盘事件
           if (reactFlowWrapper.current) {
             reactFlowWrapper.current.focus();
           }
         }}
-        style={{ outline: 'none' }} // 移除焦点时的轮廓线
+        style={{ outline: 'none' }}
       >
         <ReactFlowProvider>
           <ReactFlow
@@ -696,7 +665,7 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
               maskColor="rgba(255, 255, 255, 0.8)"
               pannable={true}
               zoomable={true}
-              ariaLabel="流程图缩略图"
+              ariaLabel="Flowchart minimap"
             />
             <Controls />
             <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
@@ -704,11 +673,10 @@ const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onS
         </ReactFlowProvider>
       </div>
 
-      {/* 节点配置侧边栏 */}
       <NodeConfigDrawer
         visible={isConfigDrawerVisible}
         node={selectedNode}
-        nodes={Array.isArray(nodes) ? nodes.filter(isChatflowNode) : []} // 确保传递正确格式的数组
+        nodes={Array.isArray(nodes) ? nodes.filter(isChatflowNode) : []}
         onClose={() => setIsConfigDrawerVisible(false)}
         onSave={handleSaveConfig}
         onDelete={handleDeleteNode}
@@ -721,5 +689,5 @@ ChatflowEditor.displayName = 'ChatflowEditor';
 
 export default ChatflowEditor;
 
-// 导出类型映射函数供其他组件使用
+// Export type definitions for use by other components
 export type { ChatflowNodeData, ChatflowEditorRef };

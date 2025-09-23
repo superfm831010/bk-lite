@@ -184,7 +184,8 @@
   background: var(--color-bg-1);
   border: 2px solid var(--color-border);
   border-radius: 8px;
-  width: 160px;
+  width: 240px;
+  min-height: 120px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   
@@ -218,31 +219,32 @@
     font-weight: 500;
     font-size: 14px;
     color: var(--color-text);
-    white-space: nowrap; // Prevent title wrapping
-    overflow: hidden; // Hide overflow content
-    text-overflow: ellipsis; // Show ellipsis
+    word-wrap: break-word;
+    overflow-wrap: break-word;
     flex: 1; // Take remaining space
+    line-height: 1.4;
   }
 }
 
 .nodeContent {
-  padding: 6px;
+  padding: 12px;
   
   .nodeConfigInfo {
     font-size: 12px;
     color: var(--color-text-3);
-    padding: 6px 8px;
+    padding: 8px 10px;
     background: var(--color-fill-1);
     border-radius: 4px;
-    min-height: 20px;
+    min-height: 32px;
     display: flex;
-    align-items: center;
-    
-    // Critical fix: text truncation styles
-    white-space: nowrap; // Force single line display
-    overflow: hidden; // Hide overflow content
-    text-overflow: ellipsis; // Show ellipsis
-    max-width: 100%; // Ensure not exceeding container width
+    align-items: flex-start;
+    line-height: 1.4;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: initial;
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
     
     &:empty {
       display: none;
@@ -250,17 +252,18 @@
   }
   
   .nodeDescription {
-    margin: 0;
+    margin: 8px 0 0 0;
     font-size: 12px;
     color: var(--color-text-3);
     line-height: 1.4;
     
-    // Add truncation for description text
     display: -webkit-box;
-    -webkit-line-clamp: 2; // Maximum 2 lines display
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 }
 

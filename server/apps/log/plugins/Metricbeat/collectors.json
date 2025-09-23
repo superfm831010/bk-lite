@@ -6,7 +6,7 @@
     "icon": "",
     "node_operating_system": "linux",
     "service_type": "exec",
-    "executable_path": "/opt/fusion-collectors/bin/metricbeat",
+    "executable_path": "/opt/fusion-collectors/bin/metricbeat/metricbeat",
     "execute_parameters": "-c %s",
     "validation_parameters": "",
     "default_template": "",
