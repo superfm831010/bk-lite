@@ -10,7 +10,7 @@ from apps.core.models.time_info import TimeInfo
 class UserAPISecret(TimeInfo):
     username = models.CharField(max_length=255)
     api_secret = models.CharField(max_length=64)
-    team = models.CharField(max_length=100, default="", null=True, blank=True)
+    team = models.IntegerField(default=0)
 
     @staticmethod
     def generate_api_secret():
