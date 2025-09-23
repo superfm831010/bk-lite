@@ -327,8 +327,8 @@ class AlertViewSet(viewsets.ModelViewSet):
             # 查询所有有权限的采集类型的告警（使用优化后的统一方法）
             policy_ids = self._get_all_accessible_policy_ids(request)
 
-            if not policy_ids:
-                return WebUtils.response_success({"count": 0, "items": []})
+        if not policy_ids:
+            return WebUtils.response_success({"count": 0, "items": []})
 
         # 基于policy权限过滤告警
         queryset = self.filter_queryset(self.get_queryset())

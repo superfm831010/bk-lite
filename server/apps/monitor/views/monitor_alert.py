@@ -8,7 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from apps.core.utils.permission_utils import get_permission_rules, permission_filter
+from apps.core.utils.permission_utils import get_permission_rules, permission_filter, get_permissions_rules, \
+    check_instance_permission
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.constants import DEFAULT_PERMISSION, POLICY_MODULE
 from apps.monitor.models import MonitorAlert, MonitorEvent, MonitorPolicy, MonitorEventRawData
@@ -30,20 +31,66 @@ class MonitorAlertVieSet(
     filterset_class = MonitorAlertFilter
     pagination_class = CustomPageNumberPagination
 
+    def _get_all_accessible_policy_ids(self, request):
+        """
+        获取当前用户所有有权限的策略ID
+        """
+        current_team = request.COOKIES.get("current_team")
+
+        # 获取所有采集类型下policy模块的权限规则
+        permissions_result = get_permissions_rules(
+            request.user,
+            current_team,
+            "monitor",
+            POLICY_MODULE,
+        )
+
+        policy_permissions = permissions_result.get("data", {})
+        cur_team = permissions_result.get("team", [])
+
+        if not policy_permissions:
+            return []
+
+        # 一次性获取所有策略及其关联组织，减少SQL查询
+        all_policies = MonitorPolicy.objects.select_related('collect_type').prefetch_related(
+            'policyorganization_set'
+        ).all()
+
+        accessible_policy_ids = []
+
+        # 遍历所有策略，在内存中进行权限检查（使用通用权限检查函数）
+        for policy_obj in all_policies:
+            monitor_object_id = str(policy_obj.monitor_object_id)
+            policy_id = policy_obj.id
+
+            # 获取策略关联的组织
+            teams = {org.organization for org in policy_obj.policyorganization_set.all()}
+
+            # 使用通用权限检查函数
+            if check_instance_permission(monitor_object_id, policy_id, teams, policy_permissions, cur_team):
+                accessible_policy_ids.append(policy_id)
+
+        return accessible_policy_ids
+
     def list(self, request, *args, **kwargs):
         monitor_object_id = request.query_params.get('monitor_object_id', None)
-        if not monitor_object_id:
-            return WebUtils.response_error("monitor_object_id is required")
-        permission = get_permission_rules(
-            request.user,
-            request.COOKIES.get("current_team"),
-            "monitor",
-            f"{POLICY_MODULE}.{monitor_object_id}",
-        )
-        qs = permission_filter(MonitorPolicy, permission, team_key="policyorganization__organization__in", id_key="id__in")
 
-        qs = qs.filter(monitor_object_id=monitor_object_id).distinct()
-        policy_ids = qs.values_list("id", flat=True)
+        if monitor_object_id:
+            permission = get_permission_rules(
+                request.user,
+                request.COOKIES.get("current_team"),
+                "monitor",
+                f"{POLICY_MODULE}.{monitor_object_id}",
+            )
+            qs = permission_filter(MonitorPolicy, permission, team_key="policyorganization__organization__in", id_key="id__in")
+
+            qs = qs.filter(monitor_object_id=monitor_object_id).distinct()
+            policy_ids = qs.values_list("id", flat=True)
+        else:
+            policy_ids = self._get_all_accessible_policy_ids(request)
+
+        if not policy_ids:
+            return WebUtils.response_success(dict(count=0, results=[]))
 
         # 获取经过过滤器处理的数据
         queryset = self.filter_queryset(self.get_queryset())
@@ -79,19 +126,21 @@ class MonitorAlertVieSet(
         # 将策略和实例数据映射到字典中
         policy_dict = {policy.id: policy for policy in policies}
 
-        # 如果有权限规则，则添加到数据中
-        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
+        # # 如果有权限规则，则添加到数据中
+        # inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
 
         # 补充策略和实例到每个 alert 中
+
         for alert in results:
 
-            # 补充权限信息
-            if alert["policy_id"] in inst_permission_map:
-                alert["permission"] = inst_permission_map[alert["policy_id"]]
-            else:
-                alert["permission"] = DEFAULT_PERMISSION
+            # # 补充权限信息
+            # if alert["policy_id"] in inst_permission_map:
+            #     alert["permission"] = inst_permission_map[alert["policy_id"]]
+            # else:
+            #     alert["permission"] = DEFAULT_PERMISSION
 
             # 补充instance_id_values
+
             try:
                 alert["instance_id_values"] = [i for i in ast.literal_eval(alert["monitor_instance_id"])]
             except Exception as e:
