@@ -1,0 +1,42 @@
+{
+  "zh": [
+    {
+      "title": "镜像管理",
+      "icon": "Gc_103_face-Data",
+      "url": "/lab/mirror",
+      "name": "anomaly_detection_datasets"
+    },
+    {
+      "title": "环境管理",
+      "icon": "Gc_103_face-Data",
+      "url": "/lab/env",
+      "name": "train_tasks"
+    }
+  ],
+  "en": [
+    {
+      "title": "DataSet",
+      "icon": "Gc_103_face-Data",
+      "url": "/lab/",
+      "name": "Datasets",
+      "children": [
+        {
+          "title": "AnomalyDetection",
+          "icon": "Gc_103_face-Data",
+          "url": "/mlops/manage/list",
+          "name": "anomaly_detection_datasets"
+        },
+        {
+          "Title": "DatasetDetail",
+          "url": "/mlops/manage/detail",
+          "name": "anomaly_detection_datasets_detail"
+        },
+        {
+          "title": "ModalRelease",
+          "url": "/mlops/manage/annotation",
+          "name": "anomaly_detection_datasets_tag"
+        }
+      ]
+    }
+  ]
+}
