@@ -12,6 +12,7 @@ import {
 import dayjs, { Dayjs } from 'dayjs';
 import {
   Card,
+  Input,
   Button,
   Select,
   Segmented,
@@ -27,7 +28,6 @@ import GrammarExplanation from '@/app/log/components/operate-drawer';
 import SearchTable from './searchTable';
 import FieldList from './fieldList';
 import LogTerminal from './logTerminal';
-import AceSearchInput from './aceEditor';
 import {
   ChartData,
   ModalRef,
@@ -342,11 +342,6 @@ const SearchView: React.FC = () => {
     });
   };
 
-  // 获取时间范围的方法
-  const getTimeRange = () => {
-    return timeSelectorRef.current?.getValue() || [];
-  };
-
   return (
     <div className={`${searchStyle.search} w-full`}>
       <Spin spinning={pageLoading}>
@@ -370,12 +365,10 @@ const SearchView: React.FC = () => {
                 </Option>
               ))}
             </Select>
-            <AceSearchInput
+            <Input
               className="flex-1 mx-[8px]"
               placeholder={t('log.search.searchPlaceHolder')}
               value={searchText}
-              fields={fields}
-              getTimeRange={getTimeRange}
               addonAfter={
                 <BulbFilled
                   className="cursor-pointer px-[10px] py-[8px]"
@@ -383,7 +376,7 @@ const SearchView: React.FC = () => {
                   onClick={() => setVisible(true)}
                 />
               }
-              onChange={setSearchText}
+              onChange={(e) => setSearchText(e.target.value)}
               onPressEnter={handleSearch}
             />
             <Button
