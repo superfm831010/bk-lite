@@ -4,10 +4,12 @@
     "addDir": "Add Directory",
     "addDash": "Add Dashboard",
     "addTopo": "Add Topology",
+    "addArch": "Add Architecture",
     "addGroup": "Add Group",
     "editGroup": "Edit Group",
     "editDash": "Edit Dashboard",
     "editTopo": "Edit Topology",
+    "editArch": "Edit Architecture",
     "editDir": "Edit Directory",
     "deleteConfirm": "Are you sure you want to delete?",
     "inputPlaceholder": "Please enter name",
@@ -238,7 +240,8 @@
         "icon": "Icon",
         "basicShape": "Basic Shape",
         "chart": "Chart",
-        "node": "Node"
+        "node": "Node",
+        "text": "Text"
     },
     "nodeTitles": {
         "single-value": "Single Value Node",
