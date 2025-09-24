@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import Sidebar from '../../components/sidebar';
 import Dashboard, { DashboardRef } from './dashBoard/index';
 import Topology from './topology/index';
+import { TopologyRef } from '@/app/ops-analysis/types/topology';
 import Architecture, { ArchitectureRef } from './architecture/index';
 import { useTranslation } from '@/utils/i18n';
 import { DirectoryType, SidebarRef } from '@/app/ops-analysis/types';
@@ -34,6 +35,7 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
   });
   const dashboardRef = useRef<DashboardRef>(null);
   const architectureRef = useRef<ArchitectureRef>(null);
+  const topologyRef = useRef<TopologyRef>(null);
   const sidebarRef = useRef<SidebarRef>(null);
   const previousSelectionRef = useRef<{
     type: DirectoryType;
@@ -65,10 +67,12 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
     if (selectedType === 'dashboard' && dashboardRef.current) {
       return dashboardRef.current.hasUnsavedChanges();
     }
+    if (selectedType === 'topology' && topologyRef.current) {
+      return topologyRef.current.hasUnsavedChanges();
+    }
     if (selectedType === 'architecture' && architectureRef.current) {
       return architectureRef.current.hasUnsavedChanges();
     }
-    // 拓扑图暂时没有未保存状态检查
     return false;
   };
 
@@ -181,7 +185,10 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
               selectedArchitecture={selectedItem.architecture}
             />
           ) : selectedType === 'topology' ? (
-            <Topology />
+            <Topology
+              ref={topologyRef}
+              selectedTopology={selectedItem.topology}
+            />
           ) : selectedType === 'dashboard' ? (
             <Dashboard
               ref={dashboardRef}
