@@ -7,6 +7,7 @@ import EntityList from '@/components/entity-list';
 import { ModalRef } from '@/app/lab/types';
 import { useTranslation } from '@/utils/i18n';
 import useLabEnv from '@/app/lab/api/env';
+import LabEnvModal from './labEnvModal';
 
 const EnvManage = () => {
   const { t } = useTranslation();
@@ -198,6 +199,7 @@ const EnvManage = () => {
           />
         </div>
       </div>
+      <LabEnvModal ref={modalRef} onSuccess={fetchEnvs} />
     </>
   )
 };
