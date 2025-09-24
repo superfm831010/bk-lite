@@ -142,4 +142,8 @@ def bootstrap() -> Sanic:
         logger.info("download PaddleOCR")
         PPOcr()
 
+        logger.info('download tiktoken')
+        import tiktoken
+        encoding = tiktoken.get_encoding("cl100k_base")
+        encoding.encode('Metis')
     return app
