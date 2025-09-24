@@ -3,6 +3,7 @@ import useMlopsTaskApi from "@/app/mlops/api/task";
 import { Button, Spin } from "antd";
 import { LeftOutlined } from "@ant-design/icons";
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useTranslation } from "@/utils/i18n";
 
 interface TrainTaskDetailProps {
   metricData: any,
@@ -17,12 +18,13 @@ interface LazyChartProps {
 }
 
 const LazyChart: React.FC<LazyChartProps> = ({ metricName, runId, getMetricsDetail }) => {
-  const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
   const chartRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const enterTimeRef = useRef<number | null>(null);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Intersection Observer 实现懒加载
   useEffect(() => {
@@ -32,7 +34,7 @@ const LazyChart: React.FC<LazyChartProps> = ({ metricName, runId, getMetricsDeta
           if (entry.isIntersecting) {
             // 记录进入视口的时间
             enterTimeRef.current = Date.now();
-            
+
             // 如果正在加载中，不重复发起请求
             if (loadingRef.current) {
               return;
@@ -48,7 +50,7 @@ const LazyChart: React.FC<LazyChartProps> = ({ metricName, runId, getMetricsDeta
               // 检查是否仍在视口内，且停留时间足够
               const now = Date.now();
               const stayTime = enterTimeRef.current ? now - enterTimeRef.current : 0;
-              
+
               // 只有停留时间超过600ms才加载数据
               if (stayTime >= 600) {
                 loadChartData();
@@ -120,7 +122,7 @@ const LazyChart: React.FC<LazyChartProps> = ({ metricName, runId, getMetricsDeta
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-50">
             <span className="text-sm text-gray-400 text-center px-4">
-              暂无数据
+              {t(`common.noData`)}
             </span>
           </div>
         )}

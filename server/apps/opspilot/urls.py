@@ -99,5 +99,15 @@ urlpatterns += [
         views.get_token_consumption_overview,
         name="get_token_consumption_overview",
     ),
+    path(
+        r"bot_mgmt/execute_chat_flow/",
+        views.execute_chat_flow,
+        name="execute_chat_flow",
+    ),
+    path(
+        r"test/",
+        views.test,
+        name="test",
+    ),
     # path(r"api/bot/automation_skill_execute", AutomationSkillExecuteView.as_view(), name="automation_skill_execute"),
 ]

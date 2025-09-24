@@ -249,6 +249,8 @@ const TestingPage: React.FC = () => {
     }
 
     if (activeTab === 'docs') {
+      const shouldShowScore = configData.ragRecallMode === 'chunk';
+      
       return results.docs.length > 0 ? (
         results.docs.map((result, index) => (
           <KnowledgeResultItem
@@ -256,6 +258,7 @@ const TestingPage: React.FC = () => {
             result={result}
             index={index}
             onClick={handleContentClick}
+            showScore={shouldShowScore}
           />
         ))
       ) : (

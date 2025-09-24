@@ -1,3 +1,5 @@
+import uuid
+
 from celery import shared_task
 
 from apps.core.exceptions.base_app_exception import BaseAppException
@@ -7,7 +9,7 @@ from apps.node_mgmt.models import ControllerTask, CollectorTask, PackageVersion,
     Collector, SidecarEnv
 from apps.node_mgmt.utils.installer import exec_command_to_remote, download_to_local, \
     exec_command_to_local, get_install_command, get_uninstall_command, unzip_file, transfer_file_to_remote
-from apps.node_mgmt.utils.token_auth import generate_token
+from apps.node_mgmt.utils.token_auth import generate_node_token
 from config.components.nats import NATS_NAMESPACE
 
 
@@ -32,7 +34,6 @@ def install_controller(task_id):
     controller_install_dir, controller_storage_dir = dir_map["install_dir"], dir_map["storage_dir"]
 
     # 获取安装命令所需参数
-    sidecar_token = generate_token({"username": "admin"})
     obj = SidecarEnv.objects.filter(cloud_region=task_obj.cloud_region_id, key=NODE_SERVER_URL_KEY).first()
     server_url = obj.value if obj else "null"
 
@@ -82,8 +83,15 @@ def install_controller(task_id):
 
             action = "run"
             groups = ",".join([str(i) for i in node_obj.organizations])
+
+            # token生成
+            node_id = uuid.uuid4().hex
+            ip = node_obj.ip
+            user = task_obj.created_by
+            sidecar_token = generate_node_token(node_id, ip, user)
+
             install_command = get_install_command(
-                package_obj.os, package_obj.name, task_obj.cloud_region_id,sidecar_token, server_url, groups, node_obj.node_name)
+                package_obj.os, package_obj.name, task_obj.cloud_region_id, sidecar_token, server_url, groups, node_obj.node_name, node_id)
             exec_command_to_remote(task_obj.work_node, node_obj.ip, node_obj.username, node_obj.password, install_command, node_obj.port)
             node_obj.status = "success"
         except Exception as e:

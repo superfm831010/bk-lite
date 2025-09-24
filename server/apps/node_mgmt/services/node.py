@@ -7,6 +7,8 @@ from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguratio
 from apps.node_mgmt.serializers.node import NodeSerializer
 from datetime import datetime, timedelta
 
+from apps.system_mgmt.models import User
+
 
 class NodeService:
     @staticmethod
@@ -115,9 +117,12 @@ class NodeService:
         """获取节点列表"""
 
         if permission_data:
+
+            user_obj = User(username=permission_data["username"], domain=permission_data["domain"])
+
             from apps.core.utils.permission_utils import permission_filter
             permission = get_permission_rules(
-                permission_data["user"],
+                user_obj,
                 permission_data["current_team"],
                 "node_mgmt",
                 NODE_MODULE,

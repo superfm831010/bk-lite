@@ -380,7 +380,7 @@ class BasicNode:
         user_message = request.user_message
 
         # 如果启用问题改写功能
-        if config["configurable"].get('enable_query_rewrite', False) and request.chat_history:
+        if config["configurable"]["graph_request"].enable_query_rewrite:
             try:
                 rewritten_message = self._rewrite_query(request, config)
                 if rewritten_message and rewritten_message.strip():

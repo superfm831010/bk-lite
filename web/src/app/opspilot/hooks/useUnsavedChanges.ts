@@ -57,23 +57,23 @@ export const useUnsavedChanges = ({
         Modal.confirm({
           title: t('chatflow.unsavedChanges'),
           content: defaultMessage,
-          okText: onSave ? t('chatflow.saveAndLeave') : t('common.leave'),
-          cancelText: t('common.cancel'),
+          okText: onSave ? t('chatflow.saveAndLeave') : t('common.cancel'),
+          cancelText: t('chatflow.leaveWithoutSaving'),
           centered: true,
           onOk: async () => {
             try {
               if (onSave) {
                 await onSave();
               }
-              isNavigatingRef.current = true;
-              originalMethod.apply(router, args);
             } catch (error) {
               console.error('Save failed:', error);
               isNavigatingRef.current = false;
             }
           },
           onCancel: () => {
-            // User chose to stay on page
+            // User chose to leave without saving
+            isNavigatingRef.current = true;
+            originalMethod.apply(router, args);
           }
         });
         return;
