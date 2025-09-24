@@ -25,12 +25,16 @@ const useLabManage = () => {
 
   // 获取IDE镜像列表
   const getIdeImages = async () => {
-    return await get(`/lab/images/ide_images/`);
+    const response = await get(`/lab/images/`);
+    // 确保返回的数据格式与预期一致
+    return response.filter((image: any) => image.image_type === 'ide')
   };
 
   // 获取基础设施镜像列表
   const getInfraImages = async () => {
-    return await get(`/lab/images/infra_images/`);
+    const response = await get(`/lab/images/`);
+    // 确保返回的数据格式与预期一致
+    return response.filter((image: any) => image.image_type === 'infra');
   };
 
   // 获取镜像实例列表
