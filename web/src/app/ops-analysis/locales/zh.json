@@ -4,10 +4,12 @@
     "addDir": "新增目录",
     "addDash": "添加仪表盘",
     "addTopo": "添加拓扑图",
+    "addArch": "添加架构图",
     "addGroup": "添加分组",
     "editGroup": "编辑分组",
     "editDash": "编辑仪表盘",
     "editTopo": "编辑拓扑图",
+    "editArch": "编辑架构图",
     "editDir": "编辑目录",
     "edit": "编辑",
     "deleteConfirm": "确认删除?",
@@ -239,7 +241,8 @@
         "icon": "图标",
         "basicShape": "基础图形",
         "chart": "图表",
-        "node": "节点"
+        "node": "节点",
+        "text": "文本"
     },
     "nodeTitles": {
         "single-value": "单值节点",
