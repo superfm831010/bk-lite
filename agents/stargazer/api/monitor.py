@@ -141,8 +141,7 @@ async def vmware_metrics(request):
                 EndTime=end_time_str,
                 Period=300,
                 Metrics=[],
-                context={"resources": [{"bk_obj_id": object_id}]},
-                utc=True,
+                context={"resources": [{"bk_obj_id": object_id}]}
             )
 
             if not data["result"]:
@@ -223,8 +222,7 @@ async def qcloud_metrics(request):
                 EndTime=end_time_str,
                 Period=300,
                 Metrics=[],
-                context={"resources": [{"bk_obj_id": object_id}]},
-                utc=True,
+                context={"resources": [{"bk_obj_id": object_id}]}
             )
 
             if not data["result"]:
