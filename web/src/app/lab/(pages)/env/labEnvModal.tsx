@@ -89,11 +89,13 @@ const LabEnvModal = forwardRef<ModalRef, LabEnvProps>(({ onSuccess }, ref) => {
       if (data) {
         // 编辑模式，填充表单数据
         form.setFieldsValue({
-          ...data
+          ...data,
+          infra_instances: data.infra_instances || []
         });
       } else {
         // 新建模式，重置表单
         form.resetFields();
+        setCurEnvInstances([]);
         form.setFieldsValue({
           cpu: 2,
           memory: '4Gi',
@@ -161,11 +163,12 @@ const LabEnvModal = forwardRef<ModalRef, LabEnvProps>(({ onSuccess }, ref) => {
         name: values.name,
         description: values.description,
         ide_image: values.ide_image,
-        infra_instances: curEnvInstances,
+        infra_instances: curEnvInstances || [],
         cpu: values.cpu,
         memory: values.memory,
         gpu: values.gpu,
-        volume_size: values.volume_size
+        volume_size: values.volume_size,
+        endpoint: values.endpoint
       };
 
       console.log('提交环境数据:', formData);
@@ -219,16 +222,36 @@ const LabEnvModal = forwardRef<ModalRef, LabEnvProps>(({ onSuccess }, ref) => {
     return Promise.resolve();
   };
 
-  // 处理基础设施实例创建成功
-  const handleInfraInstanceSuccess = async (instance: any) => {
+  // 处理基础设施实例操作成功（创建或更新）
+  const handleInfraInstanceSuccess = async (instance: any, operation: 'create' | 'update' = 'create') => {
     try {
-      // 只刷新基础设施实例数据，不影响其他已加载的数据
+      // 刷新基础设施实例数据
       const infraInstancesResponse = await getInstanceList();
       setInfraInstances(infraInstancesResponse || []);
-      setCurEnvInstances((prev) => Array.from(new Set([...prev, instance.id ])));
-      console.log('刷新基础设施实例:', infraInstancesResponse);
+      
+      if (operation === 'create') {
+        // 创建操作：添加新实例到当前选择列表
+        const newInstances = Array.from(new Set([...curEnvInstances, instance.id]));
+        setCurEnvInstances(newInstances);
+        
+        // 同步更新表单值
+        form.setFieldsValue({ infra_instances: newInstances });
+        
+        console.log('创建实例成功，已添加到选择列表:', instance);
+        // message.success(`实例 "${instance.name || instance.id}" 已创建并添加到环境中`);
+      } else {
+        // 更新操作：仅刷新数据，保持当前选择状态
+        console.log('更新实例成功，已刷新实例信息:', instance);
+        // message.success(`实例 "${instance.name || instance.id}" 更新成功`);
+      }
+      
+      // 强制重新渲染已选择的实例卡片以显示最新信息
+      setCurEnvInstances(prev => [...prev]);
+      
     } catch (error) {
-      console.error('刷新基础设施实例失败:', error);
+      const action = operation === 'create' ? '创建' : '更新';
+      console.error(`处理${action}实例失败:`, error);
+      message.error(`处理${action}实例失败`);
     }
   };
 
@@ -281,45 +304,79 @@ const LabEnvModal = forwardRef<ModalRef, LabEnvProps>(({ onSuccess }, ref) => {
     }
   };
 
-  const renderInstance = () => {
-    if (!curEnvInstances.length) return;
+  const renderSelectedInstances = () => {
+    if (!curEnvInstances || curEnvInstances.length === 0) return null;
 
     return curEnvInstances.map(id => {
       const instance = infraInstances.find(item => item.id === id);
-      const image = imagesList.find(image => image.id === instance?.image)
-      if (!instance || !image) return;
+      const image = imagesList.find(img => img.id === instance?.image);
+      
+      if (!instance) {
+        return (
+          <div key={id} className="p-2 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+            实例不存在 (ID: {id})
+          </div>
+        );
+      }
 
       const statusStyle = getStatusStyle(instance.status);
       return (
         <div
           key={instance.id}
-          className="w-[220px] h-[100px] p-3 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-pointer"
-          onClick={() => handleEditInstance(instance.id)}
+          className="relative w-full p-3 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-all duration-200"
         >
-          <div className="flex items-center gap-3 mb-2">
-            <span className="font-semibold text-sm text-gray-800 truncate flex-1">
+          {/* 移除按钮 */}
+          <button
+            className="absolute top-1 right-1 w-6 h-6 flex items-center justify-center text-gray-400  rounded-full transition-colors"
+            onClick={() => {
+              const newInstances = curEnvInstances.filter(instanceId => instanceId !== id);
+              setCurEnvInstances(newInstances);
+              form.setFieldsValue({ infra_instances: newInstances });
+            }}
+          >
+            ×
+          </button>
+
+          {/* 实例信息 */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-semibold text-sm text-gray-800 truncate flex-1 pr-6">
               {instance.name}
             </span>
+            
+          </div>
+
+          {image && (
+            <div className="text-xs text-gray-500 mb-2">
+              <span className="font-medium">镜像:</span> {image.name}:{image.version}
+            </div>
+          )}
+
+          {/* 资源信息 */}
+          {/* {(instance.cpu_limit || instance.memory_limit) && (
+            <div className="text-xs text-gray-500">
+              {instance.cpu_limit && <span>CPU: {instance.cpu_limit}</span>}
+              {instance.cpu_limit && instance.memory_limit && <span className="mx-1">|</span>}
+              {instance.memory_limit && <span>内存: {instance.memory_limit}</span>}
+            </div>
+          )} */}
+
+          {/* 编辑按钮 */}
+          <div className="flex justify-between mt-2">
             <span className={`px-2 py-0.5 rounded text-xs font-medium border ${getStatusClasses(instance.status)}`}>
               {statusStyle.text}
             </span>
-          </div>
-
-          <div className="flex items-center text-xs text-gray-500">
-            <span className="truncate">
-              <span className="font-medium">镜像:</span> {image.name}({image.version})
-            </span>
-          </div>
-
-          {/* 点击提示 */}
-          <div className="flex items-center justify-end mt-1">
-            <span className="text-xs text-gray-400 hover:text-blue-500 transition-colors">
-              点击编辑
-            </span>
+            <Button
+              type="link"
+              size="small"
+              onClick={() => handleEditInstance(instance.id)}
+              className="text-blue-600 hover:text-blue-700 p-0 h-auto"
+            >
+              编辑配置
+            </Button>
           </div>
         </div>
       );
-    })
+    });
   };
 
   return (
@@ -327,10 +384,6 @@ const LabEnvModal = forwardRef<ModalRef, LabEnvProps>(({ onSuccess }, ref) => {
       title={editData ? t(`lab.manage.editEnvironment`) : t(`lab.manage.addEnvironment`)}
       open={open}
       onCancel={handleCancel}
-      // width={800}
-      style={{
-        top: 50
-      }}
       footer={[
         <Button key="cancel" onClick={handleCancel}>
           {t(`common.cancel`)}
@@ -496,6 +549,16 @@ const LabEnvModal = forwardRef<ModalRef, LabEnvProps>(({ onSuccess }, ref) => {
           </Col>
         </Row>
 
+        <Form.Item
+          name="endpoint"
+          label={t('lab.manage.endpoint')}
+          rules={[
+            { max: 200, message: t('lab.manage.endpointMaxLength') }
+          ]}
+        >
+          <Input placeholder={t('lab.manage.enterEndpoint')} />
+        </Form.Item>
+
         <Divider orientation="left" orientationMargin={0}>{t(`lab.manage.infraConfig`)}</Divider>
 
         <Form.Item
@@ -508,21 +571,21 @@ const LabEnvModal = forwardRef<ModalRef, LabEnvProps>(({ onSuccess }, ref) => {
             </span>
           }
         >
-          <div style={{ marginBottom: 12 }}>
+          <div>
             <Button
               type="dashed"
               icon={<PlusOutlined />}
               onClick={handleCreateInfraInstance}
-              style={{ width: '100%' }}
+              style={{ width: '100%', marginBottom: 16 }}
             >
               创建基础设施实例
             </Button>
-          </div>
-
-          <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-            {editData?.infra_instances_info && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {renderInstance()}
+            {/* 展示当前环境拥有的实例卡片 */}
+            {curEnvInstances && curEnvInstances.length > 0 && (
+              <div>
+                <div className='flex flex-wrap gap-2'>
+                  {renderSelectedInstances()}
+                </div>
               </div>
             )}
           </div>
@@ -533,7 +596,7 @@ const LabEnvModal = forwardRef<ModalRef, LabEnvProps>(({ onSuccess }, ref) => {
       <InfraInstanceModal
         imagesList={imagesList}
         ref={infraInstanceModalRef}
-        onSuccess={handleInfraInstanceSuccess}
+        onSuccess={(instance, operation) => handleInfraInstanceSuccess(instance, operation)}
       />
     </OperateModal>
   );

@@ -12,11 +12,12 @@ import LabEnvModal from './labEnvModal';
 const EnvManage = () => {
   const { t } = useTranslation();
   const modalRef = useRef<ModalRef>(null);
-  const { 
-    getEnvList, 
-    deleteEnv, 
-    startEnv, 
-    stopEnv 
+  const {
+    getEnvList,
+    deleteEnv,
+    startEnv,
+    stopEnv,
+    restartEnv
   } = useLabEnv();
 
   const [tableData, setTableData] = useState<any[]>([]);
@@ -63,6 +64,21 @@ const EnvManage = () => {
     }
   };
 
+  // 重启环境
+  const handleRestart = async (id: string | number) => {
+    setLoading(true);
+    try {
+      await restartEnv(id);
+      message.success('环境重启成功');
+      fetchEnvs();
+    } catch (e) {
+      console.log(e);
+      message.error('重启环境失败')
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 停止环境
   const handleStop = async (id: string | number, e: React.MouseEvent) => {
     e.stopPropagation(); // 阻止卡片点击事件
@@ -92,6 +108,16 @@ const EnvManage = () => {
           </Button>
           {/* </PermissionWrapper> */}
         </Menu.Item>
+        <Menu.Item
+          className="!p-0"
+          onClick={() => handleRestart(item.id)}
+        >
+          {/* <PermissionWrapper requiredPermissions={['Edit']} className="!block" > */}
+          <Button type="text" className="w-full">
+            {t(`lab.manage.restart`)}
+          </Button>
+          {/* </PermissionWrapper> */}
+        </Menu.Item>
         {item?.name !== "default" && (
           <Menu.Item className="!p-0" onClick={() => handleDel(item.id)}>
             {/* <PermissionWrapper requiredPermissions={['Delete']} className="!block" > */}
@@ -110,16 +136,17 @@ const EnvManage = () => {
     const isRunning = item.state === 'running';
     const isStarting = item.state === 'starting';
     const isStopping = item.state === 'stopping';
-    
+
     return (
       <div className="flex justify-between items-center w-full">
         <p className="font-mini text-[var(--color-text-3)] m-0">
           {`creator: ${item.created_by || '--'}`}
         </p>
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           {!isRunning && !isStarting && (
             <Button
-              type="text"
+              // type="link"
+              color="green" variant="link"
               size="small"
               icon={<PlayCircleOutlined />}
               onClick={(e) => handleStart(item.id, e)}
@@ -129,7 +156,7 @@ const EnvManage = () => {
               启动
             </Button>
           )}
-          {(isRunning || isStarting) && (
+          {/* {(isRunning || isStarting) && (
             <Button
               type="text"
               size="small"
@@ -140,7 +167,18 @@ const EnvManage = () => {
             >
               停止
             </Button>
-          )}
+          )} */}
+          <Button
+            // type="link"
+            size="small"
+            color="danger" variant="link"
+            icon={<PauseCircleOutlined />}
+            onClick={(e) => handleStop(item.id, e)}
+            loading={isStopping}
+            className="text-red-600 hover:text-red-700"
+          >
+            停止
+          </Button>
         </div>
       </div>
     );

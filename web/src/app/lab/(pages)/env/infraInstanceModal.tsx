@@ -22,7 +22,7 @@ import type { ModalRef } from '@/app/lab/types';
 const { Option } = Select;
 
 interface InfraInstanceModalProps {
-  onSuccess?: (instance: any) => void;
+  onSuccess?: (instance: any, operation?: 'create' | 'update') => void;
   imagesList: any[]
 }
 
@@ -67,6 +67,11 @@ const InfraInstanceModal = forwardRef<ModalRef, InfraInstanceModalProps>(({ imag
           command_pairs: (data.command || []).map((cmd: string) => ({ command: cmd })),
           args_pairs: (data.args || []).map((arg: string) => ({ arg })),
           port_mapping_pairs: Object.entries(data.port_mappings || {}).map(([container_port, host_port]) => ({ container_port, host_port })),
+          volume_mounts: (data.volume_mounts || []).map((mount: any) => ({
+            host_path: mount.host_path,
+            container_path: mount.container_path,
+            read_only: mount.read_only
+          })),
           persistent_dir_pairs: (data.persistent_dirs || []).map((dir: string) => ({ dir }))
         });
       } else {
@@ -156,6 +161,8 @@ const InfraInstanceModal = forwardRef<ModalRef, InfraInstanceModalProps>(({ imag
       console.log('提交基础设施实例数据:', formData);
 
       let result;
+      const operation = editData ? 'update' : 'create';
+      
       if (editData) {
         // 编辑模式
         result = await updateInstance(editData?.id as string, formData);
@@ -170,7 +177,7 @@ const InfraInstanceModal = forwardRef<ModalRef, InfraInstanceModalProps>(({ imag
       setOpen(false);
       form.resetFields();
       setEditData(null);
-      onSuccess?.(result);
+      onSuccess?.(result, operation);
 
     } catch (error) {
       console.error('操作失败:', error);
@@ -243,7 +250,7 @@ const InfraInstanceModal = forwardRef<ModalRef, InfraInstanceModalProps>(({ imag
           </Col>
         </Row>
 
-        <Divider orientation="left" orientationMargin={0}>资源限制</Divider>
+        {/* <Divider orientation="left" orientationMargin={0}>资源限制</Divider> */}
 
         <Row gutter={16}>
           <Col span={12}>
@@ -277,6 +284,16 @@ const InfraInstanceModal = forwardRef<ModalRef, InfraInstanceModalProps>(({ imag
             </Form.Item>
           </Col>
         </Row>
+
+        <Form.Item
+          name="endpoint"
+          label={t('lab.manage.endpoint')}
+          rules={[
+            { max: 200, message: t('lab.manage.endpointMaxLength') }
+          ]}
+        >
+          <Input placeholder={t('lab.manage.enterEndpoint')} />
+        </Form.Item>
 
         <Divider orientation="left" orientationMargin={0}>运行时配置</Divider>
 
@@ -471,7 +488,6 @@ const InfraInstanceModal = forwardRef<ModalRef, InfraInstanceModalProps>(({ imag
                       <Form.Item
                         {...restField}
                         name={[name, 'read_only']}
-                        valuePropName="checked"
                       >
                         <Select placeholder="权限" style={{ width: '100%' }}>
                           <Option value={false}>读写</Option>
