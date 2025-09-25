@@ -6,7 +6,8 @@ from rest_framework.viewsets import GenericViewSet
 
 from apps.core.utils.permission_utils import get_permission_rules, permission_filter
 from apps.core.utils.web_utils import WebUtils
-from apps.node_mgmt.constants import SIDECAR_STATUS_ENUM, NODE_MODULE, DEFAULT_PERMISSION
+from apps.node_mgmt.constants.controller import ControllerConstants
+from apps.node_mgmt.constants.node import NodeConstants
 from apps.node_mgmt.filters.node import NodeFilter
 from apps.node_mgmt.models.sidecar import Node
 from config.drf.pagination import CustomPageNumberPagination
@@ -31,7 +32,7 @@ class NodeViewSet(mixins.DestroyModelMixin,
             if node_info["id"] in node_permission_map:
                 node_info["permission"] = node_permission_map[node_info["id"]]
             else:
-                node_info["permission"] = DEFAULT_PERMISSION
+                node_info["permission"] = NodeConstants.DEFAULT_PERMISSION
 
 
     @swagger_auto_schema(
@@ -52,7 +53,7 @@ class NodeViewSet(mixins.DestroyModelMixin,
             request.user,
             request.COOKIES.get("current_team"),
             "node_mgmt",
-            NODE_MODULE,
+            NodeConstants.MODULE,
         )
 
         # 应用权限过滤
@@ -102,7 +103,7 @@ class NodeViewSet(mixins.DestroyModelMixin,
     )
     @action(methods=["get"], detail=False, url_path=r"enum", filter_backends=[])
     def enum(self, request, *args, **kwargs):
-        return WebUtils.response_success(dict(sidecar_status=SIDECAR_STATUS_ENUM))
+        return WebUtils.response_success(dict(sidecar_status=ControllerConstants.SIDECAR_STATUS_ENUM))
 
     @swagger_auto_schema(
         operation_id="nodes_binding_configuration",

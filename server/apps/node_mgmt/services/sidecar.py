@@ -4,8 +4,9 @@ from datetime import datetime, timezone
 from string import Template
 from django.core.cache import cache
 from django.http import HttpResponse
+
+from apps.node_mgmt.constants.controller import ControllerConstants
 from apps.node_mgmt.utils.crypto_helper import EncryptedJsonResponse
-from apps.node_mgmt.constants import CACHE_TIMEOUT, DEFAULT_UPDATE_INTERVAL
 from apps.node_mgmt.default_config.default_config import create_default_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
 from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization
@@ -80,7 +81,7 @@ class Sidecar:
         new_etag = Sidecar.generate_response_etag(collectors_data, request)
 
         # 更新缓存中的 ETag
-        cache.set('collectors_etag', new_etag, CACHE_TIMEOUT)
+        cache.set('collectors_etag', new_etag, ControllerConstants.CACHE_TIMEOUT)
 
         # 返回采集器列表和新的 ETag
         return EncryptedJsonResponse(collectors_data, headers={'ETag': new_etag}, request=request)
@@ -178,7 +179,7 @@ class Sidecar:
 
         # 构造响应数据
         response_data = dict(
-            configuration={"update_interval": DEFAULT_UPDATE_INTERVAL, "send_status": True},  # 配置信息, DEFAULT_UPDATE_INTERVAL s更新一次
+            configuration={"update_interval": ControllerConstants.DEFAULT_UPDATE_INTERVAL, "send_status": True},  # 配置信息, DEFAULT_UPDATE_INTERVAL s更新一次
             configuration_override=True,  # 是否覆盖配置
             actions=[],  # 采集器状态
             assignments=[],  # 采集器配置
@@ -199,7 +200,7 @@ class Sidecar:
         # 生成新的ETag - 基于实际响应内容
         new_etag = Sidecar.generate_response_etag(response_data, request)
         # 更新缓存中的ETag
-        cache.set(f"node_etag_{node_id}", new_etag, CACHE_TIMEOUT)
+        cache.set(f"node_etag_{node_id}", new_etag, ControllerConstants.CACHE_TIMEOUT)
 
         # 返回响应
         return EncryptedJsonResponse(status=202, data=response_data, headers={'ETag': new_etag}, request=request)
@@ -261,7 +262,7 @@ class Sidecar:
         new_etag = Sidecar.generate_response_etag(configuration_data, request)
 
         # 更新缓存中的 ETag
-        cache.set(f"configuration_etag_{configuration_id}", new_etag, CACHE_TIMEOUT)
+        cache.set(f"configuration_etag_{configuration_id}", new_etag, ControllerConstants.CACHE_TIMEOUT)
 
         # 返回配置信息和新的 ETag
         return EncryptedJsonResponse(configuration_data, headers={'ETag': new_etag}, request=request)
