@@ -5,7 +5,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.core.utils.permission_utils import get_permission_rules, permission_filter
 from apps.core.utils.web_utils import WebUtils
-from apps.node_mgmt.constants import NODE_MODULE
+from apps.node_mgmt.constants.node import NodeConstants
 from apps.node_mgmt.models.sidecar import CollectorConfiguration, Node
 from apps.node_mgmt.serializers.collector_configuration import (
     CollectorConfigurationSerializer,
@@ -63,7 +63,7 @@ class CollectorConfigurationViewSet(ModelViewSet):
             request.user,
             request.COOKIES.get("current_team"),
             "node_mgmt",
-            NODE_MODULE,
+            NodeConstants.MODULE,
         )
         queryset = permission_filter(Node, permission, team_key="nodeorganization__organization__in", id_key="id__in")
         node_ids = list(queryset.values_list("id", flat=True).distinct())
