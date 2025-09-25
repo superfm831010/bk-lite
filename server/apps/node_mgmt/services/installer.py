@@ -4,7 +4,7 @@ from apps.node_mgmt.constants import NODE_SERVER_URL_KEY
 from apps.node_mgmt.models import SidecarEnv
 from apps.node_mgmt.models.installer import ControllerTask, ControllerTaskNode, CollectorTaskNode, CollectorTask
 from apps.node_mgmt.utils.installer import get_install_command
-from apps.node_mgmt.utils.token_auth import generate_token, generate_node_token
+from apps.node_mgmt.utils.token_auth import generate_node_token
 
 
 class InstallerService:
