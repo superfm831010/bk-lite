@@ -14,9 +14,9 @@ class OpenSidecarViewSet(OpenAPIViewSet):
     )
     @action(detail=False, methods=["get"], url_path="node")
     def server_info(self, request):
-        # node_id = request.query_params.get("node_id")
-        # check_token_auth(node_id, request)
-        return Sidecar.get_version()
+        node_id = request.query_params.get("node_id")
+        check_token_auth(node_id, request)
+        return Sidecar.get_version(request)
 
     @swagger_auto_schema(
         operation_id="sidecar_collectors",
@@ -24,8 +24,8 @@ class OpenSidecarViewSet(OpenAPIViewSet):
     )
     @action(detail=False, methods=["get"], url_path="node/sidecar/collectors")
     def collectors(self, request):
-        # node_id = request.query_params.get("node_id")
-        # check_token_auth(node_id, request)
+        node_id = request.query_params.get("node_id")
+        check_token_auth(node_id, request)
         return Sidecar.get_collectors(request)
 
     @swagger_auto_schema(
