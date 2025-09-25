@@ -136,8 +136,6 @@ const Architecture = forwardRef<ArchitectureRef, ArchitectureProps>(
               views: [],
               fitToScreen: true,
             });
-            setFossflowKey((prev) => prev + 1);
-
             const data = await getArchitectureDetail(currentArchitectureId);
             const viewSets = Array.isArray(data.view_sets)
               ? { items: [], views: [] }
@@ -199,7 +197,6 @@ const Architecture = forwardRef<ArchitectureRef, ArchitectureProps>(
       if (newEditMode) {
         setHasUnsaved(false);
       }
-      setFossflowKey((prev) => prev + 1);
     };
 
     const saveDiagram = async () => {
@@ -227,8 +224,7 @@ const Architecture = forwardRef<ArchitectureRef, ArchitectureProps>(
         setHasUnsaved(false);
         setIsEditMode(false);
         message.success(t('topology.architecture.diagramSaved'));
-      } catch (error) {
-        console.error('Save failed:', error);
+      } catch {
         message.error(t('topology.architecture.saveFailed'));
       } finally {
         setLoading(false);
