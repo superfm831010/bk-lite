@@ -19,7 +19,7 @@ class ControllerConstants:
     DEFAULT_UPDATE_INTERVAL = 30
 
     # Etag缓存时间（秒）
-    CACHE_TIMEOUT = 60 * 5  # 5分钟
+    E_CACHE_TIMEOUT = 60 * 5  # 5分钟
 
     # 控制器下发目录
     CONTROLLER_INSTALL_DIR = {

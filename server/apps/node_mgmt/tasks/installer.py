@@ -168,7 +168,7 @@ def install_collector(task_id):
     task_obj.save()
 
     # 获取采集器下发目录
-    collector_install_dir = CollectorConstants.INSTALL_DIR.get(package_obj.os)
+    collector_install_dir = CollectorConstants.DOWNLOAD_DIR.get(package_obj.os)
 
     # 获取所有节点
     nodes = task_obj.collectortasknode_set.all()

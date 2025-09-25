@@ -5,7 +5,7 @@ class CollectorConstants:
     """采集器相关常量"""
 
     # 采集器下发目录
-    INSTALL_DIR = {
+    DOWNLOAD_DIR = {
         NodeConstants.LINUX_OS: "/opt/fusion-collectors/bin",
         NodeConstants.WINDOWS_OS: "C:\\gse\\fusion-collectors\\bin",
     }
