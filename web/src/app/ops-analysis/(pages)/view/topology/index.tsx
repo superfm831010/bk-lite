@@ -7,16 +7,17 @@ import React, {
   useCallback,
 } from 'react';
 import styles from './index.module.scss';
+import { useTranslation } from '@/utils/i18n';
 import { Spin } from 'antd';
 import { AppstoreOutlined, CloseOutlined } from '@ant-design/icons';
 import { v4 as uuidv4 } from 'uuid';
 import { useTopologyState } from './hooks/useTopologyState';
 import { useGraphOperations } from './hooks/useGraphOperations';
-import { useTextOperations } from './hooks/useTextOperations';
 import { useContextMenuAndModal } from './hooks/useGraphInteractions';
 import { useDataSourceManager } from '@/app/ops-analysis/hooks/useDataSource';
 import {
   NodeType,
+  NodeTypeId,
   DropPosition,
   ViewConfigFormValues,
   NodeConfigFormValues,
@@ -28,7 +29,6 @@ import TopologyToolbar from './components/toolbar';
 import ContextMenu from './components/contextMenu';
 import EdgeConfigPanel from './components/edgeConfPanel';
 import NodeSidebar from './components/nodeSidebar';
-import TextEditInput from './components/textEditInput';
 import NodeConfPanel from './components/nodeConfPanel';
 import ViewConfig from '../dashBoard/components/viewConfig';
 import ViewSelector from '../dashBoard/components/viewSelector';
@@ -49,6 +49,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       y: number;
     } | null>(null);
     const [minimapVisible, setMinimapVisible] = useState(true);
+    const { t } = useTranslation();
     const state = useTopologyState();
     const dataSourceManager = useDataSourceManager();
 
@@ -78,11 +79,6 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       state,
       minimapContainerRef,
       minimapVisible
-    );
-
-    const { handleAddText, finishTextEdit, cancelTextEdit } = useTextOperations(
-      containerRef,
-      state
     );
 
     const { handleEdgeConfigConfirm, closeEdgeConfig, handleMenuClick } =
@@ -214,6 +210,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
             borderWidth: values.borderWidth,
             textColor: values.textColor,
             fontSize: values.fontSize,
+            fontWeight: values.fontWeight,
             renderEffect: values.renderEffect,
             iconPadding: values.iconPadding,
             lineType: values.lineType,
@@ -230,17 +227,16 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       handleNodeEditClose();
     };
 
-    const getNodeType = (): 'single-value' | 'icon' | 'basic-shape' => {
+    const getNodeType = (): NodeTypeId => {
       return addNodeVisible
-        ? (selectedNodeType?.id as 'single-value' | 'icon' | 'basic-shape')
-        : (state.editingNodeData?.type as
-            | 'single-value'
-            | 'icon'
-            | 'basic-shape');
+        ? (selectedNodeType?.id as NodeTypeId)
+        : (state.editingNodeData?.type as NodeTypeId);
     };
 
     const getNodeTitle = (): string => {
-      return state.isEditMode ? '编辑节点' : '查看节点';
+      return state.isEditMode
+        ? t('topology.nodeEditTitle')
+        : t('topology.nodeViewTitle');
     };
 
     const getNodeReadonly = (): boolean => {
@@ -320,7 +316,6 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           onFit={handleFit}
           onDelete={handleDelete}
           onSelectMode={handleSelectMode}
-          onAddText={handleAddText}
           onUndo={undo}
           onRedo={redo}
           canUndo={canUndo}
@@ -368,7 +363,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
                   <button
                     onClick={() => setMinimapVisible(false)}
                     className={styles.minimapCloseBtn}
-                    title="收起缩略图"
+                    title={t('topology.minimapCollapse')}
                   >
                     <CloseOutlined />
                   </button>
@@ -383,21 +378,11 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
               <button
                 onClick={() => setMinimapVisible(true)}
                 className={styles.minimapShowBtn}
-                title="显示缩略图"
+                title={t('topology.minimapShow')}
               >
                 <AppstoreOutlined />
               </button>
             )}
-
-            <TextEditInput
-              isEditingText={state.isEditingText}
-              editPosition={state.editPosition}
-              inputWidth={state.inputWidth}
-              tempTextInput={state.tempTextInput}
-              setTempTextInput={state.setTempTextInput}
-              finishTextEdit={finishTextEdit}
-              cancelTextEdit={cancelTextEdit}
-            />
           </div>
         </div>
 

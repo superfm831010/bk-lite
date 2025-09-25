@@ -5,6 +5,7 @@ import { Drawer, Form, Input, Select, InputNumber, Button, message, TimePicker, 
 import { DeleteOutlined, InboxOutlined, CopyOutlined } from '@ant-design/icons';
 import { Node } from '@xyflow/react';
 import type { UploadProps, UploadFile as AntdUploadFile } from 'antd';
+import { useTranslation } from '@/utils/i18n';
 
 // Extend UploadFile to include the 'content' property
 interface UploadFile extends AntdUploadFile {
@@ -47,6 +48,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   onSave,
   onDelete
 }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [frequency, setFrequency] = useState('daily');
   const [paramRows, setParamRows] = useState<Array<{ key: string, value: string }>>([]);
@@ -66,8 +68,8 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       const skills = await fetchSkill({is_template: 0});
       setSkills(skills || []);
     } catch (error) {
-      console.error('获取智能体列表失败:', error);
-      message.error('获取智能体列表失败');
+      console.error(t('skill.settings.noSkillHasBeenSelected'), error);
+      message.error(t('skill.settings.noSkillHasBeenSelected'));
     } finally {
       setLoadingSkills(false);
     }
@@ -80,7 +82,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     
     try {
       await navigator.clipboard.writeText(apiUrl);
-      message.success('API链接已复制到剪贴板');
+      message.success(t('chatflow.nodeConfig.apiLinkCopied'));
     } catch {
       const textArea = document.createElement('textarea');
       textArea.value = apiUrl;
@@ -88,7 +90,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      message.success('API链接已复制到剪贴板');
+      message.success(t('chatflow.nodeConfig.apiLinkCopied'));
     }
   };
 
@@ -231,7 +233,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       }
 
       onSave(node.id, configData);
-      message.success('节点配置已保存');
+      message.success(t('chatflow.messages.nodeConfigured'));
     });
   };
 
@@ -290,13 +292,13 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     fileList: uploadedFiles,
     beforeUpload: (file) => {
       if (!file.name.toLowerCase().endsWith('.md')) {
-        message.error('只支持上传 .md 格式的文件');
+        message.error(t('chatflow.nodeConfig.onlyMdFilesSupported'));
         return false;
       }
       
       const isLt10M = file.size / 1024 / 1024 < 10;
       if (!isLt10M) {
-        message.error('文件大小不能超过 10MB');
+        message.error(t('chatflow.nodeConfig.fileSizeLimit'));
         return false;
       }
       
@@ -308,7 +310,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     onRemove: (file) => {
       const newFileList = uploadedFiles.filter(item => item.uid !== file.uid);
       setUploadedFiles(newFileList);
-      message.success('文件删除成功');
+      message.success(t('chatflow.nodeConfig.fileDeleted'));
     },
     customRequest: async ({ file, onSuccess, onError }) => {
       try {
@@ -339,7 +341,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         onSuccess && onSuccess(fileWithContent.response);
       } catch (error) {
         console.error('File read error:', error);
-        onError && onError(new Error('读取文件内容失败'));
+        onError && onError(new Error(t('chatflow.nodeConfig.fileReadError')));
       }
     }
   };
@@ -382,17 +384,17 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     return (
       <>
         {/* Common node name configuration for all node types */}
-        <Form.Item name="name" label="节点名称" rules={[{ required: true, message: '请输入节点名称' }]}>
-          <Input placeholder="请输入节点名称" />
+        <Form.Item name="name" label={t('chatflow.nodeConfig.nodeName')} rules={[{ required: true, message: t('chatflow.nodeConfig.pleaseEnterNodeName') }]}>
+          <Input placeholder={t('chatflow.nodeConfig.pleaseEnterNodeName')} />
         </Form.Item>
 
         {/* Common input and output parameters for all node types */}
-        <Form.Item name="inputParams" label="输入参数" rules={[{ required: true, message: '请输入输入参数' }]}>
-          <Input placeholder="请输入输入参数" />
+        <Form.Item name="inputParams" label={t('chatflow.nodeConfig.inputParams')} rules={[{ required: true, message: t('chatflow.nodeConfig.pleaseEnterInputParams') }]}>
+          <Input placeholder={t('chatflow.nodeConfig.pleaseEnterInputParams')} />
         </Form.Item>
         
-        <Form.Item name="outputParams" label="输出参数" rules={[{ required: true, message: '请输入输出参数' }]}>
-          <Input placeholder="请输入输出参数" />
+        <Form.Item name="outputParams" label={t('chatflow.nodeConfig.outputParams')} rules={[{ required: true, message: t('chatflow.nodeConfig.pleaseEnterOutputParams') }]}>
+          <Input placeholder={t('chatflow.nodeConfig.pleaseEnterOutputParams')} />
         </Form.Item>
 
         {/* Render specific configuration based on node type */}
@@ -401,19 +403,19 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
             case 'celery':
               return (
                 <>
-                  <Form.Item name="frequency" label="触发频率" rules={[{ required: true }]}>
-                    <Select placeholder="选择触发频率" onChange={handleFrequencyChange}>
-                      <Option value="daily">每日触发</Option>
-                      <Option value="weekly">每周触发</Option>
-                      <Option value="monthly">每月触发</Option>
+                  <Form.Item name="frequency" label={t('chatflow.nodeConfig.triggerFrequency')} rules={[{ required: true }]}>
+                    <Select placeholder={t('chatflow.nodeConfig.pleaseSelectTriggerFrequency')} onChange={handleFrequencyChange}>
+                      <Option value="daily">{t('chatflow.daily')}</Option>
+                      <Option value="weekly">{t('chatflow.weekly')}</Option>
+                      <Option value="monthly">{t('chatflow.monthly')}</Option>
                     </Select>
                   </Form.Item>
 
                   {frequency === 'daily' && (
-                    <Form.Item name="time" label="触发时间" rules={[{ required: true }]}>
+                    <Form.Item name="time" label={t('chatflow.nodeConfig.triggerTime')} rules={[{ required: true }]}>
                       <TimePicker
                         format="HH:mm"
-                        placeholder="选择时间"
+                        placeholder={t('chatflow.nodeConfig.selectTime')}
                         className="w-full"
                       />
                     </Form.Item>
@@ -421,21 +423,21 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
 
                   {frequency === 'weekly' && (
                     <>
-                      <Form.Item name="weekday" label="星期" rules={[{ required: true }]}>
-                        <Select placeholder="选择星期">
-                          <Option value={1}>星期一</Option>
-                          <Option value={2}>星期二</Option>
-                          <Option value={3}>星期三</Option>
-                          <Option value={4}>星期四</Option>
-                          <Option value={5}>星期五</Option>
-                          <Option value={6}>星期六</Option>
-                          <Option value={0}>星期日</Option>
+                      <Form.Item name="weekday" label={t('chatflow.weekday')} rules={[{ required: true }]}>
+                        <Select placeholder={t('chatflow.nodeConfig.selectWeekday')}>
+                          <Option value={1}>{t('chatflow.nodeConfig.monday')}</Option>
+                          <Option value={2}>{t('chatflow.nodeConfig.tuesday')}</Option>
+                          <Option value={3}>{t('chatflow.nodeConfig.wednesday')}</Option>
+                          <Option value={4}>{t('chatflow.nodeConfig.thursday')}</Option>
+                          <Option value={5}>{t('chatflow.nodeConfig.friday')}</Option>
+                          <Option value={6}>{t('chatflow.nodeConfig.saturday')}</Option>
+                          <Option value={0}>{t('chatflow.nodeConfig.sunday')}</Option>
                         </Select>
                       </Form.Item>
-                      <Form.Item name="time" label="触发时间" rules={[{ required: true }]}>
+                      <Form.Item name="time" label={t('chatflow.nodeConfig.triggerTime')} rules={[{ required: true }]}>
                         <TimePicker
                           format="HH:mm"
-                          placeholder="选择时间"
+                          placeholder={t('chatflow.nodeConfig.selectTime')}
                           className="w-full"
                         />
                       </Form.Item>
@@ -444,25 +446,25 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
 
                   {frequency === 'monthly' && (
                     <>
-                      <Form.Item name="day" label="日期" rules={[{ required: true }]}>
-                        <Select placeholder="选择日期">
+                      <Form.Item name="day" label={t('chatflow.day')} rules={[{ required: true }]}>
+                        <Select placeholder={t('chatflow.nodeConfig.selectDay')}>
                           {Array.from({ length: 31 }, (_, i) => (
-                            <Option key={i + 1} value={i + 1}>{i + 1}日</Option>
+                            <Option key={i + 1} value={i + 1}>{i + 1}</Option>
                           ))}
                         </Select>
                       </Form.Item>
-                      <Form.Item name="time" label="触发时间" rules={[{ required: true }]}>
+                      <Form.Item name="time" label={t('chatflow.nodeConfig.triggerTime')} rules={[{ required: true }]}>
                         <TimePicker
                           format="HH:mm"
-                          placeholder="选择时间"
+                          placeholder={t('chatflow.nodeConfig.selectTime')}
                           className="w-full"
                         />
                       </Form.Item>
                     </>
                   )}
 
-                  <Form.Item name="message" label="触发输入语" rules={[{ required: true }]}>
-                    <TextArea rows={3} placeholder="请输入初始message内容..." />
+                  <Form.Item name="message" label={t('chatflow.nodeConfig.triggerMessage')}>
+                    <TextArea rows={3} placeholder={t('chatflow.nodeConfig.triggerMessagePlaceholder')} />
                   </Form.Item>
                 </>
               );
@@ -473,7 +475,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                   <Form.Item label="API" required>
                     <div className="flex gap-2">
                       <Form.Item name="method" noStyle rules={[{ required: true }]}>
-                        <Select style={{ width: 100 }} placeholder="方法">
+                        <Select style={{ width: 100 }} placeholder={t('chatflow.nodeConfig.apiMethod')}>
                           <Option value="GET">GET</Option>
                           <Option value="POST">POST</Option>
                           <Option value="PUT">PUT</Option>
@@ -481,29 +483,29 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         </Select>
                       </Form.Item>
                       <Form.Item name="url" noStyle rules={[{ required: true }]}>
-                        <Input placeholder="输入URL" className="flex-1" />
+                        <Input placeholder={t('chatflow.nodeConfig.enterUrl')} className="flex-1" />
                       </Form.Item>
                     </div>
                   </Form.Item>
 
-                  <Form.Item label="请求参数">
+                  <Form.Item label={t('chatflow.nodeConfig.requestParams')}>
                     <div className="space-y-2">
                       <div className="grid gap-2 text-sm text-gray-500 mb-1 grid-cols-[1fr_1fr_60px]">
-                        <span>变量名</span>
-                        <span>变量值</span>
-                        <span>操作</span>
+                        <span>{t('chatflow.nodeConfig.paramName')}</span>
+                        <span>{t('chatflow.nodeConfig.paramValue')}</span>
+                        <span>{t('chatflow.nodeConfig.operation')}</span>
                       </div>
                       {paramRows.map((row, index) => (
                         <div key={index} className="grid gap-2 items-center grid-cols-[1fr_1fr_60px]">
                           <Input
-                            placeholder="输入参数名"
+                            placeholder={t('chatflow.nodeConfig.enterParamName')}
                             value={row.key}
                             onChange={(e) => updateParamRow(index, 'key', e.target.value)}
                           />
                           <div className="flex items-center gap-1">
                             <span className="text-xs bg-[var(--color-fill-1)] px-1 rounded">str</span>
                             <Input
-                              placeholder="输入或引用参数值"
+                              placeholder={t('chatflow.nodeConfig.enterOrReferenceParamValue')}
                               value={row.value}
                               onChange={(e) => updateParamRow(index, 'value', e.target.value)}
                             />
@@ -528,24 +530,24 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                     </div>
                   </Form.Item>
 
-                  <Form.Item label="请求头">
+                  <Form.Item label={t('chatflow.nodeConfig.requestHeaders')}>
                     <div className="space-y-2">
                       <div className="grid gap-2 text-sm text-gray-500 mb-1 grid-cols-[1fr_1fr_60px]">
-                        <span>变量名</span>
-                        <span>变量值</span>
-                        <span>操作</span>
+                        <span>{t('chatflow.nodeConfig.paramName')}</span>
+                        <span>{t('chatflow.nodeConfig.paramValue')}</span>
+                        <span>{t('chatflow.nodeConfig.operation')}</span>
                       </div>
                       {headerRows.map((row, index) => (
                         <div key={index} className="grid gap-2 items-center grid-cols-[1fr_1fr_60px]">
                           <Input
-                            placeholder="输入参数名"
+                            placeholder={t('chatflow.nodeConfig.enterParamName')}
                             value={row.key}
                             onChange={(e) => updateHeaderRow(index, 'key', e.target.value)}
                           />
                           <div className="flex items-center gap-1">
                             <span className="text-xs bg-[var(--color-fill-1)] px-1 rounded">str</span>
                             <Input
-                              placeholder="输入或引用参数值"
+                              placeholder={t('chatflow.nodeConfig.enterOrReferenceParamValue')}
                               value={row.value}
                               onChange={(e) => updateHeaderRow(index, 'value', e.target.value)}
                             />
@@ -570,18 +572,18 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                     </div>
                   </Form.Item>
 
-                  <Form.Item name="requestBody" label="请求体">
-                    <TextArea rows={6} placeholder="请输入JSON格式的请求体" />
+                  <Form.Item name="requestBody" label={t('chatflow.nodeConfig.requestBody')}>
+                    <TextArea rows={6} placeholder={t('chatflow.nodeConfig.requestBodyPlaceholder')} />
                   </Form.Item>
 
-                  <Form.Item name="timeout" label="超时设置（秒）">
+                  <Form.Item name="timeout" label={t('chatflow.nodeConfig.timeoutSettings')}>
                     <InputNumber min={1} max={300} className="w-full" />
                   </Form.Item>
 
-                  <Form.Item name="outputMode" label="输出模式">
+                  <Form.Item name="outputMode" label={t('chatflow.nodeConfig.outputMode')}>
                     <Radio.Group>
-                      <Radio value="stream">流式（SSE）</Radio>
-                      <Radio value="once">一次性返回</Radio>
+                      <Radio value="stream">{t('chatflow.nodeConfig.streamMode')}</Radio>
+                      <Radio value="once">{t('chatflow.nodeConfig.onceMode')}</Radio>
                     </Radio.Group>
                   </Form.Item>
                 </>
@@ -601,9 +603,9 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
 
               return (
                 <>
-                  <Form.Item name="agent" label="选择智能体" rules={[{ required: true }]}>
+                  <Form.Item name="agent" label={t('chatflow.nodeConfig.selectAgent')} rules={[{ required: true }]}>
                     <Select 
-                      placeholder="请选择智能体"
+                      placeholder={t('chatflow.nodeConfig.pleaseSelectAgent')}
                       loading={loadingSkills}
                       disabled={loadingSkills}
                       showSearch
@@ -627,21 +629,21 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                   {/* Prompt 追加功能 */}
                   <Form.Item 
                     name="prompt" 
-                    label="Prompt"
-                    tooltip="在流程流转过程中，需要追加更多的指令，让智能体的执行更符合预期和使用场景">
-                    <TextArea rows={4} placeholder="请输入Prompt内容..." />
+                    label={t('chatflow.nodeConfig.promptAppend')}
+                    tooltip={t('chatflow.nodeConfig.promptAppendTooltip')}>
+                    <TextArea rows={4} placeholder={t('chatflow.nodeConfig.promptPlaceholder')} />
                   </Form.Item>
 
                   {/* 知识追加功能 */}
                   <Form.Item 
-                    label="上传知识"
-                    tooltip="在流程流转过程中，需要追加更多知识，这些知识会作为智能体执行的前提条件进行输入">
+                    label={t('chatflow.nodeConfig.uploadKnowledge')}
+                    tooltip={t('chatflow.nodeConfig.uploadKnowledgeTooltip')}>
                     <Upload.Dragger {...uploadProps}>
                       <p className="ant-upload-drag-icon">
                         <InboxOutlined />
                       </p>
-                      <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-                      <p className="ant-upload-hint">支持单个或批量上传，仅支持 .md 格式文件</p>
+                      <p className="ant-upload-text">{t('chatflow.nodeConfig.uploadHint')}</p>
+                      <p className="ant-upload-hint">{t('chatflow.nodeConfig.uploadDescription')}</p>
                     </Upload.Dragger>
                   </Form.Item>
                 </>
@@ -654,28 +656,28 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
               return (
                 <>
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-xs leading-5">
-                    <p className="text-[var(--color-text-2)] mb-2">
-                      对外提供REST接口，适合以外部系统/应用进行调用。当画布保存后，可点击节点查询对应的调用参数如下
+                    <p className="text-gray-500 mb-2">
+                      {t('chatflow.nodeConfig.restfulApiInfo')}
                     </p>
                     <div className="mt-2 mb-2 relative">
                       <Input.TextArea
                         readOnly
                         value={restfulApiUrl}
                         autoSize={{ minRows: 2, maxRows: 4 }}
-                        className="font-mono text-xs text-[var(--color-text-2)] bg-white pr-10 border-none"
+                        className="font-mono text-xs text-gray-700 bg-white pr-10 border-none"
                       />
                       <Button
                         type="text"
                         icon={<CopyOutlined />}
                         size="small"
                         onClick={copyApiUrl}
-                        className="absolute top-2 right-2 z-10 text-[var(--color-text-3)] hover:text-[var(--color-primary)]"
-                        title="复制链接"
+                        className="absolute top-2 right-2 z-10 text-gray-500 hover:text-[var(--color-primary)]"
+                        title={t('chatflow.nodeConfig.copyLink')}
                       />
                     </div>
-                    <span className="text-[var(--color-text-2)]">更多详细介绍，可前往“接口文档”进行查看</span>
+                    <span className="text-gray-500">{t('chatflow.nodeConfig.moreDetails')}</span>
                     <Link href="/opspilot/studio/detail/api" target="_blank" className="text-blue-500 hover:underline">
-                      查看接口文档 →
+                      {t('chatflow.nodeConfig.viewApiDocs')}
                     </Link>
                   </div>
                 </>
@@ -688,28 +690,28 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
               return (
                 <>
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-xs leading-5">
-                    <p className="text-[var(--color-text-2)] mb-2">
-                      对外提供的接口，可通过OpenAI的方式进行流程调用，支持SSE流式设置。当画布保存后，可点击节点查看对应调用参数如下
+                    <p className="text-gray-500 mb-2">
+                      {t('chatflow.nodeConfig.openaiApiInfo')}
                     </p>
                     <div className="mt-2 mb-2 relative">
                       <Input.TextArea
                         readOnly
                         value={openaiApiUrl}
                         autoSize={{ minRows: 2, maxRows: 4 }}
-                        className="font-mono text-xs text-[var(--color-text-2)] bg-white pr-10 border-none"
+                        className="font-mono text-xs text-gray-700 bg-white pr-10 border-none"
                       />
                       <Button
                         type="text"
                         icon={<CopyOutlined />}
                         size="small"
                         onClick={copyApiUrl}
-                        className="absolute top-2 right-2 z-10 text-[var(--color-text-3)] hover:text-[var(--color-primary)]"
-                        title="复制链接"
+                        className="absolute top-2 right-2 z-10 text-gray-500 hover:text-[var(--color-primary)]"
+                        title={t('chatflow.nodeConfig.copyLink')}
                       />
                     </div>
-                    <span className="text-[var(--color-text-2)]">更多详细介绍，可前往“接口文档”进行查看</span>
+                    <span className="text-gray-500">{t('chatflow.nodeConfig.moreDetails')}</span>
                     <Link href="/opspilot/studio/detail/api" target="_blank" className="text-blue-500 hover:underline">
-                      查看接口文档 →
+                      {t('chatflow.nodeConfig.viewApiDocs')}
                     </Link>
                   </div>
                 </>
@@ -721,23 +723,23 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
               return (
                 <>
                   <div className="mb-4">
-                    <h4 className="text-sm font-medium mb-3">分支条件</h4>
+                    <h4 className="text-sm font-medium mb-3">{t('chatflow.nodeConfig.branchCondition')}</h4>
                     <div className="grid grid-cols-3 gap-2">
                       <Form.Item name="conditionField" rules={[{ required: true }]}>
-                        <Select placeholder="触发类型">
-                          <Option value="triggerType">触发类型</Option>
+                        <Select placeholder={t('chatflow.nodeConfig.conditionField')}>
+                          <Option value="triggerType">{t('chatflow.nodeConfig.triggerType')}</Option>
                         </Select>
                       </Form.Item>
                       <Form.Item name="conditionOperator" rules={[{ required: true }]}>
-                        <Select placeholder="条件">
-                          <Option value="equals">等于</Option>
-                          <Option value="notEquals">不等于</Option>
+                        <Select placeholder={t('chatflow.nodeConfig.conditionOperator')}>
+                          <Option value="equals">{t('chatflow.nodeConfig.equals')}</Option>
+                          <Option value="notEquals">{t('chatflow.nodeConfig.notEquals')}</Option>
                         </Select>
                       </Form.Item>
                       <Form.Item name="conditionValue" rules={[{ required: true }]}>
-                        <Select placeholder="选择值">
+                        <Select placeholder={t('chatflow.nodeConfig.selectValue')}>
                           {triggerNodes.length === 0 ? (
-                            <Option value="" disabled>暂无触发器节点</Option>
+                            <Option value="" disabled>{t('chatflow.nodeConfig.noTriggerNodes')}</Option>
                           ) : (
                             triggerNodes.map((triggerNode) => (
                               <Option key={triggerNode.id} value={triggerNode.id}>
@@ -749,14 +751,14 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                       </Form.Item>
                     </div>
                     <div className="mt-4 p-3 bg-[var(--color-fill-1)] rounded-md">
-                      <p className="text-xs text-gray-600 mb-2">连接说明：</p>
+                      <p className="text-xs text-gray-600 mb-2">{t('chatflow.nodeConfig.connectionDescription')}</p>
                       <div className="flex items-center gap-2 text-xs">
                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <span>右侧上方连接点：条件为 True 时的执行路径</span>
+                        <span>{t('chatflow.nodeConfig.truePathDescription')}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs mt-1">
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span>右侧下方连接点：条件为 False 时的执行路径</span>
+                        <span>{t('chatflow.nodeConfig.falsePathDescription')}</span>
                       </div>
                     </div>
                   </div>
@@ -785,13 +787,13 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
             icon={<DeleteOutlined />}
             onClick={handleDelete}
           >
-            删除
+            {t('chatflow.nodeConfig.deleteNode')}
           </Button>
           <Button onClick={onClose}>
-            取消
+            {t('chatflow.nodeConfig.cancel')}
           </Button>
           <Button type="primary" onClick={handleSave}>
-            确认
+            {t('chatflow.nodeConfig.confirm')}
           </Button>
         </div>
       }

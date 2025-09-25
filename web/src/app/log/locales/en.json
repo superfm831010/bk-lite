@@ -126,6 +126,7 @@
     "group": "Group",
     "search": {
       "searchPlaceHolder": "Enter your search query here and press Enter to search",
+      "smartSearchPlaceHolder": "Enter search criteria",
       "searchCriteria": "Search Criteria",
       "addToQuery": "Add to query statement",
       "histogram": "Query Histogram",
@@ -150,7 +151,11 @@
       "searchError": "Log grouping cannot be empty",
       "storageConditions": "Storage Conditions",
       "loadConditions": "Load Conditions",
-      "query": "Query"
+      "query": "Query",
+      "loading": "Loading",
+      "loadingEllipsis": "Loading...",
+      "field": "Field",
+      "noMatchValues": "No matching values"
     },
     "integration": {
       "interval": "Interval",

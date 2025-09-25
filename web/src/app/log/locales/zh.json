@@ -126,6 +126,7 @@
     "group": "分组",
     "search": {
       "searchPlaceHolder": "在此处输入您的搜索查询，然后按Enter",
+      "smartSearchPlaceHolder": "请输入搜索条件",
       "searchCriteria": "搜索条件",
       "addToQuery": "添加到查询语句",
       "histogram": "查询直方图",
@@ -150,7 +151,11 @@
       "searchError": "日志分组不能为空",
       "storageConditions": "保存条件",
       "loadConditions": "加载条件",
-      "query": "查询"
+      "query": "查询",
+      "loading": "加载中",
+      "loadingEllipsis": "加载中...",
+      "field": "字段",
+      "noMatchValues": "无匹配的值"
     },
     "analysis": {
       "dashboard": "仪表盘",

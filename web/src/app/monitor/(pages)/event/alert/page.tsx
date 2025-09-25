@@ -99,7 +99,6 @@ const Alert: React.FC = () => {
   const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [treeData, setTreeData] = useState<TreeItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [objectId, setObjectId] = useState<React.Key>('');
 
   const columns: ColumnItem[] = [
@@ -305,8 +304,6 @@ const Alert: React.FC = () => {
       });
       setObjects(data);
       const _treeData = getTreeData(deepClone(data));
-      const defaulltId = (_treeData[0]?.children || [])[0]?.key;
-      setDefaultSelectObj(defaulltId);
       setTreeData(_treeData);
     } finally {
       setPageLoading(false);
@@ -330,7 +327,14 @@ const Alert: React.FC = () => {
       });
       return acc;
     }, {} as Record<string, TreeItem>);
-    return Object.values(groupedData);
+    return [
+      {
+        title: t('common.all'),
+        key: 'all',
+        children: [],
+      },
+      ...Object.values(groupedData),
+    ];
   };
 
   const alertCloseConfirm = async (id: string | number) => {
@@ -359,7 +363,7 @@ const Alert: React.FC = () => {
         ? 'new'
         : filtersMap.state.join(',') || 'recovered,closed',
       level_in: filtersMap.level.join(','),
-      monitor_object_id: objectId,
+      monitor_object_id: objectId === 'all' ? '' : objectId,
       content: searchText || '',
       page: pagination.current,
       page_size: pagination.pageSize,
@@ -554,8 +558,9 @@ const Alert: React.FC = () => {
         <div className={alertStyle.alert}>
           <div className={alertStyle.filters}>
             <TreeSelector
+              showAllMenu
               data={treeData}
-              defaultSelectedKey={defaultSelectObj as string}
+              defaultSelectedKey="all"
               onNodeSelect={handleObjectChange}
             />
           </div>
