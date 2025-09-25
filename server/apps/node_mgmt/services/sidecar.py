@@ -2,14 +2,15 @@ import hashlib
 from datetime import datetime, timezone
 from string import Template
 from django.core.cache import cache
-from django.http import JsonResponse, HttpResponse
-from apps.core.utils.crypto.aes_crypto import AESCryptor
+from django.http import HttpResponse, JsonResponse
+from apps.node_mgmt.utils.crypto_helper import EncryptedJsonResponse
 from apps.node_mgmt.constants import CACHE_TIMEOUT, DEFAULT_UPDATE_INTERVAL
 from apps.node_mgmt.default_config.default_config import create_default_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
 from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization
 from apps.node_mgmt.utils.sidecar import format_tags_dynamic
 from apps.core.logger import node_logger as logger
+from apps.core.utils.crypto.aes_crypto import AESCryptor
 
 
 class Sidecar:
@@ -22,7 +23,7 @@ class Sidecar:
     @staticmethod
     def get_version():
         """获取版本信息"""
-        return JsonResponse({"version": "5.0.0"})
+        return EncryptedJsonResponse({"version": "5.0.0"})
 
     @staticmethod
     def get_collectors(request):
@@ -55,7 +56,7 @@ class Sidecar:
         cache.set('collectors_etag', new_etag, CACHE_TIMEOUT)
 
         # 返回采集器列表和新的 ETag
-        return JsonResponse({'collectors': collectors}, headers={'ETag': new_etag})
+        return EncryptedJsonResponse({'collectors': collectors}, headers={'ETag': new_etag}, request=request)
 
     @staticmethod
     def asso_groups(node_id: str, groups: list):
@@ -175,7 +176,7 @@ class Sidecar:
         cache.set(f"node_etag_{node_id}", new_etag, CACHE_TIMEOUT)
 
         # 返回响应
-        return JsonResponse(status=202, data=response_data, headers={'ETag': new_etag})
+        return EncryptedJsonResponse(status=202, data=response_data, headers={'ETag': new_etag}, request=request)
 
     @staticmethod
     def get_node_config(request, node_id, configuration_id):
@@ -198,13 +199,13 @@ class Sidecar:
         # 从数据库获取节点信息
         node = Node.objects.filter(id=node_id).first()
         if not node:
-            return JsonResponse(status=404, data={}, manage="Node collector Configuration not found")
+            return EncryptedJsonResponse(status=404, data={}, manage="Node collector Configuration not found", request=request)
 
         # 查询配置，并预取关联的子配置
         configuration = CollectorConfiguration.objects.filter(id=configuration_id).prefetch_related(
             'childconfig_set').first()
         if not configuration:
-            return JsonResponse(status=404, data={}, manage="Configuration not found")
+            return EncryptedJsonResponse(status=404, data={}, manage="Configuration not found", request=request)
 
         # 合并子配置内容到模板
         merged_template = configuration.config_template
@@ -238,19 +239,19 @@ class Sidecar:
         configuration['template'] = Sidecar.render_template(configuration['template'], variables)
 
         # 返回配置信息和新的 ETag
-        return JsonResponse(configuration, headers={'ETag': new_etag})
+        return EncryptedJsonResponse(configuration, headers={'ETag': new_etag}, request=request)
 
     @staticmethod
-    def get_node_config_env(node_id, configuration_id):
+    def get_node_config_env(request, node_id, configuration_id):
         node = Node.objects.filter(id=node_id).first()
         if not node:
-            return JsonResponse(status=404, data={}, manage="Node collector Configuration not found")
+            return EncryptedJsonResponse(status=404, data={}, manage="Node collector Configuration not found", request=request)
 
         obj = CollectorConfiguration.objects.filter(id=configuration_id).first()
         if not obj:
-            return JsonResponse(status=404, data={}, manage="Configuration environment not found")
+            return EncryptedJsonResponse(status=404, data={}, manage="Configuration environment not found", request=request)
 
-        return JsonResponse(dict(id=configuration_id, env_config={k: str(v) for k, v in obj.env_config.items()}))
+        return EncryptedJsonResponse(dict(id=configuration_id, env_config={k: str(v) for k, v in obj.env_config.items()}), request=request)
 
     @staticmethod
     def get_variables(node_obj):
