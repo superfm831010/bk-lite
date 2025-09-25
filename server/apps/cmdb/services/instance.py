@@ -456,6 +456,13 @@ class InstanceManage(object):
         _import = Import(model_id, attrs, exist_items, operator)
         add_results, update_results, asso_result = _import.import_inst_list_support_edit(file_stream)
 
+        # 检查是否存在验证错误
+        if _import.validation_errors:
+            error_summary = f"数据导入失败：发现 {len(_import.validation_errors)} 个数据验证错误\n"
+            error_details = "\n".join(_import.validation_errors)
+            logger.warning(f"模型 {model_id} 数据导入验证失败，错误数量: {len(_import.validation_errors)}")
+            return {"success": False, "message": error_summary + error_details}
+
         add_changes = [
             dict(
                 inst_id=i["data"]["_id"],
@@ -481,7 +488,8 @@ class InstanceManage(object):
         batch_create_change_record(INSTANCE, CREATE_INST, add_changes, operator=operator)
         batch_create_change_record(INSTANCE, UPDATE_INST, update_changes, operator=operator)
         result_message = self.format_result_message(_import.import_result_message)
-        return result_message
+        logger.info(f"模型 {model_id} 数据导入成功")
+        return {"success": True, "message": result_message}
 
     @staticmethod
     def format_result_message(result: dict):

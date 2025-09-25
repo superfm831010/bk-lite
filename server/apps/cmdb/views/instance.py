@@ -10,6 +10,7 @@ from apps.cmdb.services.model import ModelManage
 from apps.cmdb.utils.base import format_group_params, get_cmdb_rules, format_groups_params
 from apps.cmdb.utils.permisssion_util import CmdbRulesFormatUtil
 from apps.core.decorators.api_permission import HasPermission
+from apps.core.logger import cmdb_logger as logger
 from apps.core.utils.permission_utils import get_permission_rules, get_permissions_rules
 from apps.core.utils.web_utils import WebUtils
 from apps.rpc.node_mgmt import NodeMgmt
@@ -485,12 +486,45 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_info-Add")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import")
     def inst_import(self, request, model_id):
-        import_message = InstanceManage().inst_import_support_edit(
-            model_id=model_id,
-            file_stream=request.data.get("file").file,
-            operator=request.user.username,
-        )
-        return JsonResponse({"data": [], "result": True, "message": import_message})
+        try:
+            # 检查是否上传了文件
+            uploaded_file = request.data.get("file")
+            if not uploaded_file:
+                return JsonResponse({
+                    "data": [], 
+                    "result": False, 
+                    "message": "请上传Excel文件"
+                })
+            
+            import_result = InstanceManage().inst_import_support_edit(
+                model_id=model_id,
+                file_stream=uploaded_file.file,
+                operator=request.user.username,
+            )
+            
+            # 根据返回的结果结构判断成功或失败
+            if isinstance(import_result, dict):
+                return JsonResponse({
+                    "data": [], 
+                    "result": import_result["success"], 
+                    "message": import_result["message"]
+                })
+            else:
+                # 兼容旧的字符串返回格式
+                is_success = not str(import_result).startswith("数据导入失败")
+                return JsonResponse({
+                    "data": [], 
+                    "result": is_success, 
+                    "message": str(import_result)
+                })
+                
+        except Exception as e:
+            logger.error(f"模型 {model_id} 数据导入异常: {str(e)}", exc_info=True)
+            return JsonResponse({
+                "data": [], 
+                "result": False, 
+                "message": f"数据导入异常，请检查文件格式和内容: {str(e)}"
+            })
 
     @swagger_auto_schema(
         operation_id="inst_export",
