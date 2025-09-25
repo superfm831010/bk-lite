@@ -1,4 +1,4 @@
-FROM python:3.12
+FROM python:3.10
 
 RUN apt-get update && \
     apt-get install -y libhdf5-dev vim unzip curl pkg-config libssl-dev libffi-dev supervisor && \
