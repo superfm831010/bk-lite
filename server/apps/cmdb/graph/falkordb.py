@@ -18,30 +18,63 @@ from apps.core.logger import cmdb_logger as logger
 load_dotenv()
 
 
+class FalkorDBConnectionPool:
+    """FalkorDB连接池，避免重复初始化"""
+    _instance = None
+    _client = None
+    _graph = None
+    _initialized = False
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(FalkorDBConnectionPool, cls).__new__(cls)
+        return cls._instance
+    
+    def get_connection(self):
+        """获取连接，如果未初始化则初始化"""
+        if not self._initialized:
+            self._initialize()
+        return self._client, self._graph
+    
+    def _initialize(self):
+        """初始化连接"""
+        if self._initialized:
+            return
+            
+        try:
+            password = os.getenv("FALKORDB_REQUIREPASS", "") or None
+            host = os.getenv('FALKORDB_HOST', '127.0.0.1')
+            port = int(os.getenv("FALKORDB_PORT", "6379"))
+            database = os.getenv("FALKORDB_DATABASE", "cmdb_graph")
+            
+            self._client = falkordb.FalkorDB(
+                host=host,
+                port=port,
+                password=password
+            )
+            self._graph = self._client.select_graph(database)
+            self._initialized = True
+            logger.info(f"已连接到 FalkorDB，选择Graph: {database}")
+        except Exception:
+            import traceback
+            logger.error(f"连接失败: {traceback.format_exc()}")
+            raise
+
+
 class FalkorDBClient:
     def __init__(self):
-        self.password = os.getenv("FALKORDB_REQUIREPASS", "") or None
-        self.host = os.getenv('FALKORDB_HOST', '10.10.40.189')
-        self.port = int(os.getenv("FALKORDB_PORT", "6379"))
-        self.database = os.getenv("FALKORDB_DATABASE", "default_graph")
+        self._pool = FalkorDBConnectionPool()
         self._client = None
         self._graph = None
 
     def connect(self):
         """建立连接并选择Graph"""
         try:
-            self._client = falkordb.FalkorDB(
-                host=self.host,
-                port=self.port,
-                password=self.password
-            )
-            self._graph = self._client.select_graph(self.database)
-            logger.info(f"已连接到 FalkorDB，选择Graph: {self.database}")
-
+            self._client, self._graph = self._pool.get_connection()
             return True
         except Exception:  # noqa
             import traceback
-            logger.info(f"连接失败: {traceback.format_exc()}")
+            logger.error(f"连接失败: {traceback.format_exc()}")
             return False
 
     def close(self):
@@ -66,6 +99,32 @@ class FalkorDBClient:
         """对象销毁时自动关闭连接"""
         # self.close()
         pass
+
+    def _execute_query(self, query: str):
+        """
+        统一的查询执行方法，记录CQL日志
+        
+        Args:
+            query: CQL查询语句
+        
+        Returns:
+            查询结果
+        """
+        import time
+        start_time = time.time()
+        
+        # 记录查询日志
+        logger.info(f"[CQL] {query}")
+        
+        try:
+            result = self._graph.query(query)
+            execution_time = (time.time() - start_time) * 1000  # 转换为毫秒
+            logger.info(f"[CQL Result] 查询成功，耗时: {execution_time:.2f}ms")
+            return result
+        except Exception as e:
+            execution_time = (time.time() - start_time) * 1000
+            logger.error(f"[CQL Error] 查询失败，耗时: {execution_time:.2f}ms，错误: {str(e)}")
+            raise
 
     def entity_to_list(self, data):
         """将使用fetchall查询的结果转换成列表类型"""
@@ -190,7 +249,7 @@ class FalkorDBClient:
 
         # 创建实体
         properties_str = self.format_properties(properties)
-        entity = self._graph.query(f"CREATE (n:{label} {properties_str}) RETURN n")
+        entity = self._execute_query(f"CREATE (n:{label} {properties_str}) RETURN n")
 
         return self.entity_to_dict(entity)
 
@@ -226,7 +285,7 @@ class FalkorDBClient:
 
         # 校验边是否已经存在
         check_asst_val = properties.get(check_asst_key)
-        result = self._graph.query(
+        result = self._execute_query(
             f"MATCH (a:{a_label})-[e]-(b:{b_label}) WHERE ID(a) = {a_id} AND ID(b) = {b_id} AND e.{check_asst_key} = '{check_asst_val}' RETURN COUNT(e) AS count"
             # noqa
         )
@@ -237,7 +296,7 @@ class FalkorDBClient:
 
         # 创建边
         properties_str = self.format_properties(properties)
-        edge = self._graph.query(
+        edge = self._execute_query(
             f"MATCH (a:{a_label}) WHERE ID(a) = {a_id} WITH a MATCH (b:{b_label}) WHERE ID(b) = {b_id} CREATE (a)-[e:{label} {properties_str}]->(b) RETURN e"
             # noqa
         )
@@ -369,7 +428,15 @@ class FalkorDBClient:
             team_conditions = []
             for team in teams:
                 if team:  # 确保team不为空
-                    team_conditions.append(f"{team} IN n.organization")
+                    # 处理团队数据，支持字典格式（如 {'id': 3}）和简单值
+                    if isinstance(team, dict):
+                        team_id = team.get('id') or team.get('team_id')
+                        if team_id:
+                            team_conditions.append(f"{team_id} IN n.organization")
+                        else:
+                            logger.warning(f"Team dict missing id field: {team}")
+                    else:
+                        team_conditions.append(f"{team} IN n.organization")
 
             if team_conditions:
                 team_condition_str = " OR ".join(team_conditions)
@@ -386,10 +453,6 @@ class FalkorDBClient:
             if inst_names_list:
                 permission_conditions.append(f"n.inst_name IN {inst_names_list}")
 
-        # 4. 模型限制 (可选)
-        if model_id:
-            permission_conditions.append(f"n.model_id = '{model_id}'")
-
         # 组合权限条件 (使用OR，因为满足任一权限即可访问)
         base_permission_str = ""
         if permission_conditions:
@@ -401,14 +464,17 @@ class FalkorDBClient:
         if additional_params:
             additional_params_str = self.format_search_params(additional_params, additional_param_type)
 
-        # 6. 组合基础权限和额外参数 (使用AND，额外参数在权限范围内进行过滤)
-        final_condition = ""
-        if base_permission_str and additional_params_str:
-            final_condition = f"{base_permission_str} AND {additional_params_str}"
-        elif base_permission_str:
-            final_condition = base_permission_str
-        elif additional_params_str:
-            final_condition = additional_params_str
+        # 6. 组合所有条件：权限条件 + 额外参数 + 模型限制
+        conditions = []
+        if base_permission_str:
+            conditions.append(base_permission_str)
+        if additional_params_str:
+            conditions.append(additional_params_str)
+        # 模型限制作为强制条件，而不是权限条件的一部分
+        if model_id:
+            conditions.append(f"n.model_id = '{model_id}'")
+
+        final_condition = " AND ".join(conditions) if conditions else ""
 
         return final_condition
 
@@ -464,13 +530,13 @@ class FalkorDBClient:
         count = None
         if page:
             count_str = f"MATCH (n{label_str}) {where_clause} RETURN COUNT(n) AS count"
-            _result = self._graph.query(count_str)
+            _result = self._execute_query(count_str)
             result = FormatDBResult(_result).to_list_of_lists()
             count = result[0] if result else 0
             sql_str += f" SKIP {page['skip']} LIMIT {page['limit']}"
 
         # 执行查询
-        objs = self._graph.query(sql_str)
+        objs = self._execute_query(sql_str)
         return self.entity_to_list(objs), count
 
     def query_entity(
@@ -528,12 +594,12 @@ class FalkorDBClient:
         count_str = f"MATCH (n{label_str}) {params_str} RETURN COUNT(n) AS count"
         count = None
         if page:
-            _result = self._graph.query(count_str)
+            _result = self._execute_query(count_str)
             result = FormatDBResult(_result).to_list_of_lists()
             count = result[0] if result else 0
             sql_str += f" SKIP {page['skip']} LIMIT {page['limit']}"
 
-        objs = self._graph.query(sql_str)
+        objs = self._execute_query(sql_str)
         return self.entity_to_list(objs), count
 
     def query_entity_by_id(self, id: int):

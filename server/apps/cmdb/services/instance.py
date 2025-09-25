@@ -8,6 +8,7 @@ from apps.cmdb.utils.export import Export
 from apps.cmdb.utils.Import import Import
 from apps.cmdb.utils.permission import PermissionManage
 from apps.core.exceptions.base_app_exception import BaseAppException
+from apps.core.logger import cmdb_logger as logger
 
 
 class InstanceManage(object):
@@ -501,6 +502,10 @@ class InstanceManage(object):
         attrs = ModelManage.search_model_attr_v2(model_id)
         association = ModelManage.model_association_search(model_id)
 
+        # 添加调试日志
+        logger.info(f"导出参数 - model_id: {model_id}, ids: {ids}, association_list: {association_list}")
+        logger.info(f"查询到的所有关联关系: {len(association)} 个")
+
         with GraphClient() as ag:
             # 使用新的基础权限过滤方法获取有权限的实例
             inst_list = ag.export_entities_with_permission(
@@ -513,8 +518,12 @@ class InstanceManage(object):
             )
 
         attrs = [i for i in attrs if i["attr_id"] in attr_list] if attr_list else attrs
+        # 只有当用户明确选择了关联关系时才包含关联关系
         association = [i for i in association if
                        i["model_asst_id"] in association_list] if association_list else []
+        
+        logger.info(f"过滤后的关联关系: {len(association)} 个")
+        
         return Export(attrs, model_id=model_id, association=association).export_inst_list(inst_list)
 
     @staticmethod
