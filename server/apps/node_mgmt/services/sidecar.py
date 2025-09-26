@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from string import Template
 from django.core.cache import cache
 from django.http import HttpResponse
+from django.core.serializers.json import DjangoJSONEncoder
 
 from apps.node_mgmt.constants.controller import ControllerConstants
 from apps.node_mgmt.utils.crypto_helper import EncryptedJsonResponse
@@ -40,12 +41,12 @@ class Sidecar:
                 encrypted_content = encrypt_response_data(data, encryption_key)
                 return hashlib.md5(encrypted_content.encode('utf-8')).hexdigest()
             except Exception:
-                # 加密失败，回退到明文内容
-                json_content = json.dumps(data, ensure_ascii=False)
+                # 加密失败，回退到明文内容，使用 Django JSON 编码器处理 datetime
+                json_content = json.dumps(data, ensure_ascii=False, cls=DjangoJSONEncoder)
                 return hashlib.md5(json_content.encode('utf-8')).hexdigest()
         else:
-            # 不需要加密，基于 JSON 内容生成 ETag
-            json_content = json.dumps(data, ensure_ascii=False)
+            # 不需要加密，基于 JSON 内容生成 ETag，使用 Django JSON 编码器处理 datetime
+            json_content = json.dumps(data, ensure_ascii=False, cls=DjangoJSONEncoder)
             return hashlib.md5(json_content.encode('utf-8')).hexdigest()
 
     @staticmethod
