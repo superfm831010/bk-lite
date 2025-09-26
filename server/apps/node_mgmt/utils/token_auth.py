@@ -63,13 +63,24 @@ def get_node_cache_token(node_id: str):
 
 
 def decode_token(token: str, secret: str = SECRET_KEY):
-    # 解码 token
-    decoded_data = base64.urlsafe_b64decode(token)
-    signature, json_data = decoded_data.split(b".", 1)
+    """解码和验证 token"""
+    try:
+        # 解码 token
+        decoded_data = base64.urlsafe_b64decode(token)
 
-    # 验证签名
-    expected_signature = hmac.new(secret.encode('utf-8'), json_data, hashlib.sha256).digest()
-    if hmac.compare_digest(signature, expected_signature):
-        return json.loads(json_data)
-    else:
-        raise BaseAppException("无效的 token")
+        # 分割签名和数据，处理格式错误的情况
+        parts = decoded_data.split(b".", 1)
+        if len(parts) != 2:
+            raise BaseAppException("token 格式错误")
+
+        signature, json_data = parts
+
+        # 验证签名
+        expected_signature = hmac.new(secret.encode('utf-8'), json_data, hashlib.sha256).digest()
+        if hmac.compare_digest(signature, expected_signature):
+            return json.loads(json_data)
+        else:
+            raise BaseAppException("无效的 token")
+    except (ValueError, json.JSONDecodeError, Exception) as e:
+        logger.error(f"decode_token error: {e}")
+        raise BaseAppException("token 解析失败")

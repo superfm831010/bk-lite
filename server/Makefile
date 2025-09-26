@@ -5,6 +5,9 @@ install:
 	uv sync --all-groups
 	uv sync --all-extras
 
+shell:
+	uv run python manage.py shell_plus --ipython
+	
 migrate:
 	uv run python manage.py makemigrations
 	uv run python manage.py migrate

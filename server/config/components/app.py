@@ -45,7 +45,11 @@ INSTALLED_APPS = (
     "django_select2",
     "apps.core",
     "nats_client",
+    "django_extensions",
 )
+
+SHELL_PLUS = "ipython"
+IPYTHON_KERNEL_DISPLAY_NAME = "BK-Lite"
 
 STORAGES = {
     "staticfiles": {
