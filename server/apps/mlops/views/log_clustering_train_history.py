@@ -1,6 +1,5 @@
 from config.drf.viewsets import ModelViewSet
 from apps.mlops.filters.log_clustering_train_history import LogClusteringTrainHistoryFilter
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 
 from apps.core.logger import opspilot_logger as logger

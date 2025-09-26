@@ -1,5 +1,4 @@
 from django.core.cache import cache
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins
 from rest_framework.decorators import action
 from rest_framework.viewsets import GenericViewSet
@@ -14,7 +13,6 @@ from config.drf.pagination import CustomPageNumberPagination
 from apps.node_mgmt.serializers.node import NodeSerializer, BatchBindingNodeConfigurationSerializer, \
     BatchOperateNodeCollectorSerializer
 from apps.node_mgmt.services.node import NodeService
-from drf_yasg import openapi
 
 
 class NodeViewSet(mixins.DestroyModelMixin,
@@ -35,18 +33,6 @@ class NodeViewSet(mixins.DestroyModelMixin,
                 node_info["permission"] = NodeConstants.DEFAULT_PERMISSION
 
 
-    @swagger_auto_schema(
-        operation_id="node_list",
-        operation_summary="获取节点列表",
-        manual_parameters=[
-            openapi.Parameter('search', openapi.IN_QUERY, description="模糊搜索(id, name, ip)",
-                              type=openapi.TYPE_STRING),
-            openapi.Parameter('cloud_region_id', openapi.IN_QUERY, description="云区域ID", type=openapi.TYPE_INTEGER,
-                              required=True),
-            openapi.Parameter('organization_ids', openapi.IN_QUERY, description="组织ID列表(用逗号分隔)", type=openapi.TYPE_STRING),
-        ],
-        tags=['Node']
-    )
     def list(self, request, *args, **kwargs):
         # 获取权限规则
         permission = get_permission_rules(
@@ -86,31 +72,15 @@ class NodeViewSet(mixins.DestroyModelMixin,
 
         return WebUtils.response_success(processed_data)
 
-    @swagger_auto_schema(
-        operation_id="node_del",
-        operation_summary="删除节点",
-        tags=['Node']
-    )
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
         return WebUtils.response_success()
 
-    @swagger_auto_schema(
-        operation_id="node_enum",
-        operation_summary="节点管理的状态枚举值",
-        tags=['Node']
-    )
     @action(methods=["get"], detail=False, url_path=r"enum", filter_backends=[])
     def enum(self, request, *args, **kwargs):
         return WebUtils.response_success(dict(sidecar_status=ControllerConstants.SIDECAR_STATUS_ENUM))
 
-    @swagger_auto_schema(
-        operation_id="nodes_binding_configuration",
-        operation_summary="批量绑定或更新节点的采集器配置",
-        request_body=BatchBindingNodeConfigurationSerializer,
-        tags=['Node']
-    )
     @action(detail=False, methods=["post"], url_path="batch_binding_configuration")
     def batch_binding_node_configuration(self, request):
         serializer = BatchBindingNodeConfigurationSerializer(data=request.data)
@@ -128,12 +98,6 @@ class NodeViewSet(mixins.DestroyModelMixin,
         else:
             return WebUtils.response_error(error_message=message)
 
-    @swagger_auto_schema(
-        operation_id="batch_operate_node_collector",
-        operation_summary="批量操作节点的采集器(包括start, stop, restart)",
-        request_body=BatchOperateNodeCollectorSerializer,
-        tags=['Node']
-    )
     @action(detail=False, methods=["post"], url_path="batch_operate_collector")
     def batch_operate_node_collector(self, request):
         serializer = BatchOperateNodeCollectorSerializer(data=request.data)
@@ -149,18 +113,6 @@ class NodeViewSet(mixins.DestroyModelMixin,
 
         return WebUtils.response_success()
 
-    @swagger_auto_schema(
-        operation_summary="查询节点信息以及关联的配置",
-        operation_id="node_config_asso",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "cloud_region_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="云区域ID"),
-                "ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING,description="节点id")),
-            },
-            required=["cloud_region_id"]
-        ),
-    )
     @action(detail=False, methods=["post"], url_path="node_config_asso")
     def get_node_config_asso(self, request):
         nodes = Node.objects.prefetch_related("collectorconfiguration_set").filter(cloud_region_id=request.data["cloud_region_id"])
