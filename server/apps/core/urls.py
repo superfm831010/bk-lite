@@ -23,7 +23,6 @@ urlpatterns = [
     re_path(r"api/get_client_detail/", index_view.get_client_detail),
     re_path(r"api/get_user_menus/", index_view.get_user_menus),
     re_path(r"api/get_all_groups/", index_view.get_all_groups),
-    path("select2/", include("django_select2.urls")),
 ]
 
 public_router.register(r"api/user_group", UserGroupViewSet, basename="user_group")

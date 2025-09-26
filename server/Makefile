@@ -6,7 +6,7 @@ install:
 	uv sync --all-extras
 
 shell:
-	uv run python manage.py shell_plus --ipython
+	uv run python manage.py shell_plus
 	
 migrate:
 	uv run python manage.py makemigrations
@@ -40,9 +40,6 @@ collect-static:
 dev:
 	uv run uvicorn asgi:application --host 0.0.0.0 --port 8001 --reload --workers 1
 
-run:
-	uv run gunicorn -w 4 -b 0.0.0.0:8001 asgi:application -k uvicorn.workers.UvicornWorker
-
 clean-migrate:
 	cd apps &&\
 	find . -path "*/migrations/*.py" -not -name "__init__.py" -delete &&\
@@ -56,9 +53,6 @@ celery:
 
 celery-inspect:
 	uv run celery -A apps.core.celery inspect scheduled
-
-celery-flower:
-	uv run celery -A apps.core.celery flower
 
 start-nats:
 	uv run python manage.py nats_listener

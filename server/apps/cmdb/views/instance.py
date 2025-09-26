@@ -1,6 +1,4 @@
 from django.http import HttpResponse, JsonResponse
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 
@@ -17,26 +15,6 @@ from apps.rpc.node_mgmt import NodeMgmt
 
 
 class InstanceViewSet(viewsets.ViewSet):
-    @swagger_auto_schema(
-        operation_id="instance_list",
-        operation_description="实例列表",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "query_list": openapi.Schema(
-                    type=openapi.TYPE_ARRAY,
-                    items=openapi.Schema(type=openapi.TYPE_OBJECT, description="查询条件"),
-                    description="查询条件列表",
-                ),
-                "page": openapi.Schema(type=openapi.TYPE_INTEGER, description="第几页"),
-                "page_size": openapi.Schema(type=openapi.TYPE_INTEGER, description="每页条目数"),
-                "order": openapi.Schema(type=openapi.TYPE_STRING, description="排序"),
-                "model_id": openapi.Schema(type=openapi.TYPE_STRING, description="模型ID"),
-                "role": openapi.Schema(type=openapi.TYPE_STRING, description="角色"),
-            },
-            required=["model_id"],
-        ),
-    )
     @HasPermission("asset_info-View")
     @action(methods=["post"], detail=False)
     def search(self, request):
@@ -94,13 +72,6 @@ class InstanceViewSet(viewsets.ViewSet):
                                                                    instance=instance)
         return has_permission
 
-    @swagger_auto_schema(
-        operation_id="instance_detail",
-        operation_description="查询实例信息",
-        manual_parameters=[
-            openapi.Parameter("id", openapi.IN_PATH, description="实例ID", type=openapi.TYPE_INTEGER),
-        ],
-    )
     @HasPermission("asset_info-View")
     def retrieve(self, request, pk: str):
         instance = InstanceManage.query_entity_by_id(int(pk))
@@ -155,18 +126,6 @@ class InstanceViewSet(viewsets.ViewSet):
                 else:
                     instance['permission'] = []
 
-    @swagger_auto_schema(
-        operation_id="instance_create",
-        operation_description="创建实例",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "model_id": openapi.Schema(type=openapi.TYPE_STRING, description="模型ID"),
-                "instance_info": openapi.Schema(type=openapi.TYPE_OBJECT, description="实例信息"),
-            },
-            required=["model_id", "instance_info"],
-        ),
-    )
     @HasPermission("asset_info-Add")
     def create(self, request):
         model_id = request.data.get("model_id")
@@ -177,11 +136,6 @@ class InstanceViewSet(viewsets.ViewSet):
         )
         return WebUtils.response_success(inst)
 
-    @swagger_auto_schema(
-        operation_id="instance_delete",
-        operation_description="删除实例",
-        manual_parameters=[openapi.Parameter("id", openapi.IN_PATH, description="实例ID", type=openapi.TYPE_INTEGER)],
-    )
     @HasPermission("asset_info-Delete")
     def destroy(self, request, pk: int):
         instance = InstanceManage.query_entity_by_id(pk)
@@ -199,14 +153,6 @@ class InstanceViewSet(viewsets.ViewSet):
         )
         return WebUtils.response_success()
 
-    @swagger_auto_schema(
-        operation_id="instance_batch_delete",
-        operation_description="批量删除实例",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_ARRAY,
-            items=openapi.Schema(type=openapi.TYPE_INTEGER, description="实例ID"),
-        ),
-    )
     @HasPermission("asset_info-Delete")
     @action(detail=False, methods=["post"], url_path="batch_delete")
     def instance_batch_delete(self, request):
@@ -246,14 +192,6 @@ class InstanceViewSet(viewsets.ViewSet):
         )
         return WebUtils.response_success()
 
-    @swagger_auto_schema(
-        operation_id="instance_update",
-        operation_description="更新实例属性",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            description="实例信息",
-        ),
-    )
     @HasPermission("asset_info-Edit")
     def partial_update(self, request, pk: int):
         instance = InstanceManage.query_entity_by_id(pk)
@@ -272,21 +210,6 @@ class InstanceViewSet(viewsets.ViewSet):
         )
         return WebUtils.response_success(inst)
 
-    @swagger_auto_schema(
-        operation_id="instance_batch_update",
-        operation_description="批量更新实例属性",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "inst_ids": openapi.Schema(
-                    type=openapi.TYPE_ARRAY,
-                    items=openapi.Schema(type=openapi.TYPE_INTEGER, description="实例ID"),
-                ),
-                "update_data": openapi.Schema(type=openapi.TYPE_OBJECT, description="要更新的数据"),
-            },
-            required=["inst_ids", "update_data"],
-        ),
-    )
     @HasPermission("asset_info-Edit")
     @action(detail=False, methods=["post"], url_path="batch_update")
     def instance_batch_update(self, request):
@@ -326,29 +249,6 @@ class InstanceViewSet(viewsets.ViewSet):
         )
         return WebUtils.response_success()
 
-    @swagger_auto_schema(
-        operation_id="instance_association_create",
-        operation_description="创建实例关联",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "model_asst_id": openapi.Schema(type=openapi.TYPE_STRING, description="模型关联关系"),
-                "src_model_id": openapi.Schema(type=openapi.TYPE_STRING, description="源模型ID"),
-                "dst_model_id": openapi.Schema(type=openapi.TYPE_STRING, description="目标模型ID"),
-                "src_inst_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="源模型实例ID"),
-                "dst_inst_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="目标模型实例ID"),
-                "asst_id": openapi.Schema(type=openapi.TYPE_STRING, description="目标模型实例ID"),
-            },
-            required=[
-                "model_asst_id",
-                "src_model_id",
-                "src_inst_id",
-                "dst_model_id",
-                "dst_inst_id",
-                "asst_id",
-            ],
-        ),
-    )
     @HasPermission("asset_info-Add Associate")
     @action(detail=False, methods=["post"], url_path="association")
     def instance_association_create(self, request):
@@ -372,31 +272,12 @@ class InstanceViewSet(viewsets.ViewSet):
         asso = InstanceManage.instance_association_create(request.data, request.user.username)
         return WebUtils.response_success(asso)
 
-    @swagger_auto_schema(
-        operation_id="instance_association_delete",
-        operation_description="删除实例关联",
-        manual_parameters=[
-            openapi.Parameter("id", openapi.IN_PATH, description="实例关联ID", type=openapi.TYPE_INTEGER)],
-    )
     @HasPermission("asset_info-Delete Associate")
     @action(detail=False, methods=["delete"], url_path="association/(?P<id>.+?)")
     def instance_association_delete(self, request, id: int):
         InstanceManage.instance_association_delete(int(id), request.user.username)
         return WebUtils.response_success()
 
-    @swagger_auto_schema(
-        operation_id="instance_association_instance_list",
-        operation_description="查询某个实例的所有关联实例",
-        manual_parameters=[
-            openapi.Parameter(
-                "model_id",
-                openapi.IN_PATH,
-                description="模型ID",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter("inst_id", openapi.IN_PATH, description="实例ID", type=openapi.TYPE_NUMBER),
-        ],
-    )
     @action(
         detail=False,
         methods=["get"],
@@ -412,18 +293,6 @@ class InstanceViewSet(viewsets.ViewSet):
         asso_insts = InstanceManage.instance_association_instance_list(model_id, int(inst_id))
         return WebUtils.response_success(asso_insts)
 
-    @swagger_auto_schema(
-        operation_id="instance_association",
-        operation_description="查询某个实例的所有关联",
-        manual_parameters=[
-            openapi.Parameter(
-                "model_id",
-                openapi.IN_PATH,
-                description="模型ID",
-                type=openapi.TYPE_STRING,
-            ),
-        ],
-    )
     @action(
         detail=False,
         methods=["get"],
@@ -440,18 +309,6 @@ class InstanceViewSet(viewsets.ViewSet):
         asso_insts = InstanceManage.instance_association(model_id, int(inst_id))
         return WebUtils.response_success(asso_insts)
 
-    @swagger_auto_schema(
-        operation_id="download_template",
-        operation_description="下载模型实例导入模板",
-        manual_parameters=[
-            openapi.Parameter(
-                "model_id",
-                openapi.IN_PATH,
-                description="模型ID",
-                type=openapi.TYPE_STRING,
-            )
-        ],
-    )
     @HasPermission("asset_info-Add")
     @action(methods=["get"], detail=False, url_path=r"(?P<model_id>.+?)/download_template")
     def download_template(self, request, model_id):
@@ -460,29 +317,6 @@ class InstanceViewSet(viewsets.ViewSet):
         response.write(InstanceManage.download_import_template(model_id).read())
         return response
 
-    @swagger_auto_schema(
-        operation_id="inst_import",
-        operation_description="实例导入支持编辑",
-        manual_parameters=[
-            openapi.Parameter(
-                "model_id",
-                openapi.IN_PATH,
-                description="模型ID",
-                type=openapi.TYPE_STRING,
-            )
-        ],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "file": openapi.Schema(
-                    type=openapi.TYPE_FILE,
-                    format=openapi.FORMAT_BINARY,
-                    description="文件",
-                ),
-            },
-            required=["file"],
-        ),
-    )
     @HasPermission("asset_info-Add")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import")
     def inst_import(self, request, model_id):
@@ -526,22 +360,6 @@ class InstanceViewSet(viewsets.ViewSet):
                 "message": f"数据导入异常，请检查文件格式和内容: {str(e)}"
             })
 
-    @swagger_auto_schema(
-        operation_id="inst_export",
-        operation_description="实例导出",
-        manual_parameters=[
-            openapi.Parameter(
-                "model_id",
-                openapi.IN_PATH,
-                description="模型ID",
-                type=openapi.TYPE_STRING,
-            )
-        ],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_ARRAY,
-            items=openapi.Schema(type=openapi.TYPE_INTEGER, description="实例ID"),
-        ),
-    )
     @HasPermission("asset_info-View")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_export")
     def inst_export(self, request, model_id):
@@ -571,18 +389,6 @@ class InstanceViewSet(viewsets.ViewSet):
         ).read())
         return response
 
-    @swagger_auto_schema(
-        operation_id="instance_fulltext_search",
-        operation_description="实例全文检索",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "search": openapi.Schema(type=openapi.TYPE_STRING, description="检索内容"),
-                "model_id": openapi.Schema(type=openapi.TYPE_STRING, description="模型ID"),
-            },
-            required=["search"],
-        ),
-    )
     @HasPermission("search-View")
     @action(methods=["post"], detail=False)
     def fulltext_search(self, request):
@@ -604,19 +410,6 @@ class InstanceViewSet(viewsets.ViewSet):
         )
         return WebUtils.response_success(result)
 
-    @swagger_auto_schema(
-        operation_id="topo_search",
-        operation_description="实例拓扑查询",
-        manual_parameters=[
-            openapi.Parameter(
-                "model_id",
-                openapi.IN_PATH,
-                description="模型ID",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter("inst_id", openapi.IN_PATH, description="实例ID", type=openapi.TYPE_NUMBER),
-        ],
-    )
     @action(
         detail=False,
         methods=["get"],
@@ -636,19 +429,6 @@ class InstanceViewSet(viewsets.ViewSet):
         result = InstanceManage.topo_search(int(inst_id))
         return WebUtils.response_success(result)
 
-    @swagger_auto_schema(
-        operation_id="topo_search_test_config",
-        operation_description="实例拓扑查询",
-        manual_parameters=[
-            openapi.Parameter(
-                "model_id",
-                openapi.IN_PATH,
-                description="模型ID",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter("inst_id", openapi.IN_PATH, description="实例ID", type=openapi.TYPE_NUMBER),
-        ],
-    )
     @action(
         detail=False,
         methods=["get"],
@@ -669,14 +449,6 @@ class InstanceViewSet(viewsets.ViewSet):
         result = InstanceManage.topo_search_test_config(int(inst_id), model_id)
         return WebUtils.response_success(result)
 
-    @swagger_auto_schema(
-        operation_id="show_field_settings",
-        operation_description="展示字段设置",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_ARRAY,
-            items=openapi.Schema(type=openapi.TYPE_STRING, description="模型属性ID"),
-        ),
-    )
     @action(
         methods=["post"],
         detail=False,
@@ -698,10 +470,6 @@ class InstanceViewSet(viewsets.ViewSet):
         result = InstanceManage.get_info(model_id, request.user.username)
         return WebUtils.response_success(result)
 
-    @swagger_auto_schema(
-        operation_id="model_inst_count",
-        operation_description="模型实例数量",
-    )
     @action(methods=["get"], detail=False, url_path=r"model_inst_count")
     @HasPermission("asset_info-View")
     def model_inst_count(self, request):
