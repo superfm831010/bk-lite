@@ -102,7 +102,7 @@ urlpatterns += [
         name="get_token_consumption_overview",
     ),
     path(
-        r"bot_mgmt/execute_chat_flow/",
+        r"bot_mgmt/execute_chat_flow/<int:bot_id>/<str:node_id>/",
         views.execute_chat_flow,
         name="execute_chat_flow",
     ),
