@@ -176,8 +176,6 @@ const LineChart: React.FC<LineChartProps> = memo(
     useEffect(() => {
       if (eventData.length > 0) {
         processEventData();
-      } else {
-        setBoxItems([]);
       }
     }, [eventData, minTime, maxTime, processEventData]);
 
