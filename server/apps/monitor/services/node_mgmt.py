@@ -90,7 +90,7 @@ class InstanceConfigService:
             metric_obj = Metric.objects.filter(monitor_object_id=child_obj.id).first()
             rules.append(MonitorObjectOrganizationRule(
                 name=f"{child_obj.name}-{monitor_instance_id}",
-                monitor_object=child_obj.id,
+                monitor_object_id=child_obj.id,
                 rule={
                     "type": "metric",
                     "metric_id": metric_obj.id,
