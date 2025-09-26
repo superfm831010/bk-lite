@@ -348,7 +348,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
                   <div
                     className="pt-[10px]"
                     style={{
-                      height: 'calc(100vh - 456px)',
+                      height: 'calc(100vh - 520px)',
                       overflowY: 'auto',
                     }}
                     ref={timelineRef}
