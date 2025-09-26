@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# who_is_big.py — 按"发行包(distribution)"统计安装体积，并列出 Top N
-
 from importlib import metadata as md
 from pathlib import Path
 import sys
