@@ -401,16 +401,13 @@ def set_channel_type_line(end_time, queryset, start_time):
 
 
 @api_exempt
-def execute_chat_flow(request):
+def execute_chat_flow(request, bot_id, node_id):
     """执行ChatFlow流程"""
-    bot_id = request.GET.get("bot_id", "")
-    node_id = request.GET.get("node_id", "")
-
     if not bot_id or not node_id:
         return JsonResponse({"result": False, "message": _("Bot ID and Node ID are required.")})
     kwargs = json.loads(request.body)
     message = kwargs.get("message", "")
-
+    is_test = kwargs.get("is_test", False)
     # 验证token
     token = request.META.get("HTTP_AUTHORIZATION") or request.META.get(settings.API_TOKEN_HEADER_NAME)
     is_valid, msg = validate_openai_token(token, request.COOKIES.get("current_team") or None)
@@ -419,7 +416,13 @@ def execute_chat_flow(request):
 
     # 验证Bot
     user = msg
-    bot_obj = Bot.objects.filter(id=bot_id, online=True, team__contains=int(user.team)).first()
+    filter_dict = {
+        "id": bot_id,
+        "team__contains": int(user.team),
+    }
+    if not is_test:
+        filter_dict["online"] = True
+    bot_obj = Bot.objects.filter(**filter_dict).first()
     if not bot_obj:
         return JsonResponse({"result": False, "message": _("No bot online")})
 
