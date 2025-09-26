@@ -65,7 +65,11 @@ const LabImageModal = forwardRef<ModalRef, LabImageProps>(({ onSuccess }, ref) =
           default_command_pairs: (data.default_command || []).map((cmd: string) => ({ command: cmd })),
           default_args_pairs: (data.default_args || []).map((arg: string) => ({ arg: arg })),
           expose_ports_pairs: (data.expose_ports || []).map((port: number) => ({ port: port })),
-          volume_mount_pairs: data.volume_mounts || []
+          volume_mount_pairs: (data.volume_mounts || []).map((mount: any) => ({
+            container_path: mount.container_path,
+            host_path: mount.host_path,
+            read_only: mount.read_only
+          }))
         });
       } else {
         // 新建模式，重置表单
@@ -511,7 +515,6 @@ const LabImageModal = forwardRef<ModalRef, LabImageProps>(({ onSuccess }, ref) =
                       <Form.Item
                         className="mb-2"
                         name={[name, 'read_only']}
-                        valuePropName="checked"
                         {...restField}
                       >
                         <Select placeholder="读写权限" style={{ width: '100%' }}>

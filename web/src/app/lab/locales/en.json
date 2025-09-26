@@ -113,7 +113,11 @@
       "cpuLimit": "CPU Limit",
       "memoryLimit": "Memory Limit",
       "instanceCreatedSuccess": "Infrastructure instance created successfully",
-      "instanceUpdatedSuccess": "Infrastructure instance updated successfully"
+      "instanceUpdatedSuccess": "Infrastructure instance updated successfully",
+      "endpoint": "Endpoint",
+      "endpointMaxLength": "Endpoint cannot exceed 200 characters",
+      "enterEndpoint": "Please enter endpoint (optional)",
+      "restart": "restart"
     }
   }
 }

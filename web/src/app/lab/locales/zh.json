@@ -28,7 +28,7 @@
       "configVar": "环境变量",
       "varName": "变量名",
       "varValue": "变量值",
-      "addConfigVar":"添加环境变量",
+      "addConfigVar": "添加环境变量",
       "varNameMsg": "请输入变量名",
       "varValueMsg": "请输入变量值",
       "defaultCommand": "默认启动命令",
@@ -113,7 +113,11 @@
       "cpuLimit": "CPU限制",
       "memoryLimit": "内存限制",
       "instanceCreatedSuccess": "基础设施实例创建成功",
-      "instanceUpdatedSuccess": "基础设施实例更新成功"
+      "instanceUpdatedSuccess": "基础设施实例更新成功",
+      "endpoint": "访问端点",
+      "endpointMaxLength": "访问端点不能超过200个字符",
+      "enterEndpoint": "请输入访问端点（可选）",
+      "restart": "重启"
     }
   }
 }
