@@ -312,11 +312,28 @@ const EventHeatMap: React.FC<EventHeatMapProps> = ({
             return (
               <Tooltip key={index} title={tooltipTitle}>
                 <div
-                  className="h-6 rounded transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  className="h-6 rounded transition-all duration-200 hover:scale-105 hover:shadow-md flex items-center justify-center relative"
                   style={{
                     backgroundColor: color,
                   }}
-                ></div>
+                >
+                  <span
+                    className="text-[12px] font-medium select-none"
+                    style={{ color: 'var(--color-bg)' }}
+                  >
+                    {
+                      viewMode === 'month'
+                        ? dayjs(cellData.date).date() // 显示日期数字
+                        : `${dayjs(cellData.date)
+                          .hour()
+                          .toString()
+                          .padStart(2, '0')}:00-${dayjs(cellData.date)
+                          .hour()
+                          .toString()
+                          .padStart(2, '0')}:59` // 显示时间段
+                    }
+                  </span>
+                </div>
               </Tooltip>
             );
           })}
