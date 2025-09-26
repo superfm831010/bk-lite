@@ -64,6 +64,17 @@ const useMlopsManageApi = () => {
     return await get(`/mlops/timeseries_predict_datasets/?page=${page}&page_size=${page_size}`);
   };
 
+  // 获取分类任务数据集列表
+  const getClassificationDatasetsList = async ({
+    page = 1,
+    page_size = -1
+  }: {
+    page?: number;
+    page_size?: number
+  }) => {
+    return await get(`/mlops/classification_datasets/?page=${page}&page_size=${page_size}`)
+  };
+
   // 获取Rasa意图列表
   const getRasaIntentFileList = async ({
     name = '',
@@ -610,6 +621,7 @@ const useMlopsManageApi = () => {
   return {
     getAnomalyDatasetsList,
     getRasaDatasetsList,
+    getClassificationDatasetsList,
     getLogClusteringList,
     getTimeSeriesPredictList,
     getOneAnomalyDataset,
