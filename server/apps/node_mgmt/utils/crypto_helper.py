@@ -6,7 +6,8 @@ import base64
 import hashlib
 import json
 import os
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
+from django.core.serializers.json import DjangoJSONEncoder
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
@@ -35,14 +36,14 @@ def encrypt_response_data(data, uuid_str):
     try:
         # 如果数据不是bytes，先转换为JSON字符串再编码
         if isinstance(data, (dict, list)):
-            plaintext = json.dumps(data, ensure_ascii=False).encode('utf-8')
+            plaintext = json.dumps(data, ensure_ascii=False, cls=DjangoJSONEncoder).encode('utf-8')
         elif isinstance(data, str):
             plaintext = data.encode('utf-8')
         elif isinstance(data, bytes):
             plaintext = data
         else:
-            # 其他类型尝试JSON序列化
-            plaintext = json.dumps(data, ensure_ascii=False).encode('utf-8')
+            # 其他类型尝试JSON序列化，使用Django编码器处理datetime
+            plaintext = json.dumps(data, ensure_ascii=False, cls=DjangoJSONEncoder).encode('utf-8')
 
         # 生成32字节AES密钥
         key = uuid_to_key(uuid_str)
@@ -75,6 +76,10 @@ class EncryptedJsonResponse(HttpResponse):
 
     def __init__(self, data, request=None, encoder=None, safe=True,
                  json_dumps_params=None, **kwargs):
+
+        # 如果没有指定编码器，默认使用DjangoJSONEncoder处理datetime等对象
+        if encoder is None:
+            encoder = DjangoJSONEncoder
 
         # 检查是否需要加密
         encryption_key = None
