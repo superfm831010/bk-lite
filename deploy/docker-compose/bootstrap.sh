@@ -266,7 +266,6 @@ else
     export REDIS_PASSWORD=$(generate_password 32)
     export SECRET_KEY=$(generate_password 32)
     export NEXTAUTH_SECRET=$(generate_password 12)
-    export SIDECAR_INIT_TOKEN=$(generate_password 64)
     export NATS_ADMIN_USERNAME=admin
     export NATS_ADMIN_PASSWORD=$(generate_password 32)
     export NATS_MONITOR_USERNAME=monitor
@@ -286,7 +285,6 @@ export POSTGRES_PASSWORD=$POSTGRES_PASSWORD
 export REDIS_PASSWORD=$REDIS_PASSWORD
 export SECRET_KEY=$SECRET_KEY
 export NEXTAUTH_SECRET=$NEXTAUTH_SECRET
-export SIDECAR_INIT_TOKEN=$SIDECAR_INIT_TOKEN
 export NATS_ADMIN_USERNAME=$NATS_ADMIN_USERNAME
 export NATS_ADMIN_PASSWORD=$NATS_ADMIN_PASSWORD
 export NATS_MONITOR_USERNAME=$NATS_MONITOR_USERNAME
@@ -411,7 +409,6 @@ POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 REDIS_PASSWORD=${REDIS_PASSWORD}
 SECRET_KEY=${SECRET_KEY}
 NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-SIDECAR_INIT_TOKEN=${SIDECAR_INIT_TOKEN}
 NATS_ADMIN_USERNAME=${NATS_ADMIN_USERNAME}
 NATS_ADMIN_PASSWORD=${NATS_ADMIN_PASSWORD}
 NATS_MONITOR_USERNAME=${NATS_MONITOR_USERNAME}
@@ -484,7 +481,20 @@ uv run manage.py collector_package_init --os linux --object Vector --pk_version 
 uv run manage.py collector_package_init --os linux --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/nats-executor
 EOF
 
+if [ -z "${SIDECAR_NODE_ID:-}" ]; then
+    log "WARNING" "重新初始化 Sidecar Node ID 和 Token，可能会导致已注册的 Sidecar 失效"
+    mapfile -t ARR < <(docker-compose exec -T server /bin/bash -c 'uv run manage.py node_token_init --ip default' 2>&1| grep -oP 'node_id: \K[0-9a-f]+|token: \K\S+')
+    SIDECAR_NODE_ID=${ARR[0]}
+    SIDECAR_INIT_TOKEN=${ARR[1]}
+    log "SUCCESS" "Sidecar Node ID: $SIDECAR_NODE_ID, Token: $SIDECAR_INIT_TOKEN"
+else
+    log "SUCCESS" "检测到 SIDECAR_INIT_TOKEN 环境变量，跳过 Sidecar Token 初始化"
+fi
+
+echo "SIDECAR_NODE_ID=$SIDECAR_NODE_ID" >> .env
+echo "SIDECAR_INIT_TOKEN=$SIDECAR_INIT_TOKEN" >> .env
+
+${DOCKER_COMPOSE_CMD} up -d fusion-collector
+
 log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_WEB_PORT 访问系统"
 log "SUCCESS" "初始用户名: admin, 初始密码: password"
-log "SUCCESS" "控制器安装信息："
-log "SUCCESS" "Token: ${SIDECAR_INIT_TOKEN}"
