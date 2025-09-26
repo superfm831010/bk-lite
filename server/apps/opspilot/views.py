@@ -4,7 +4,7 @@ import json
 import time
 
 from django.conf import settings
-from django.db.models import Count, Sum
+from django.db.models import Count
 from django.db.models.functions import TruncDate
 from django.http import FileResponse, JsonResponse, StreamingHttpResponse
 from django.utils.translation import gettext as _
@@ -14,7 +14,7 @@ from apps.base.models import UserAPISecret
 from apps.core.logger import opspilot_logger as logger
 from apps.core.utils.async_utils import create_async_compatible_generator
 from apps.core.utils.exempt import api_exempt
-from apps.opspilot.models import Bot, BotChannel, BotConversationHistory, BotWorkFlow, LLMSkill, TokenConsumption
+from apps.opspilot.models import Bot, BotChannel, BotConversationHistory, BotWorkFlow, LLMSkill
 from apps.opspilot.services.llm_service import llm_service
 from apps.opspilot.services.skill_excute_service import SkillExecuteService
 from apps.opspilot.utils.bot_utils import get_client_ip, insert_skill_log, set_time_range
@@ -71,14 +71,24 @@ def model_download(request):
     return response
 
 
-def validate_openai_token(token):
+def validate_openai_token(token, team=None):
     """Validate the OpenAI API token"""
     if not token:
         return False, {"choices": [{"message": {"role": "assistant", "content": "No authorization"}}]}
     token = token.split("Bearer ")[-1]
     user = UserAPISecret.objects.filter(api_secret=token).first()
     if not user:
-        return False, {"choices": [{"message": {"role": "assistant", "content": "No authorization"}}]}
+        if team is None:
+            return False, {"choices": [{"message": {"role": "assistant", "content": "No authorization"}}]}
+        client = SystemMgmt()
+        result = client.verify_token(token)
+        if not result.get("result"):
+            return False, {"choices": [{"message": {"role": "assistant", "content": "No authorization"}}]}
+        user_info = result.get("data")
+        user = UserAPISecret(
+            username=user_info["username"],
+            team=int(team),
+        )
     return True, user
 
 
@@ -314,45 +324,12 @@ def get_skill_execute_result(bot_id, channel, chat_history, kwargs, request, sen
 
 # @HasRole("admin")
 def get_total_token_consumption(request):
-    start_time_str = request.GET.get("start_time")
-    end_time_str = request.GET.get("end_time")
-    end_time, start_time = set_time_range(end_time_str, start_time_str)
-    total_tokens = TokenConsumption.objects.filter(
-        created_at__range=[start_time, end_time],
-        bot_id=request.GET.get("bot_id"),
-    ).aggregate(total_input_tokens=Sum("input_tokens"), total_output_tokens=Sum("output_tokens"))
-    input_tokens = total_tokens["total_input_tokens"] or 0
-    output_tokens = total_tokens["total_output_tokens"] or 0
-    total_combined_tokens = input_tokens + output_tokens
-    return JsonResponse({"result": True, "data": total_combined_tokens})
+    return JsonResponse({"result": True, "data": 0})
 
 
 # @HasRole("admin")
 def get_token_consumption_overview(request):
-    start_time_str = request.GET.get("start_time")
-    end_time_str = request.GET.get("end_time")
-    end_time, start_time = set_time_range(end_time_str, start_time_str)
-    num_days = (end_time - start_time).days + 1
-    all_dates = [start_time + datetime.timedelta(days=i) for i in range(num_days)]
-    formatted_dates = {date.strftime("%Y-%m-%d"): 0 for date in all_dates}
-    # 查询特定日期范围内的TokenConsumption，并按天分组统计input_tokens和output_tokens的总和
-    queryset = (
-        TokenConsumption.objects.filter(created_at__range=[start_time, end_time], bot_id=request.GET.get("bot_id"))
-        .annotate(date=TruncDate("created_at"))
-        .values("date")
-        .annotate(input_tokens_sum=Sum("input_tokens"), output_tokens_sum=Sum("output_tokens"))
-    )
-
-    # 更新字典与查询结果
-    for entry in queryset:
-        date = entry["date"].strftime("%Y-%m-%d")
-        input_tokens = entry["input_tokens_sum"] or 0
-        output_tokens = entry["output_tokens_sum"] or 0
-        formatted_dates[date] = input_tokens + output_tokens
-
-    # 转换为所需的输出格式
-    result = [{"time": date, "count": values} for date, values in sorted(formatted_dates.items())]
-    return JsonResponse({"result": True, "data": result})
+    return JsonResponse({"result": True, "data": []})
 
 
 # @HasRole("admin")
@@ -436,7 +413,7 @@ def execute_chat_flow(request):
 
     # 验证token
     token = request.META.get("HTTP_AUTHORIZATION") or request.META.get(settings.API_TOKEN_HEADER_NAME)
-    is_valid, msg = validate_openai_token(token)
+    is_valid, msg = validate_openai_token(token, request.COOKIES.get("current_team") or None)
     if not is_valid:
         return JsonResponse(msg)
 

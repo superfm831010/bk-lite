@@ -108,20 +108,13 @@ APPS_DIR = os.path.join(BASE_DIR, "apps")
 if os.path.exists(APPS_DIR):
     install_apps = os.getenv("INSTALL_APPS", "")
     if install_apps:
-        app_folders = [
-            name
-            for name in os.listdir(APPS_DIR)
-            if os.path.isdir(os.path.join(APPS_DIR, name)) and name in install_apps.split(",")
-        ]
+        app_folders = [name for name in os.listdir(APPS_DIR) if os.path.isdir(os.path.join(APPS_DIR, name)) and name in install_apps.split(",")]
     else:
         exclude_apps = ["base", "core", "rpc"]
         app_folders = [
             name
             for name in os.listdir(APPS_DIR)
-            if os.path.isdir(os.path.join(APPS_DIR, name))
-            and name not in exclude_apps
-            and not name.startswith("_")
-            and not name.startswith(".")
+            if os.path.isdir(os.path.join(APPS_DIR, name)) and name not in exclude_apps and not name.startswith("_") and not name.startswith(".")
         ]
 
 else:

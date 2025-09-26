@@ -232,15 +232,3 @@ class ModelType(models.Model):
     is_build_in = models.BooleanField(default=False)
     index = models.IntegerField(default=0, verbose_name="排序")
     tags = models.JSONField(default=list)
-
-
-class TokenConsumption(models.Model):
-    bot_id = models.IntegerField(default=0, db_index=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    input_tokens = models.BigIntegerField()
-    output_tokens = models.BigIntegerField()
-    username = models.CharField(max_length=100)
-    user_id = models.CharField(max_length=100)
-
-    class Meta:
-        db_table = "model_provider_mgmt_tokenconsumption"

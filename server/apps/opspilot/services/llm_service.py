@@ -9,7 +9,7 @@ from django.utils.translation import gettext as _
 from apps.core.logger import opspilot_logger as logger
 from apps.core.mixinx import EncryptMixin
 from apps.opspilot.enum import SkillTypeChoices
-from apps.opspilot.models import KnowledgeBase, KnowledgeDocument, LLMModel, SkillTools, TokenConsumption
+from apps.opspilot.models import KnowledgeBase, KnowledgeDocument, LLMModel, SkillTools
 from apps.opspilot.services.knowledge_search_service import KnowledgeSearchService
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
@@ -32,17 +32,6 @@ class LLMService:
         """
         citing_knowledge = []
         data, doc_map, title_map = self.invoke_chat(kwargs)
-
-        # 记录token消耗
-        if "bot_id" in kwargs:
-            TokenConsumption.objects.create(
-                bot_id=kwargs["bot_id"],
-                input_tokens=data["prompt_tokens"],
-                output_tokens=data["completion_tokens"],
-                username=kwargs["username"],
-                user_id=kwargs["user_id"],
-            )
-
         # 如果启用了知识源引用，构建引用信息
         if kwargs["enable_rag_knowledge_source"]:
             citing_knowledge = [
