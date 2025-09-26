@@ -27,6 +27,7 @@ import Information from './information';
 import EventDetail from './eventDetail';
 import { LEVEL_MAP } from '@/app/log/constants';
 import { useLevelList, useStateMap } from '@/app/log/hooks/event';
+import EventHeatMap from './eventHeatMap';
 
 const AlertDetail = forwardRef<ModalRef, ModalConfig>(
   ({ userList, onSuccess }, ref) => {
@@ -39,6 +40,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const timelineRef = useRef<HTMLDivElement>(null);
     const isFetchingRef = useRef<boolean>(false); // 用于标记是否正在加载数据
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
+    const [chartDataLoading, setChartDataLoading] = useState<boolean>(false);
     const [formData, setFormData] = useState<TableDataItem>({});
     const [title, setTitle] = useState<string>('');
     const [rawData, setRawData] = useState<TableDataItem[]>([]);
@@ -52,6 +54,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const [tableLoading, setTableLoading] = useState<boolean>(false);
     const tabs: TabItem[] = useAlertDetailTabs();
     const [timeLineData, setTimeLineData] = useState<TimeLineItem[]>([]);
+    const [chartData, setChartData] = useState<TableDataItem[]>([]);
 
     useImperativeHandle(ref, () => ({
       showModal: ({ title, form }) => {
@@ -73,6 +76,21 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
         isFetchingRef.current = false;
       }
     }, [tableLoading]);
+
+    const getAllEventData = async () => {
+      setChartDataLoading(true);
+      try {
+        const params = {
+          page: 1,
+          page_size: -1,
+          alert_id: formData.id,
+        };
+        const data = await geEventList(params);
+        setChartData(data || []);
+      } finally {
+        setChartDataLoading(false);
+      }
+    };
 
     const getTableData = async (customPage?: number) => {
       setTableLoading(true);
@@ -162,6 +180,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const changeTab = (val: string) => {
       setActiveTab(val);
       setTimeLineData([]);
+      setChartData([]);
       setPagination({
         current: 1,
         total: 0,
@@ -174,6 +193,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
         return;
       }
       getTableData();
+      getAllEventData();
     };
 
     const closeModal = () => {
@@ -241,28 +261,35 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
               </ul>
             </div>
             <Tabs activeKey={activeTab} items={tabs} onChange={changeTab} />
-            <Spin className="w-full" spinning={loading || tableLoading}>
-              {isInformation ? (
+            {isInformation ? (
+              <Spin className="w-full" spinning={loading}>
                 <Information
                   formData={formData}
                   userList={userList}
                   onClose={closeModal}
                   rawData={rawData}
                 />
-              ) : (
-                <div
-                  className="pt-[10px]"
-                  style={{
-                    height: 'calc(100vh - 276px)',
-                    overflowY: 'auto',
-                  }}
-                  ref={timelineRef}
-                  onScroll={handleScroll}
-                >
-                  <Timeline items={timeLineData} />
-                </div>
-              )}
-            </Spin>
+              </Spin>
+            ) : (
+              <div>
+                <Spin spinning={chartDataLoading}>
+                  <EventHeatMap data={chartData} className="mb-4" />
+                </Spin>
+                <Spin spinning={tableLoading}>
+                  <div
+                    className="pt-[10px]"
+                    style={{
+                      height: 'calc(100vh - 456px)',
+                      overflowY: 'auto',
+                    }}
+                    ref={timelineRef}
+                    onScroll={handleScroll}
+                  >
+                    <Timeline items={timeLineData} />
+                  </div>
+                </Spin>
+              </div>
+            )}
           </div>
         </OperateModal>
         <EventDetail ref={eventDetailRef} />
