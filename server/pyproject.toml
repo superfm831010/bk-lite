@@ -66,6 +66,8 @@ dependencies = [
     "pyotp==2.9.0",
     "qrcode==8.2",
     "pillow==11.3.0",
+    "django-extensions==4.1",
+    "ipython>=8.37.0",
 ]
 
 [project.optional-dependencies]
