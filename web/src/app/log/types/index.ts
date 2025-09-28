@@ -12,6 +12,8 @@ export interface ListItem {
   title?: string;
   label?: string;
   name?: string;
+  icon?: string;
+  content?: string;
   display_name?: string;
   id?: string | number;
   value?: string | number;
@@ -46,6 +48,7 @@ export interface TreeItem {
 export interface UserItem {
   id: string;
   username: string;
+  display_name: string;
   [key: string]: unknown;
 }
 

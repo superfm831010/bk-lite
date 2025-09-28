@@ -2,33 +2,26 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Input, Button, Modal, message } from 'antd';
-import { useSearchParams } from 'next/navigation';
 import { PlusOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/custom-table';
 import AttributesModal from './attributesModal';
 import { Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { ATTR_TYPE_LIST } from '@/app/cmdb/constants/asset';
-import useApiClient from '@/utils/request';
 import { useTranslation } from '@/utils/i18n';
-import { useCommon } from '@/app/cmdb/context/common';
 import PermissionWrapper from '@/components/permission';
+import { useModelApi } from '@/app/cmdb/api';
+import { useModelDetail } from '../context';
 
-const Attributes = () => {
-  const { get, del } = useApiClient();
+const Attributes: React.FC = () => {
   const { confirm } = Modal;
   const { t } = useTranslation();
-  const commonContext = useCommon();
-  const searchParams = useSearchParams();
-  const modelId = searchParams.get('model_id');
-  const permissionParam = searchParams.get('permission');
-  const modelPermission = permissionParam
-    ? decodeURIComponent(permissionParam).split(',')
-    : [];
-  const permissionGroupsInfo = useRef(
-    commonContext?.permissionGroupsInfo || null
-  );
-  const isAdmin = permissionGroupsInfo.current?.is_all;
+  const modelDetail = useModelDetail();
+
+  const { getModelAttrList, deleteModelAttr } = useModelApi();
+
+  const modelId = modelDetail?.model_id;
+  const modelPermission = modelDetail?.permission || [];
   const attrRef = useRef<any>(null);
   const [searchText, setSearchText] = useState<string>('');
   const [pagination, setPagination] = useState<any>({
@@ -74,7 +67,7 @@ const Attributes = () => {
       ),
     },
     {
-      title: t('common.editable'),
+      title: t('editable'),
       key: 'editable',
       dataIndex: 'editable',
       render: (_, { editable }) => (
@@ -102,7 +95,7 @@ const Attributes = () => {
       ),
     },
     {
-      title: t('common.action'),
+      title: t('common.actions'),
       key: 'action',
       render: (_, record) => (
         <>
@@ -113,7 +106,6 @@ const Attributes = () => {
             <Button
               type="link"
               className="mr-[10px]"
-              disabled={!isAdmin && record.is_pre}
               onClick={() => showAttrModal('edit', record)}
             >
               {t('common.edit')}
@@ -125,7 +117,6 @@ const Attributes = () => {
           >
             <Button
               type="link"
-              disabled={!isAdmin && record.is_pre}
               onClick={() =>
                 showDeleteConfirm({
                   attr_id: record.attr_id,
@@ -141,8 +132,10 @@ const Attributes = () => {
   ];
 
   useEffect(() => {
-    fetchData();
-  }, [pagination]);
+    if (modelId) {
+      fetchData();
+    }
+  }, [pagination, modelId]);
 
   const showAttrModal = (type: string, row = {}) => {
     const title = t(
@@ -158,13 +151,15 @@ const Attributes = () => {
 
   const showDeleteConfirm = (row = { attr_id: '' }) => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await del(`/cmdb/api/model/${modelId}/attr/${row.attr_id}/`);
+            await deleteModelAttr(modelId!, row.attr_id);
             message.success(t('successfullyDeleted'));
             if (pagination.current > 1 && tableData.length === 1) {
               pagination.current--;
@@ -201,7 +196,7 @@ const Attributes = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const data = await get(`/cmdb/api/model/${modelId}/attr_list/`);
+      const data = await getModelAttrList(modelId!);
       setTableData(data);
       pagination.total = data.length;
       pagination.pageSize = 10;

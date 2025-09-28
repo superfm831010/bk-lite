@@ -1,8 +1,18 @@
 import { useTranslation } from '@/utils/i18n';
 import { useMemo } from 'react';
 
+const DISPLAY_PLUGINS: string[] = [
+  'Telegraf',
+  'Vector',
+  'Beat',
+  'Export',
+  'JMX',
+];
+
 const COLLECTOR_LABEL: Record<string, string[]> = {
   Telegraf: ['Telegraf'],
+  Vector: ['Vector'],
+  Beat: ['Auditbeat', 'Metricbeat', 'Winlogbeat', 'Packetbeat', 'Filebeat'],
   JMX: [
     'Tomcat-JMX',
     'ActiveMQ-JMX',
@@ -45,32 +55,34 @@ const COLLECTOR_LABEL: Record<string, string[]> = {
     'JBoss-Bk-pull',
     'WebSphere-Bk-pull',
     'TiDB-BK-pull',
-  ]
+  ],
 };
 
 const useMenuItem = () => {
   const { t } = useTranslation();
-  return useMemo(() => [
-    {
-      key: 'edit',
-      role: 'Edit',
-      title: 'edit',
-      config: {
-        title: 'editCollector', type: 'edit'
-      }
-    },
-    {
-      key: 'upload',
-      role: 'AddPacket',
-      title: 'uploadPackage',
-      config: {
-        title: 'uploadPackage', type: 'upload'
-      }
-    }
-  ], [t])
+  return useMemo(
+    () => [
+      {
+        key: 'edit',
+        role: 'Edit',
+        title: 'edit',
+        config: {
+          title: 'editCollector',
+          type: 'edit',
+        },
+      },
+      {
+        key: 'upload',
+        role: 'AddPacket',
+        title: 'uploadPackage',
+        config: {
+          title: 'uploadPackage',
+          type: 'upload',
+        },
+      },
+    ],
+    [t]
+  );
 };
 
-export {
-  COLLECTOR_LABEL,
-  useMenuItem
-}
+export { COLLECTOR_LABEL, useMenuItem, DISPLAY_PLUGINS };

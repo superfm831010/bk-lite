@@ -14,7 +14,8 @@ const StudioCard: React.FC<StudioCardProps> = (props) => {
   const iconTypeMapping: [string, string] = ['jiqirenjiaohukapian', 'jiqiren'];
   const botTypeMapping: { [key: number]: string } = {
     1: 'Pilot',
-    2: 'LobeChat'
+    2: 'LobeChat',
+    3: 'Chatflow'
   };
 
   return (
@@ -26,6 +27,7 @@ const StudioCard: React.FC<StudioCardProps> = (props) => {
       team_name={team_name}
       team={team}
       online={online}
+      bot_type={bot_type}
       botType={botTypeMapping[bot_type] || ''}
       permissions={permissions}
       onMenuClick={onMenuClick}

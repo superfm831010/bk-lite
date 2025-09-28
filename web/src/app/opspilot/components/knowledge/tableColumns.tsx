@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tag, Button } from 'antd';
+import { Tag, Button, Space } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { TableData, QAPairData } from '@/app/opspilot/types/knowledge';
 import PermissionWrapper from '@/components/permission';
@@ -35,7 +35,7 @@ export const getDocumentColumns = (
         style={{ color: '#155aef' }}
         onClick={(e) => {
           e.preventDefault();
-          router.push(`/opspilot/knowledge/detail/documents/result?id=${id}&name=${name}&desc=${desc}&knowledgeId=${record.id}`);
+          router.push(`/opspilot/knowledge/detail/documents/result?id=${id}&name=${name}&desc=${desc}&documentId=${record.id}`);
         }}
       >
         {text}
@@ -141,6 +141,7 @@ export const getDocumentColumns = (
   {
     title: t('knowledge.documents.actions'),
     key: 'action',
+    width: 170,
     render: (_: any, record: TableData) => (
       <ActionButtons
         record={record}
@@ -162,10 +163,12 @@ export const getQAPairColumns = (
   getRandomColor: () => string,
   knowledgeBasePermissions: string[],
   onDeleteSingle: (id: number) => void,
+  onExport: (id: number, name: string) => void,
   router: RouterType,
   id: string | null,
   name: string | null,
-  desc: string | null
+  desc: string | null,
+  exportLoadingMap: { [key: number]: boolean }
 ): TableColumnsType<QAPairData> => [
   {
     title: t('knowledge.qaPairs.name'),
@@ -177,7 +180,7 @@ export const getQAPairColumns = (
         style={{ color: '#155aef' }}
         onClick={(e) => {
           e.preventDefault();
-          router.push(`/opspilot/knowledge/detail/documents/qapair/result?id=${id}&name=${name}&desc=${desc}&qaPairId=${record.id}`);
+          router.push(`/opspilot/knowledge/detail/documents/qapair/result?id=${id}&name=${name}&desc=${desc}&qaPairId=${record.id}&documentId=${record.document_id}`);
         }}
       >
         {text}
@@ -186,8 +189,22 @@ export const getQAPairColumns = (
   },
   {
     title: t('knowledge.qaPairs.qaCount'),
-    dataIndex: 'qa_count',
-    key: 'qa_count',
+    dataIndex: 'generate_count',
+    key: 'generate_count',
+  },
+  {
+    title: t('knowledge.qaPairs.type'),
+    dataIndex: 'create_type',
+    key: 'create_type', 
+    render: (text: string) => {
+      if (text=== 'custom') {
+        return <span>{t('knowledge.qaPairs.custom')}</span>;
+      } else if (text === 'import') {
+        return <span>{t('knowledge.qaPairs.import')}</span>;
+      } else {
+        return <span>{t('knowledge.qaPairs.generate')}</span>;
+      }
+    }
   },
   {
     title: t('knowledge.documents.createdAt'),
@@ -216,7 +233,6 @@ export const getQAPairColumns = (
     key: 'status',
     dataIndex: 'status',
     render: (_: any, record: QAPairData) => {
-      // pending: 准备中，generating：生成中，failed：失败，completed: 完成
       const statusColors: { [key: string]: string } = {
         'pending': 'processing',
         'generating': 'orange',
@@ -224,15 +240,8 @@ export const getQAPairColumns = (
         'completed': 'green'
       };
 
-      const statusMaps: { [key: string]: string } = {
-        'pending': '准备中',
-        'generating': '生成中',
-        'failed': '失败',
-        'completed': '完成'
-      };
-
       const color = statusColors[record.status?.toString()] || 'processing';
-      const text = statusMaps[record.status] || '--';
+      const text = t(`knowledge.qaPairs.status.${record.status}`) || '--';
 
       return <Tag color={color}>{text}</Tag>;
     },
@@ -240,18 +249,55 @@ export const getQAPairColumns = (
   {
     title: t('knowledge.documents.actions'),
     key: 'action',
-    render: (_: any, record: QAPairData) => (
-      <PermissionWrapper
-        requiredPermissions={['Delete']}
-        instPermissions={knowledgeBasePermissions}>
-        <Button
-          type="link"
-          size="small"
-          onClick={() => onDeleteSingle(record.id)}
-        >
-          {t('common.delete')}
-        </Button>
-      </PermissionWrapper>
-    ),
+    render: (_: any, record: QAPairData) => {
+      const isProcessing = record.status === 'pending' || record.status === 'generating';
+      const isDocumentGenerated = record.create_type === 'document';
+      
+      return (
+        <Space>
+          <PermissionWrapper
+            requiredPermissions={['Delete']}
+            instPermissions={knowledgeBasePermissions}>
+            <Button
+              type="link"
+              size="small"
+              loading={exportLoadingMap[record.id]}
+              disabled={isProcessing}
+              onClick={() => onExport(record.id, record.name)}
+            >
+              {t('common.export')}
+            </Button>
+          </PermissionWrapper>
+          {isDocumentGenerated && (
+            <PermissionWrapper
+              requiredPermissions={['Set']}
+              instPermissions={knowledgeBasePermissions}>
+              <Button
+                type="link"
+                size="small"
+                disabled={isProcessing}
+                onClick={() => {
+                  router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_pairs&id=${id}&name=${name}&desc=${desc}&parId=${record.id}`);
+                }}
+              >
+                {t('common.set')}
+              </Button>
+            </PermissionWrapper>
+          )}
+          <PermissionWrapper
+            requiredPermissions={['Delete']}
+            instPermissions={knowledgeBasePermissions}>
+            <Button
+              type="link"
+              size="small"
+              disabled={isProcessing}
+              onClick={() => onDeleteSingle(record.id)}
+            >
+              {t('common.delete')}
+            </Button>
+          </PermissionWrapper>
+        </Space>
+      );
+    },
   }
 ];

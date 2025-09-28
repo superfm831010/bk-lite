@@ -2,20 +2,65 @@ import { BUILD_IN_MODEL, CREDENTIAL_LIST } from '@/app/cmdb/constants/asset';
 import { getSvgIcon } from './utils';
 import dayjs from 'dayjs';
 import { AttrFieldType } from '@/app/cmdb/types/assetManage';
-import { Tag, Select, Input, Cascader, DatePicker } from 'antd';
+import { Tag, Select, Input, DatePicker } from 'antd';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import GroupTreeSelector from '@/components/group-tree-select';
+import { useUserInfoContext } from '@/context/userInfo';
 import UserAvatar from '@/components/user-avatar';
+import React from 'react';
 import {
   ModelIconItem,
   ColumnItem,
   UserItem,
   SubGroupItem,
-  Organization,
   OriginOrganization,
   OriginSubGroupItem,
   EnumList,
 } from '@/app/cmdb/types/assetManage';
 const { RangePicker } = DatePicker;
+
+// 通用的组织名称查找函数（用于新的组织显示组件）
+const findOrganizationNameById = (arr: Array<any>, targetValue: unknown) => {
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i].id === targetValue || arr[i].value === targetValue) {
+      return arr[i].name || arr[i].label;
+    }
+  }
+  return null;
+};
+
+// 通用的组织显示文本处理函数
+const getOrganizationDisplayText = (value: any, flatGroups: Array<any>) => {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '--';
+    const groupNames = value
+      .map((val) => findOrganizationNameById(flatGroups || [], val))
+      .filter((name) => name !== null);
+    return groupNames.length > 0 ? groupNames.join('，') : '--';
+  } else {
+    return findOrganizationNameById(flatGroups || [], value) || '--';
+  }
+};
+
+// 组织字段显示组件
+const OrganizationDisplay: React.FC<{ value: any }> = ({ value }) => {
+  const { flatGroups } = useUserInfoContext();
+
+  return (
+    <EllipsisWithTooltip
+      className="whitespace-nowrap overflow-hidden text-ellipsis"
+      text={getOrganizationDisplayText(value, flatGroups)}
+    />
+  );
+};
+
+// 组织字段编辑/显示工具组件
+export const OrganizationField: React.FC<{ value: any; hideUserAvatar?: boolean }> = ({
+  value,
+}) => {
+  const { flatGroups } = useUserInfoContext();
+  return getOrganizationDisplayText(value, flatGroups);
+};
 
 export const iconList = getSvgIcon();
 export function getIconUrl(tex: ModelIconItem) {
@@ -135,7 +180,6 @@ export const convertArray = (
 export const getAssetColumns = (config: {
   attrList: AttrFieldType[];
   userList?: UserItem[];
-  groupList?: Organization[];
   t?: any;
 }): ColumnItem[] => {
   return config.attrList.map((item: AttrFieldType) => {
@@ -171,17 +215,7 @@ export const getAssetColumns = (config: {
         return {
           ...columnItem,
           render: (_: unknown, record: any) => (
-            <>
-              <EllipsisWithTooltip
-                className="whitespace-nowrap overflow-hidden text-ellipsis"
-                text={
-                  (findGroupNameById(
-                    config.groupList || [],
-                    record[attrId][0]
-                  ) || '--') as string
-                }
-              ></EllipsisWithTooltip>
-            </>
+            <OrganizationDisplay value={record[attrId]} />
           ),
         };
       case 'bool':
@@ -240,7 +274,6 @@ export const getAssetColumns = (config: {
 export const getFieldItem = (config: {
   fieldItem: AttrFieldType;
   userList?: UserItem[];
-  groupList?: Organization[];
   isEdit: boolean;
   value?: any;
   hideUserAvatar?: boolean;
@@ -304,7 +337,7 @@ export const getFieldItem = (config: {
           </Select>
         );
       case 'organization':
-        return <Cascader options={config.groupList} />;
+        return <GroupTreeSelector multiple={false} />;
       case 'time':
         return (
           <RangePicker
@@ -329,10 +362,10 @@ export const getFieldItem = (config: {
       );
     case 'organization':
       return (
-        findGroupNameById(
-          config.groupList || [],
-          Array.isArray(config.value) ? config.value?.[0] : config.value
-        ) || '--'
+        <OrganizationField
+          value={config.value}
+          hideUserAvatar={config.hideUserAvatar}
+        />
       );
     case 'bool':
       return config.value ? 'Yes' : 'No';

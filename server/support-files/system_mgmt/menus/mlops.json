@@ -35,14 +35,6 @@
             "File Upload",
             "File Edit"
           ]
-        },
-        {
-          "id": "anomaly_detection_datasets_tag",
-          "display_name": "Anomaly Detection",
-          "name": "anomaly_detection_datasets_tag",
-          "operation": [
-            "File Tag"
-          ]
         }
       ]
     },

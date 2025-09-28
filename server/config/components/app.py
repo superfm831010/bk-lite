@@ -23,11 +23,6 @@ TEMPLATES = [
 ]
 
 INSTALLED_APPS = (
-    "unfold",
-    "unfold.contrib.filters",
-    "unfold.contrib.forms",
-    "unfold.contrib.inlines",
-    "unfold.contrib.import_export",
     "apps.base",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -41,11 +36,13 @@ INSTALLED_APPS = (
     "django_filters",
     "mptt",
     "django_comment_migrate",
-    "import_export",
-    "django_select2",
     "apps.core",
     "nats_client",
+    "django_extensions",
 )
+
+SHELL_PLUS = "ipython"
+IPYTHON_KERNEL_DISPLAY_NAME = "BK-Lite"
 
 STORAGES = {
     "staticfiles": {
@@ -77,12 +74,12 @@ MIDDLEWARE = (
     "apps.core.middlewares.drf_middleware.DisableCSRFMiddleware",
     "apps.core.middlewares.api_middleware.APISecretMiddleware",
     "apps.core.middlewares.auth_middleware.AuthMiddleware",
+    "better_exceptions.integrations.django.BetterExceptionsMiddleware",
 )
 
 if DEBUG:
     INSTALLED_APPS += (
         "corsheaders",
-        "drf_yasg",
         "debug_toolbar",
     )  # noqa
     # 该跨域中间件需要放在前面

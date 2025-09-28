@@ -14,7 +14,40 @@
         {
           "id": "search",
           "name": "Search",
+          "operation": ["View", "Delete"]
+        }
+      ]
+    },
+    {
+      "name": "Analysis",
+      "children": [
+        {
+          "id": "analysis",
+          "name": "Analysis",
           "operation": ["View"]
+        }
+      ]
+    },
+    {
+      "name": "Event",
+      "children": [
+        {
+          "id": "alert_list",
+          "name": "Alert",
+          "operation": [
+            "View",
+            "Operate"
+          ]
+        },
+        {
+          "id": "strategy_list",
+          "name": "Strategy",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
         }
       ]
     },

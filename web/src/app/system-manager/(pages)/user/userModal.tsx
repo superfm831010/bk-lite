@@ -31,6 +31,7 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
   const [currentUserId, setCurrentUserId] = useState('');
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [roleLoading, setRoleLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [type, setType] = useState<'add' | 'edit'>('add');
   const [roleTreeData, setRoleTreeData] = useState<TreeDataNode[]>([]);
@@ -42,6 +43,7 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
 
   const fetchRoleInfo = async () => {
     try {
+      setRoleLoading(true);
       const roleData = await getRoleList({ client_list: clientData });
       setRoleTreeData(
         roleData.map((item: any) => ({
@@ -57,6 +59,8 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
       );
     } catch {
       message.error(t('common.fetchFailed'));
+    } finally {
+      setRoleLoading(false);
     }
   };
 
@@ -254,6 +258,7 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
               groupRules={groupRules}
               treeData={roleTreeData}
               selectedKeys={selectedRoles}
+              loading={roleLoading}
               onChange={newKeys => {
                 setSelectedRoles(newKeys);
                 formRef.current?.setFieldsValue({ roles: newKeys });

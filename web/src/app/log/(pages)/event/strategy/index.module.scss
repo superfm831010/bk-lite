@@ -1,0 +1,60 @@
+.asset {
+    display: flex;
+    overflow: hidden;
+
+    .table {
+        background: var(--color-bg-1);
+        height: calc(100vh - 146px);
+        padding: 20px;
+        
+        .search {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        :global {
+            .ant-table {
+                width: calc(100vw - 280px);
+                min-width: 800px;
+            }
+        }
+    }
+}
+
+.strategy {
+    width: 100%;
+    overflow: hidden;
+
+    :global {
+        .ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
+            position: absolute;
+            right: -3px;
+        }
+
+        .ant-form-item-label>label {
+            margin-right: 10px;
+        }
+    }
+
+    .title {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .form {
+        height: calc(100vh - 190px);
+        overflow-y: auto;
+        padding: 10px;
+
+        .condition {
+            display: flex;
+            flex-wrap: wrap;
+        }
+    }
+
+    .footer {
+        margin-top: 10px;
+        padding-left: 20px;
+    }
+}

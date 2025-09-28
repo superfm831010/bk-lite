@@ -5,9 +5,11 @@
 from rest_framework import serializers
 from rest_framework.fields import empty
 
+from apps.cmdb.constants import VIEW, OPERATE
 from apps.cmdb.models.collect_model import CollectModels, OidMapping
 from apps.cmdb.utils.base import get_cmdb_rules
 from apps.core.logger import cmdb_logger as logger
+from apps.core.utils.serializers import UsernameSerializer
 
 
 class CollectModelSerializer(serializers.ModelSerializer):
@@ -20,7 +22,7 @@ class CollectModelSerializer(serializers.ModelSerializer):
         }
 
 
-class CollectModelLIstSerializer(serializers.ModelSerializer):
+class CollectModelLIstSerializer(UsernameSerializer):
     message = serializers.SerializerMethodField()
     permission = serializers.SerializerMethodField()
 
@@ -41,7 +43,7 @@ class CollectModelLIstSerializer(serializers.ModelSerializer):
                 "permission_map": {}
             }
             for data in permission_data:
-                if data["id"] in ["0", "-1"]:
+                if data["id"] in ["0"]:
                     _map_data["select_all"] = True
                     _map_data["permission_map"] = data["permission"]
                     break
@@ -68,6 +70,8 @@ class CollectModelLIstSerializer(serializers.ModelSerializer):
 
     def get_permission(self, obj):
         try:
+            if obj.created_by == self.context["request"].user.username or not self.permission_map:
+                return [VIEW, OPERATE]
             if obj.task_type not in self.permission_map:
                 return []
             permission_data = self.permission_map[obj.task_type]
@@ -82,7 +86,7 @@ class CollectModelLIstSerializer(serializers.ModelSerializer):
             return []
 
 
-class OidModelSerializer(serializers.ModelSerializer):
+class OidModelSerializer(UsernameSerializer):
     class Meta:
         model = OidMapping
         fields = "__all__"

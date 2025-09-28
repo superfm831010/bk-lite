@@ -17,12 +17,17 @@ import { getIconUrl } from '@/app/cmdb/utils/common';
 import GroupModal from './list/groupModal';
 import ModelModal from './list/modelModal';
 import { useRouter } from 'next/navigation';
-import useApiClient from '@/utils/request';
 import { useTranslation } from '@/utils/i18n';
 import PermissionWrapper from '@/components/permission';
+import { useClassificationApi, useInstanceApi } from '@/app/cmdb/api';
+import { useCommon } from '@/app/cmdb/context/common';
 
 const AssetManage = () => {
-  const { get, del, isLoading } = useApiClient();
+  const { getClassificationList, deleteClassification } =
+    useClassificationApi();
+  const { getModelInstanceCount } = useInstanceApi();
+  const commonContext = useCommon();
+  const modelListFromContext = commonContext?.modelList || [];
   const { confirm } = Modal;
   const { t } = useTranslation();
   const router = useRouter();
@@ -37,9 +42,10 @@ const AssetManage = () => {
   const [rawModelGroup, setRawModelGroup] = useState<GroupItem[]>([]);
 
   useEffect(() => {
-    if (isLoading) return;
-    getModelGroup();
-  }, [get, isLoading]);
+    if (modelListFromContext.length > 0) {
+      getModelGroup();
+    }
+  }, [modelListFromContext]);
 
   useEffect(() => {
     if (!searchText.trim()) {
@@ -65,13 +71,15 @@ const AssetManage = () => {
 
   const showDeleteConfirm = (row: GroupItem) => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await del(`/cmdb/api/classification/${row.classification_id}/`);
+            await deleteClassification(row.classification_id);
             message.success(t('successfullyDeleted'));
             getModelGroup();
           } finally {
@@ -106,7 +114,11 @@ const AssetManage = () => {
     getModelGroup();
   };
 
-  const updateModelList = () => {
+  const updateModelList = async () => {
+    // 首先刷新 CommonProvider 中的 modelList
+    if (commonContext?.refreshModelList) {
+      await commonContext.refreshModelList();
+    }
     getModelGroup();
   };
 
@@ -118,16 +130,12 @@ const AssetManage = () => {
   };
 
   const linkToDetail = (model: ModelItem) => {
-    const permissionStr = Array.isArray(model.permission)
-      ? model.permission.join(',')
-      : model.permission || '';
     const params = new URLSearchParams({
       model_id: model.model_id,
       model_name: model.model_name,
       icn: model.icn,
       classification_id: model.classification_id,
       is_pre: model.is_pre,
-      permission: permissionStr,
     }).toString();
     router.push(`/cmdb/assetManage/management/detail/attributes?${params}`);
   };
@@ -159,17 +167,16 @@ const AssetManage = () => {
   const getModelGroup = async () => {
     setLoading(true);
     try {
-      const [modeldata, groupData, instCount] = await Promise.all([
-        get('/cmdb/api/model/'),
-        get('/cmdb/api/classification/'),
-        get('/cmdb/api/instance/model_inst_count/'),
+      const [groupData, instCount] = await Promise.all([
+        getClassificationList(),
+        getModelInstanceCount(),
       ]);
       const groups = deepClone(groupData).map((item: GroupItem) => ({
         ...item,
         list: [],
         count: 0,
       }));
-      modeldata.forEach((modelItem: ModelItem) => {
+      modelListFromContext.forEach((modelItem: ModelItem) => {
         const target = groups.find(
           (item: GroupItem) =>
             item.classification_id === modelItem.classification_id
@@ -348,7 +355,7 @@ const AssetManage = () => {
       <GroupModal ref={groupRef} onSuccess={updateGroupList} />
       <ModelModal
         ref={modelRef}
-        groupList={groupList}
+        modelGroupList={groupList}
         onSuccess={updateModelList}
       />
     </div>

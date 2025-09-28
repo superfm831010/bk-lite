@@ -16,7 +16,16 @@ interface DatasetModalProps {
 
 const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess, activeTag }, ref) => {
   const { t } = useTranslation();
-  const { addAnomalyDatasets, updateAnomalyDatasets } = useMlopsManageApi();
+  const {
+    addAnomalyDatasets,
+    updateAnomalyDatasets,
+    addRasaDatasets,
+    updateRasaDatasets,
+    addLogClusteringDatasets,
+    addTimeSeriesPredictDatasets,
+    updateLogClustering,
+    updateTimeSeriesPredict
+  } = useMlopsManageApi();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [type, setType] = useState<string>('edit');
   const [title, setTitle] = useState<string>('editform');
@@ -45,15 +54,33 @@ const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess, activ
     }
   }, [formData, isModalOpen]);
 
-  const handleAddMap: Record<string, any> = {
+  const handleAddMap: Record<string, (params: any) => Promise<void>> = {
     'anomaly': async (params: any) => {
       await addAnomalyDatasets(params);
+    },
+    'rasa': async (params: any) => {
+      await addRasaDatasets(params);
+    },
+    'log_clustering': async (params: any) => {
+      await addLogClusteringDatasets(params);
+    },
+    'timeseries_predict': async (params: any) => {
+      await addTimeSeriesPredictDatasets(params);
     }
   };
 
-  const handleUpdateMap: Record<string, any> = {
+  const handleUpdateMap: Record<string, (id: number, params: any) => Promise<void>> = {
     'anomaly': async (id: number, params: any) => {
       await updateAnomalyDatasets(id, params);
+    },
+    'rasa': async (id: number, params: any) => {
+      await updateRasaDatasets(id, params);
+    },
+    'log_clustering': async (id: number, params: any) => {
+      await updateLogClustering(id, params);
+    },
+    'timeseries_predict': async (id: number, params: any) => {
+      await updateTimeSeriesPredict(id, params);
     }
   };
 

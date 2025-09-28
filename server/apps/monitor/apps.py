@@ -10,4 +10,5 @@ class MonitorConfig(AppConfig):
         from apps.monitor.initialization.update_grouping_rule import create_periodic_task
 
         post_migrate.connect(create_periodic_task)
-        import apps.monitor.nats  # noqa
+        import apps.monitor.nats.permission  # noqa
+        import apps.monitor.nats.monitor  # noqa

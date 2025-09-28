@@ -10,20 +10,27 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Spin, Input, Empty } from 'antd';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import { useClassificationApi, useInstanceApi } from '@/app/cmdb/api';
+import { useCommon } from '@/app/cmdb/context/common';
 
 const AssetsOverview: React.FC = () => {
-  const { get, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
   const { t } = useTranslation();
   const router = useRouter();
+  const commonContext = useCommon();
+  const modelListFromContext = commonContext?.modelList || [];
   const [loading, setLoading] = useState<boolean>(false);
   const [overViewList, setOverViewList] = useState<GroupItem[]>([]);
   const [allOverViewList, setAllOverViewList] = useState<GroupItem[]>([]);
   const [searchText, setSearchText] = useState<string>('');
 
+  const { getClassificationList } = useClassificationApi();
+  const { getModelInstanceCount } = useInstanceApi();
+
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || modelListFromContext.length === 0) return;
     fetchAssetsOverviewList();
-  }, [get, isLoading]);
+  }, [isLoading, modelListFromContext]);
 
   const breakpointColumnsObj = {
     default: 6,
@@ -60,38 +67,35 @@ const AssetsOverview: React.FC = () => {
     setOverViewList(allOverViewList);
   };
 
-  const fetchAssetsOverviewList = () => {
-    const getCroupList = get('/cmdb/api/classification/');
-    const getModelList = get('/cmdb/api/model/');
-    const getModelInstCount = get('/cmdb/api/instance/model_inst_count/');
+  const fetchAssetsOverviewList = async () => {
     setLoading(true);
     try {
-      Promise.all([getModelList, getCroupList, getModelInstCount])
-        .then((res) => {
-          const modeldata: ModelItem[] = res[0];
-          const groupData: GroupItem[] = res[1];
-          const groups = deepClone(groupData).map((item: GroupItem) => ({
-            ...item,
-            list: [],
-          }));
-          modeldata.forEach((modelItem: ModelItem) => {
-            const target = groups.find(
-              (item: GroupItem) =>
-                item.classification_id === modelItem.classification_id
-            );
-            if (target) {
-              modelItem.count = res[2][modelItem.model_id] || 0;
-              target.list.push(modelItem);
-            }
-          });
-          setOverViewList(groups);
-          setAllOverViewList(groups);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+      const [groupData, instCount] = await Promise.all([
+        getClassificationList(),
+        getModelInstanceCount(),
+      ]);
+
+      const groups = deepClone(groupData).map((item: GroupItem) => ({
+        ...item,
+        list: [],
+      }));
+
+      modelListFromContext.forEach((modelItem: ModelItem) => {
+        const target = groups.find(
+          (item: GroupItem) =>
+            item.classification_id === modelItem.classification_id
+        );
+        if (target) {
+          modelItem.count = instCount[modelItem.model_id] || 0;
+          target.list.push(modelItem);
+        }
+      });
+
+      setOverViewList(groups);
+      setAllOverViewList(groups);
     } catch (error) {
       console.error(error);
+    } finally {
       setLoading(false);
     }
   };

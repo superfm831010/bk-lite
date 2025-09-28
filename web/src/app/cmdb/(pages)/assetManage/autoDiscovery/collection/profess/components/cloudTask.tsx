@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import BaseTaskForm, { BaseTaskRef } from './baseTask';
 import styles from '../index.module.scss';
-import useApiClient from '@/utils/request';
+import { useCollectApi } from '@/app/cmdb/api';
 import { CaretRightOutlined, SyncOutlined } from '@ant-design/icons';
 import { useLocale } from '@/context/locale';
 import { useTranslation } from '@/utils/i18n';
@@ -56,7 +56,7 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
   const { model_id: modelId } = modelItem;
   const [regions, setRegions] = useState<RegionItem[]>([]);
   const [loadingRegions, setLoadingRegions] = useState(false);
-  const { post } = useApiClient();
+  const collectApi = useCollectApi();
 
   const {
     form,
@@ -83,7 +83,9 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
         (item: any) => item.value === values.accessPointId
       );
 
-      const regionItem = regions.find((item: any) => item.resource_id === values.regionId);
+      const regionItem = regions.find(
+        (item: any) => item.resource_id === values.regionId
+      );
 
       return {
         name: values.taskName,
@@ -105,11 +107,15 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
     },
   });
 
-  const fetchRegions = async (accessKey: string, accessSecret: string, refreshFlag = true) => {
+  const fetchRegions = async (
+    accessKey: string,
+    accessSecret: string,
+    refreshFlag = true
+  ) => {
     if (!accessKey || !accessSecret) return;
     setLoadingRegions(true);
     try {
-      const res = await post('/cmdb/api/collect/list_regions', {
+      const res = await collectApi.getCollectRegions({
         model_id: modelId,
         access_key: accessKey,
         access_secret: accessSecret,
@@ -130,7 +136,9 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
   const handleRefreshRegions = async (refreshFlag = false) => {
     const values = form.getFieldsValue(['accessKey', 'accessSecret']);
     if (!values.accessKey || !values.accessSecret) {
-      const msg = !values.accessKey ? t('Collection.cloudTask.accessKey') : t('Collection.cloudTask.accessSecret')
+      const msg = !values.accessKey
+        ? t('Collection.cloudTask.accessKey')
+        : t('Collection.cloudTask.accessSecret');
       message.error(t('common.inputMsg') + msg);
       return;
     }
@@ -152,9 +160,9 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
           ...values.credential,
           regionId: regions?.resource_id,
           organization: values.params?.organization,
-          accessPointId: values.access_point?.[0]?.id
+          accessPointId: values.access_point?.[0]?.id,
         });
-        handleRefreshRegions(false)
+        handleRefreshRegions(false);
       } else {
         form.setFieldsValue(CLOUD_FORM_INITIAL_VALUES);
       }
@@ -229,7 +237,7 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
               <Form.Item
                 label={t('Collection.cloudTask.accessKey')}
                 name="accessKey"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: t('common.inputTip') }]}
               >
                 <Input
                   placeholder={t('common.inputTip')}
@@ -240,7 +248,7 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
               <Form.Item
                 label={t('Collection.cloudTask.accessSecret')}
                 name="accessSecret"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: t('common.inputTip') }]}
               >
                 <Input.Password
                   placeholder={t('common.inputTip')}
@@ -251,7 +259,7 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
               <Form.Item
                 label={t('Collection.cloudTask.region')}
                 name="regionId"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: t('common.selectTip') }]}
               >
                 <RegionSelect
                   loading={loadingRegions}

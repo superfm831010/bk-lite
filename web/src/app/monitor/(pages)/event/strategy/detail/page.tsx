@@ -455,6 +455,11 @@ const StrategyOperation = () => {
     router.push(targetUrl);
   };
 
+  const linkToSystemManage = () => {
+    const url = '/system-manager/channel';
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const createStrategy = () => {
     form?.validateFields().then((values) => {
       const params = deepClone(values);
@@ -1156,44 +1161,100 @@ const StrategyOperation = () => {
                                   },
                                 ]}
                               >
-                                <Radio.Group>
-                                  {channelList.map((item) => (
-                                    <Radio key={item.id} value={item.id}>
-                                      {`${item.name}（${item.channel_type}）`}
-                                    </Radio>
-                                  ))}
-                                </Radio.Group>
-                              </Form.Item>
-                              <Form.Item<StrategyFields>
-                                label={
-                                  <span className="w-[100px]">
-                                    {t('monitor.events.notifier')}
+                                {channelList.length ? (
+                                  <Radio.Group>
+                                    {channelList.map((item) => (
+                                      <Radio key={item.id} value={item.id}>
+                                        {`${item.name}（${item.channel_type}）`}
+                                      </Radio>
+                                    ))}
+                                  </Radio.Group>
+                                ) : (
+                                  <span>
+                                    {t('monitor.events.noticeWay')}
+                                    <Button
+                                      type="link"
+                                      className="p-0 mx-[4px]"
+                                      onClick={linkToSystemManage}
+                                    >
+                                      {t('monitor.events.systemManage')}
+                                    </Button>
+                                    {t('monitor.events.config')}
                                   </span>
+                                )}
+                              </Form.Item>
+                              <Form.Item
+                                noStyle
+                                shouldUpdate={(prevValues, currentValues) =>
+                                  prevValues.notice_type_id !==
+                                  currentValues.notice_type_id
                                 }
-                                name="notice_users"
-                                rules={[
-                                  {
-                                    required: true,
-                                    message: t('common.required'),
-                                  },
-                                ]}
                               >
-                                <Select
-                                  style={{
-                                    width: '800px',
-                                  }}
-                                  showSearch
-                                  allowClear
-                                  mode="tags"
-                                  maxTagCount="responsive"
-                                  placeholder={t('monitor.events.notifier')}
-                                >
-                                  {userList.map((item) => (
-                                    <Option value={item.id} key={item.id}>
-                                      {item.username}
-                                    </Option>
-                                  ))}
-                                </Select>
+                                {({ getFieldValue }) =>
+                                  channelList.find(
+                                    (item) =>
+                                      item.id ===
+                                      getFieldValue('notice_type_id')
+                                  )?.channel_type === 'email' ? (
+                                      <Form.Item<StrategyFields>
+                                        label={
+                                          <span className="w-[100px]">
+                                            {t('monitor.events.notifier')}
+                                          </span>
+                                        }
+                                        name="notice_users"
+                                        rules={[
+                                          {
+                                            required: true,
+                                            message: t('common.required'),
+                                          },
+                                        ]}
+                                      >
+                                        <Select
+                                          style={{
+                                            width: '800px',
+                                          }}
+                                          showSearch
+                                          allowClear
+                                          mode="tags"
+                                          maxTagCount="responsive"
+                                          placeholder={t(
+                                            'monitor.events.notifier'
+                                          )}
+                                        >
+                                          {userList.map((item) => (
+                                            <Option value={item.id} key={item.id}>
+                                              {item.username}
+                                            </Option>
+                                          ))}
+                                        </Select>
+                                      </Form.Item>
+                                    ) : (
+                                      <Form.Item<StrategyFields>
+                                        label={
+                                          <span className="w-[100px]">
+                                            {t('monitor.events.notifier')}
+                                          </span>
+                                        }
+                                        name="notice_users"
+                                        rules={[
+                                          {
+                                            required: true,
+                                            message: t('common.required'),
+                                          },
+                                        ]}
+                                      >
+                                        <Input
+                                          style={{
+                                            width: '800px',
+                                          }}
+                                          placeholder={t(
+                                            'monitor.events.notifier'
+                                          )}
+                                        />
+                                      </Form.Item>
+                                    )
+                                }
                               </Form.Item>
                             </>
                           ) : null

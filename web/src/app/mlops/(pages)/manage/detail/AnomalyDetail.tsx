@@ -22,10 +22,10 @@ const { Search } = Input;
 
 const AnomalyDetail = () => {
   const { t } = useTranslation();
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const { getAnomalyTrainData, deleteAnomalyTrainData, labelingData } = useMlopsManageApi();
   const modalRef = useRef<ModalRef>(null);
+  const searchParams = useSearchParams();
+  const { getAnomalyTrainData, deleteAnomalyTrainData, labelingData } = useMlopsManageApi();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [currentData, setCurrentData] = useState<any>(null);
@@ -65,15 +65,11 @@ const AnomalyDetail = () => {
       title: t('datasets.trainFileType'),
       key: 'type',
       dataIndex: 'type',
-      render(_, record) {
+      render: (_, record) => {
         const activeTypes = Object.entries(record.type)
           .filter(([, value]) => value === true)
           .map(([key]) => <Tag key={key} color={TYPE_COLOR[key]}>{t(`datasets.${TYPE_CONTENT[key]}`)}</Tag>);
-        return (
-          <>
-            {activeTypes.length ? activeTypes : '--'}
-          </>
-        )
+        return (<>{activeTypes.length ? activeTypes : '--'}</>)
       },
     },
     {
@@ -91,7 +87,7 @@ const AnomalyDetail = () => {
           >
             {t('datasets.annotate')}
           </Button>
-          <PermissionWrapper requiredPermissions={['Edit']}>
+          <PermissionWrapper requiredPermissions={['File Edit']}>
             <Button
               type="link"
               className="mr-[10px]"
@@ -100,7 +96,7 @@ const AnomalyDetail = () => {
               {t('common.edit')}
             </Button>
           </PermissionWrapper>
-          <PermissionWrapper requiredPermissions={['Delete']}>
+          <PermissionWrapper requiredPermissions={['File Delete']}>
             <Popconfirm
               title={t('datasets.deleteTitle')}
               description={t('datasets.deleteContent')}
@@ -140,8 +136,8 @@ const AnomalyDetail = () => {
   const getDataset = useCallback(async (search: string = '') => {
     setLoading(true);
     try {
-      console.log(search);
       const { count, items } = await getAnomalyTrainData({
+        name: search,
         dataset: folder_id as string,
         page: pagination.current,
         page_size: pagination.pageSize
@@ -168,7 +164,7 @@ const AnomalyDetail = () => {
       });
     }
     catch (e) { console.log(e) }
-    finally { setLoading(false); }
+    finally { setLoading(false) }
   }, [t, searchParams]);
 
   const onUpload = () => {
@@ -214,7 +210,7 @@ const AnomalyDetail = () => {
           is_test_data: selectedTags.includes('is_test_data')
         };
         await labelingData(currentData?.id, params);
-        message.success(`common.updateSuccess`);
+        message.success(t(`common.updateSuccess`));
         setModalOpen(false);
         getDataset();
       }
@@ -242,12 +238,8 @@ const AnomalyDetail = () => {
           <Breadcrumb
             separator=">"
             items={[
-              {
-                title: <a href="/mlops/manage">{t(`datasets.datasets`)}</a>
-              },
-              {
-                title: t(`datasets.datasetsDetail`)
-              }
+              { title: <a href="#" onClick={() => router.push(`/mlops/manage/list`)}>{t(`datasets.datasets`)}</a> },
+              { title: t(`datasets.datasetsDetail`) }
             ]}
           />
         </div>
@@ -259,7 +251,7 @@ const AnomalyDetail = () => {
             onSearch={onSearch}
             style={{ fontSize: 15 }}
           />
-          <PermissionWrapper requiredPermissions={['Add']}>
+          <PermissionWrapper requiredPermissions={['File Upload']}>
             <Button type="primary" className="rounded-md text-xs shadow" onClick={onUpload}>
               {t("datasets.upload")}
             </Button>

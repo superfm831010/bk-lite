@@ -1,9 +1,13 @@
-from datetime import datetime, timezone
+from datetime import timezone
 
+from apps.core.utils.permission_utils import get_permission_rules
+from apps.node_mgmt.constants.node import NodeConstants
 from apps.node_mgmt.models import NodeCollectorInstallStatus
 from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, Action
 from apps.node_mgmt.serializers.node import NodeSerializer
 from datetime import datetime, timedelta
+
+from apps.system_mgmt.models import User
 
 
 class NodeService:
@@ -109,9 +113,26 @@ class NodeService:
             action.save()
 
     @staticmethod
-    def get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size, is_active):
+    def get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size, is_active, permission_data={}):
         """获取节点列表"""
-        qs = Node.objects.all()
+
+        if permission_data:
+
+            user_obj = User(username=permission_data["username"], domain=permission_data["domain"])
+
+            from apps.core.utils.permission_utils import permission_filter
+            permission = get_permission_rules(
+                user_obj,
+                permission_data["current_team"],
+                "node_mgmt",
+                NodeConstants.MODULE,
+            )
+            # 如果提供了权限信息，使用权限过滤
+            qs = permission_filter(Node, permission, team_key="nodeorganization__organization__in", id_key="id__in")
+        else:
+            # 兼容原有调用方式
+            qs = Node.objects.all()
+
         if cloud_region_id:
             qs = qs.filter(cloud_region_id=cloud_region_id)
         if organization_ids:
@@ -139,4 +160,8 @@ class NodeService:
             end = start + page_size
             nodes = qs[start:end]
         serializer = NodeSerializer(nodes, many=True)
-        return dict(count=count, nodes=serializer.data)
+
+        # 如果有权限信息，为每个节点添加权限
+        node_data = serializer.data
+
+        return dict(count=count, nodes=node_data)

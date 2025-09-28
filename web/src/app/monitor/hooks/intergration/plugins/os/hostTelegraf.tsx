@@ -76,10 +76,11 @@ export const useHostTelegraf = () => {
             config: TableDataItem
           ) => {
             const dataSource = cloneDeep(config.dataSource || []);
+            const { metric_type, ...rest } = row;
             return {
-              configs: pluginConfig.config_type.map((item: string) => ({
+              configs: metric_type.map((item: string) => ({
                 type: item,
-                ...row,
+                ...rest,
               })),
               collect_type: pluginConfig.collect_type,
               collector: pluginConfig.collector,

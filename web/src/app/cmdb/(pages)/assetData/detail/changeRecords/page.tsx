@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import changeRecordsStyle from './index.module.scss';
-import useApiClient from '@/utils/request';
+import { useChangeRecordApi, useModelApi } from '@/app/cmdb/api';
 import RecordDetail from './recordDetail';
 import { DatePicker, Timeline, Spin, Empty } from 'antd';
 import { useTranslation } from '@/utils/i18n';
@@ -16,8 +16,6 @@ import {
 } from '@/app/cmdb/types/assetData';
 import {
   AttrFieldType,
-  ModelItem,
-  Organization,
   UserItem,
   AssoTypeItem,
 } from '@/app/cmdb/types/assetManage';
@@ -25,29 +23,27 @@ import {
 const { RangePicker } = DatePicker;
 
 const ChangeRecords: React.FC = () => {
-  const { get, isLoading } = useApiClient();
+  const changeRecordApi = useChangeRecordApi();
+  const modelApi = useModelApi();
   const { t } = useTranslation();
   const commonContext = useCommon();
-  const authList = useRef(commonContext?.organizations || []);
-  const organizationList: Organization[] = authList.current;
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
+  const modelList = commonContext?.modelList || [];
   const detailRef = useRef<detailRef>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [enumList, setEnumList] = useState<RecordsEnum>({});
   const [recordList, setRecordList] = useState<RecordItem[]>([]);
   const [attrList, setAttrList] = useState<AttrFieldType[]>([]);
-  const [modelList, setModelList] = useState<ModelItem[]>([]);
   const [assoTypes, setAssoTypes] = useState<AssoTypeItem[]>([]);
   const searchParams = useSearchParams();
   const modelId: string = searchParams.get('model_id') || '';
   const instId: string = searchParams.get('inst_id') || '';
 
   useEffect(() => {
-    if (isLoading) return;
     // 初始加载数据
     initData();
-  }, [isLoading]);
+  }, []);
 
   const showDetailModal = (log: RecordItemList) => {
     detailRef.current?.showModal({
@@ -62,29 +58,19 @@ const ChangeRecords: React.FC = () => {
   };
 
   const initData = async () => {
-    const getChangeRecordLists = get('/cmdb/api/change_record/', {
-      params: getParams(),
-    });
-    const getEnumData = get('/cmdb/api/change_record/enum_data/');
-    const getAttrList = get(`/cmdb/api/model/${modelId}/attr_list/`);
-    const getModelList = get('/cmdb/api/model/');
-    const getAssoType = get('/cmdb/api/model/model_association_type/');
+    const getChangeRecordLists = changeRecordApi.getChangeRecords(getParams());
+    const getEnumData = changeRecordApi.getChangeRecordEnumData();
+    const getAttrList = modelApi.getModelAttrList(modelId);
+    const getAssoType = modelApi.getModelAssociationTypes();
     try {
       setLoading(true);
-      Promise.all([
-        getChangeRecordLists,
-        getEnumData,
-        getAttrList,
-        getModelList,
-        getAssoType,
-      ])
+      Promise.all([getChangeRecordLists, getEnumData, getAttrList, getAssoType])
         .then((res) => {
           const enumData = res[1];
           setEnumList(enumData);
           dealRecordList(res[0]);
           setAttrList(res[2] || []);
-          setModelList(res[3] || []);
-          setAssoTypes(res[4] || []);
+          setAssoTypes(res[3] || []);
         })
         .finally(() => {
           setLoading(false);
@@ -143,9 +129,7 @@ const ChangeRecords: React.FC = () => {
     params.created_at_before = dateString[1] || '';
     setLoading(true);
     try {
-      const data = await get('/cmdb/api/change_record/', {
-        params,
-      });
+      const data = await changeRecordApi.getChangeRecords(params);
       dealRecordList(data);
     } finally {
       setLoading(false);
@@ -207,7 +191,6 @@ const ChangeRecords: React.FC = () => {
         userList={userList}
         propertyList={attrList}
         modelList={modelList}
-        groupList={organizationList}
         enumList={enumList}
         connectTypeList={assoTypes}
       />

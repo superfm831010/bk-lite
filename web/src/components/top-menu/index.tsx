@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Popover, Spin, Tour } from 'antd';
 import { CaretDownFilled } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
+import useModelExperience from '@/app/playground/hooks/useModelExperience';
 import { usePermissions } from '@/context/permissions';
 import { useClientData } from '@/context/client';
 import { useUserInfoContext } from '@/context/userInfo';
@@ -20,6 +21,12 @@ const TopMenu = () => {
   const { t } = useTranslation();
   const { menus: menuItems } = usePermissions();
   const pathname = usePathname();
+  const {
+    renderMenu,
+    loading: modelExpLoading,
+    error: modelExpError,
+    reload,
+    isDataReady } = useModelExperience(pathname?.startsWith('/playground'));
   const { clientData, loading } = useClientData();
   const { userId } = useUserInfoContext();
   const [tourOpen, setTourOpen] = useState(false);
@@ -128,35 +135,74 @@ const TopMenu = () => {
     window.open('https://github.com/TencentBlueKing/bk-lite', '_blank');
   };
 
-  const renderSubMenuPanel = (children: MenuItem[]) => {
-    const renderMenuLevel = (items: MenuItem[], level = 0) => {
+  const renderSubMenuPanel = useMemo(() => {
+    if (modelExpLoading) {
       return (
-        <div className={`${styles.menuLevel} ${styles[`level${level + 1}`] || ''}`}>
-          {items.map((item) => (
-            <div key={item.url} className="mb-1">
-              <Link href={item.url} prefetch={false}>
-                <div className={`${styles.menuItem} flex items-center cursor-pointer`}>
-                  <Icon type={item.icon} className={`${styles.menuIcon} mr-2 w-4 h-4`} />
-                  <span>{item.title}</span>
-                </div>
-              </Link>
-              {item.children && item.children.length > 0 && (
-                <div className="mt-1">
-                  {renderMenuLevel(item.children, level + 1)}
-                </div>
-              )}
-            </div>
-          ))}
+        <div className='w-[600px] max-w-[80vw] h-32 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center'>
+          <Spin tip="加载中..." />
         </div>
       );
-    };
+    }
 
-    return (
-      <div className={`${styles.subMenuPanel} min-w-[200px] max-w-[400px] max-h-[400px] overflow-auto`}>
-        {renderMenuLevel(children)}
+    const menuData = isDataReady ? renderMenu() : [];
+
+    if (menuData.length === 0) {
+      return (
+        <div className='w-[600px] max-w-[80vw] h-32 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center'>
+          <div className="text-gray-500 text-sm">暂无可用服务</div>
+        </div>
+      );
+    }
+
+    const renderMenuItems = () => (
+      <div className="space-y-6">
+        {menuData.map(({ category, capabilities }) => (
+          <div key={category.id} className="border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
+            <h3 className='text-sm font-semibold text-gray-900 mb-3 px-1'>{category.name}</h3>
+            <div className='grid grid-cols-2 gap-3'>
+              {capabilities.map((child: any) => (
+                <Link key={`child_${child?.id}`} href={child.url} prefetch={false}>
+                  <div className="group p-3 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all duration-200 cursor-pointer h-full">
+                    <div className="flex items-start space-x-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 group-hover:text-blue-700 truncate">
+                          {child.name}
+                        </h4>
+                        <p className="text-xs text-gray-500 group-hover:text-blue-600 mt-1 leading-relaxed overflow-hidden text-ellipsis"
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical' as const
+                          }}>
+                          {child.description}
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors duration-200"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     );
-  };
+
+    return (
+      <div className='w-[600px] max-w-[80vw] max-h-[70vh] overflow-y-auto bg-white rounded-lg p-4'>
+        {renderMenuItems()}
+      </div>
+    );
+  }, [modelExpLoading, modelExpError, isDataReady, renderMenu, reload]);
 
   const renderContent = loading ? (
     <div className="flex justify-center items-center h-32">
@@ -215,19 +261,22 @@ const TopMenu = () => {
             .filter((item: MenuItem) => item.url && !item.isNotMenuItem)
             .map((item: MenuItem) => {
               const isActive = item.url === '/' ? pathname === '/' : pathname?.startsWith(item.url);
-              
-              if (isOtherMode && item.children && item.children.length > 0) {
+
+              if (isOtherMode && item.name === 'experience') {
+
                 return (
                   <Popover
                     key={item.url}
-                    content={renderSubMenuPanel(item.children)}
-                    title={item.title}
+                    content={renderSubMenuPanel}
                     trigger="hover"
                     placement="bottom"
                     overlayClassName="top-menu-submenu-popover"
+                    className='z-40'
                   >
                     <div>
-                      <Link href={item.url} prefetch={false} legacyBehavior>
+                      <Link
+                        href={"#"}
+                        prefetch={false} legacyBehavior>
                         <a
                           ref={menuRefs.current[item.url] || null}
                           id={item.name}
@@ -241,7 +290,7 @@ const TopMenu = () => {
                   </Popover>
                 );
               }
-              
+
               return (
                 <Link key={item.url} href={item.url} prefetch={false} legacyBehavior>
                   <a

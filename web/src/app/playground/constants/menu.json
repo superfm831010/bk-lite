@@ -1,33 +1,33 @@
 {
   "zh": [
     {
-      "title": "能力体验",
-      "icon": "tiyanzhongtai",
+      "title": "模型体验",
+      "icon": "moxing5",
       "url": "/playground/home",
-      "name": "capabilities",
+      "name": "experience",
       "isNotMenuItem": false
     },
     {
-      "title": "能力管理",
-      "icon": "guanli",
+      "title": "样本管理",
+      "icon": "yangbenkuguanli",
       "url": "/playground/manage",
-      "name": "categories",
+      "name": "example",
       "isNotMenuItem": false
     }
   ],
   "en": [
     {
-      "title": "Capability Experience",
+      "title": "Model Experience",
       "icon": "jiqiren2",
       "url": "/playground/home",
-      "name": "capabilities",
+      "name": "experience",
       "isNotMenuItem": false
     },
     {
-      "title": "Capability Management",
+      "title": "Sample Management",
       "icon": "jiqiren2",
       "url": "/playground/manage",
-      "name": "categories",
+      "name": "example",
       "isNotMenuItem": false
     }
   ]

@@ -1,7 +1,7 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button, Empty, message, Modal } from 'antd';
-import { SettingOutlined, ReloadOutlined, BuildOutlined } from '@ant-design/icons';
+import { SettingOutlined, ReloadOutlined, BuildOutlined, FrownOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
@@ -79,13 +79,23 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
   const [loading, setLoading] = useState(true);
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [graphExists, setGraphExists] = useState(false);
+  const [status, setStatus] = useState<string>('');
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [nodeDetailVisible, setNodeDetailVisible] = useState(false);
   const [edgeDetailVisible, setEdgeDetailVisible] = useState(false);
   const [selectedEdge, setSelectedEdge] = useState<any | null>(null);
+  
+  // 添加定时器引用和页面可见性状态
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [isPageVisible, setIsPageVisible] = useState(true);
 
-  const initializeGraph = async () => {
-    setLoading(true);
+  const initializeGraph = async (isBackgroundRefresh = false) => {
+    // 如果是后台刷新且正在轮询中，不显示loading
+    if (!isBackgroundRefresh) {
+      setLoading(true);
+      setHasGraph(false);
+      setGraphData(null);
+    }
     
     try {
       if (!knowledgeBaseId) {
@@ -95,25 +105,28 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
       const response = await fetchKnowledgeGraphDetails(parseInt(knowledgeBaseId));
       
       setGraphExists(response.is_exists || false);
+      setStatus(response.status || '');
       
-      const transformedData = transformApiDataToGraphData(response.graph);
-      
-      if (transformedData.nodes.length === 0) {
-        setHasGraph(false);
-        setGraphData(null);
-        return;
-      }
-      
+      const transformedData: GraphData = transformApiDataToGraphData(response.graph);
       setGraphData(transformedData);
-      setHasGraph(true);
+      
+      // 只有status为completed时才展示图谱，其他状态显示状态文本
+      if (response.status === 'completed') {
+        setHasGraph(true);
+      } else {
+        setHasGraph(false);
+      }
       
     } catch (error: any) {
       console.error('Failed to load knowledge graph:', error);
       setHasGraph(false);
       setGraphData(null);
       setGraphExists(false);
+      setStatus('');
     } finally {
-      setLoading(false);
+      if (!isBackgroundRefresh) {
+        setLoading(false);
+      }
     }
   };
 
@@ -124,6 +137,39 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
       setLoading(false);
     }
   }, [knowledgeBaseId]);
+
+  // 页面可见性检测
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(!document.hidden);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+
+    if (isPageVisible && (['training', 'rebuilding', 'pending'].includes(status))) {
+      pollingIntervalRef.current = setInterval(() => {
+        initializeGraph(true);
+      }, 15000);
+    }
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [status, knowledgeBaseId, isPageVisible]);
 
   const handleSettingsClick = () => {
     router.push(`/opspilot/knowledge/detail/documents/graph/edit?id=${knowledgeBaseId}&name=${name}&desc=${desc}&type=${type}`);
@@ -176,6 +222,35 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
     });
   };
 
+  const canClickSettings = () => {
+    return status === 'completed' || status === 'failed' || !graphExists;
+  };
+
+  const canRebuildCommunity = () => {
+    return status === 'completed' || status === 'failed';
+  };
+
+  const getStatusText = (status: string) => {
+    if (!status) return '';
+    return t(`knowledge.knowledgeGraph.status.${status}`);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'text-green-600';
+      case 'failed':
+        return 'text-red-600';
+      case 'training':
+      case 'rebuilding':
+        return 'text-blue-600';
+      case 'pending':
+        return 'text-yellow-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
   if (!knowledgeBaseId) {
     return (
       <div className="knowledge-graph-container h-96 flex items-center justify-center">
@@ -191,13 +266,13 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
     <div className="knowledge-graph-container relative" style={{ height: 'calc(100vh - 300px)', minHeight: '600px' }}>
       <div className="absolute top-4 right-4 z-50 flex gap-2">
         <Button
-          icon={<ReloadOutlined />}
+          icon={loading ? undefined : <ReloadOutlined />}
           onClick={handleRefresh}
           title={t('knowledge.knowledgeGraph.refreshGraph')}
           loading={loading}
           className="shadow-lg"
         />
-        {graphExists && (
+        {graphExists && canRebuildCommunity() && (
           <Button
             icon={<BuildOutlined />}
             onClick={handleRebuildCommunity}
@@ -211,6 +286,7 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
           type="primary"
           icon={<SettingOutlined />}
           onClick={handleSettingsClick}
+          disabled={!canClickSettings()}
           className="shadow-lg"
         >
           {t('knowledge.knowledgeGraph.settings')}
@@ -240,6 +316,18 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               </div>
               <div className="text-gray-600">{t('knowledge.knowledgeGraph.loading')}</div>
+            </div>
+          ) : status ? (
+            <div className="text-center">
+              <div className={`flex items-center justify-center gap-2 text-sm font-medium mb-2 ${getStatusColor(status)}`}>
+                {(status === 'training' || status === 'rebuilding' || status === 'pending') && (
+                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                )}
+                {status === 'failed' && (
+                  <FrownOutlined />
+                )}
+                {getStatusText(status)}
+              </div>
             </div>
           ) : (
             <Empty

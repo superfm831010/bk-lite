@@ -55,10 +55,10 @@ const EntityList = <T,>({
     if (itemTypeSingle === 'skill') {
       return {
         options: [
-          { key: 2, title: t('skill.form.qaType') },
-          { key: 1, title: t('skill.form.toolsType') },
-          { key: 3, title: t('skill.form.planType') },
-          { key: 4, title: t('skill.form.complexType') }
+          { key: 2, title: t('skill.form.qaTag') },
+          { key: 1, title: t('skill.form.toolsTag') },
+          { key: 3, title: t('skill.form.planTag') },
+          { key: 4, title: t('skill.form.complexTag') }
         ],
         searchField: 'skill_type'
       };
@@ -66,7 +66,8 @@ const EntityList = <T,>({
       return {
         options: [
           { key: 1, title: t('studio.pilot') },
-          { key: 2, title: t('studio.lobeChat') }
+          { key: 2, title: t('studio.lobeChat') },
+          { key: 3, title: t('studio.chatflow') }
         ],
         searchField: 'bot_type'
       };
@@ -129,8 +130,14 @@ const EntityList = <T,>({
       if (hasMoreData) {
         setCurrentPage(prev => prev + 1);
       }
-    } catch {
+    } catch (error) {
+      console.error('API request failed:', error);
       message.error(t('common.fetchFailed'));
+      if (reset) {
+        setItems([]);
+        setCurrentPage(1);
+      }
+      setHasMore(false);
     } finally {
       isFetching.current = false;
       if (reset) {
@@ -139,7 +146,7 @@ const EntityList = <T,>({
         setLoadingMore(false);
       }
     }
-  }, [get, queryParams, currentPage, pageSize, searchTerm, selectedTypes, hasMore, searchField]);
+  }, [currentPage, pageSize, searchTerm, selectedTypes, hasMore, searchField]);
 
   useEffect(() => {
     setCurrentPage(1);

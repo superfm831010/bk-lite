@@ -4,7 +4,7 @@ import nats_client
 from apps.node_mgmt.models import CloudRegion
 from apps.node_mgmt.node_init.collector_init import import_collector
 from apps.node_mgmt.services.node import NodeService
-from apps.core.logger import node_logger as logger
+# from apps.core.logger import node_logger as logger
 
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.node_mgmt.models import CollectorConfiguration, ChildConfig, Collector, Node, NodeCollectorConfiguration
@@ -67,6 +67,7 @@ class NatsService:
             - node_id: 节点ID
             - collector_name: 采集器名称
             - env_config: 环境变量配置（可选）
+            - sort_order: 排序（可选）
         """
 
         base_configs = CollectorConfiguration.objects.filter(
@@ -85,6 +86,7 @@ class NatsService:
                 content=config["content"],
                 collector_config_id=base_config_map[(config["node_id"], config["collector_name"])],
                 env_config=config["env_config"],
+                sort_order=config.get("sort_order", 0),
             ))
         if node_objs:
             ChildConfig.objects.bulk_create(node_objs, batch_size=100)
@@ -179,7 +181,8 @@ def node_list(query_data: dict):
     page = query_data.get('page', 1)
     page_size = query_data.get('page_size', 10)
     is_active = query_data.get('is_active')
-    return NodeService.get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size, is_active)
+    permission_data = query_data.get('permission_data', {})
+    return NodeService.get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size, is_active, permission_data)
 
 
 @nats_client.register
@@ -190,21 +193,21 @@ def collector_list(query_data: dict):
 @nats_client.register
 def import_collectors(collectors: list):
     """导入采集器"""
-    logger.info(f"import_collectors: {collectors}")
+    # logger.info(f"import_collectors: {collectors}")
     return import_collector(collectors)
 
 
 @nats_client.register
 def batch_add_node_child_config(configs: list):
     """批量添加子配置"""
-    logger.info(f"batch_add_node_child_config: {configs}")
+    # logger.info(f"batch_add_node_child_config: {configs}")
     NatsService().batch_create_child_configs(configs)
 
 
 @nats_client.register
 def batch_add_node_config(configs: list):
     """批量添加配置"""
-    logger.info(f"batch_add_node_config: {configs}")
+    # logger.info(f"batch_add_node_config: {configs}")
     NatsService().batch_create_configs(configs)
 
 

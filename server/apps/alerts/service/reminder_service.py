@@ -192,16 +192,27 @@ class ReminderService:
             title = param_format.format_title()
             content = param_format.format_content()
 
+            channel_params = []
+            for channel in channel_list:
+                channel_params.append({
+                    "username_list": username_list,
+                    "channel_type": channel["channel_type"],
+                    "channel_id": channel["id"],
+                    "title": title,
+                    "content": content,
+                    "object_id": alert.alert_id,
+                    "notify_action_object": "alert"
+                })
             # 移动导入到函数内部避免循环导入
             from apps.alerts.tasks import sync_notify
-
-            for channel in channel_list:
-                transaction.on_commit(lambda: sync_notify.delay(username_list, channel, title, content, alert.alert_id))
+            # 异步发送通知
+            transaction.on_commit(lambda: sync_notify.delay(channel_params))
 
             return True
 
-        except Exception as e:
-            logger.error(f"发送提醒通知失败: reminder_id={assignment.id}, error={str(e)}")
+        except Exception as e: # noqa
+            import traceback
+            logger.error(f"发送提醒通知失败: reminder_id={assignment.id}, error={traceback.format_exc()}")
             return False
 
     @staticmethod

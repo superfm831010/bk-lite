@@ -1,0 +1,23 @@
+networks:
+  prod:
+    driver: bridge
+    name: bklite-prod
+
+services:
+  vector:
+    image: ${DOCKER_IMAGE_VECTOR}
+    container_name: vector
+    command: ["--config", "/etc/vector/vector.yaml"]
+    environment:
+      NATS_ADMIN_USERNAME: ${NATS_ADMIN_USERNAME}
+      NATS_ADMIN_PASSWORD: ${NATS_ADMIN_PASSWORD}
+      VECTOR_NATS_SERVERS: nats://nats:4222
+      VECTOR_VICTORIA_METRICS_URL: http://victoria-metrics:8428
+    volumes:
+      - ../conf/vector/vector.yaml:/etc/vector/vector.yaml
+    networks:
+      - prod
+    restart: always
+    depends_on:
+      - nats
+      - victoria-logs

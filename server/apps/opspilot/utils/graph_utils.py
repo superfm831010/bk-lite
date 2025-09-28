@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.utils.translation import gettext as _
 
-from apps.opspilot.knowledge_mgmt.models.knowledge_graph import GraphChunkMap, KnowledgeGraph
+from apps.opspilot.models import GraphChunkMap, KnowledgeGraph
 from apps.opspilot.utils.chunk_helper import ChunkHelper
 
 
@@ -16,7 +16,7 @@ class GraphUtils(ChunkHelper):
             res = cls.get_document_es_chunk(
                 index_name,
                 page=1,
-                page_size=10000,
+                page_size=0,
                 search_text="",
                 metadata_filter={"is_doc": "1", "knowledge_id": str(i["id"])},
                 get_count=False,
@@ -73,7 +73,7 @@ class GraphUtils(ChunkHelper):
             "docs": docs,
         }
         try:
-            res = cls.post_chat_server(kwargs, url)
+            res = cls.post_chat_server(kwargs, url, timeout=3600)
             if not res:
                 return {"result": False, "message": _("Failed to create graph. Please check the server logs.")}
         except Exception as e:
@@ -130,7 +130,7 @@ class GraphUtils(ChunkHelper):
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/delete_index"
         kwargs = {"group_id": f"graph-{graph_obj.id}"}
         res = cls.post_chat_server(kwargs, url)
-        if not res or res["status"] != "success":
+        if not res or res.get("status", "fail") != "success":
             raise Exception("Failed to Delete graph")
 
     @classmethod
@@ -141,7 +141,7 @@ class GraphUtils(ChunkHelper):
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/delete_document"
         kwargs = {"uuids": chunk_ids}
         res = cls.post_chat_server(kwargs, url)
-        if not res or res["status"] != "success":
+        if not res or res.get("status", "fail") != "success":
             raise Exception("Failed to Delete graph chunk")
 
     @classmethod
@@ -163,6 +163,6 @@ class GraphUtils(ChunkHelper):
             "rerank_model_api_key": rerank_config["api_key"] or " ",
         }
         res = cls.post_chat_server(kwargs, url)
-        if not res or res["status"] != "success":
+        if not res or res.get("status", "fail") != "success":
             return {"result": False}
         return {"result": True}

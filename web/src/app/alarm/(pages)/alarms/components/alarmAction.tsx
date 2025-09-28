@@ -45,47 +45,56 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
     incident: incidentActionOperate,
   };
 
-  const allTypes: ActionType[] =
-    from === 'alarm'
-      ? ['assign', 'acknowledge', 'reassign', 'close']
-      : ['acknowledge', 'close', 'reopen'];
+  const allTypes: ActionType[] = (() => {
+    if (from === 'alarm') {
+      return ['assign', 'acknowledge', 'reassign', 'close'];
+    }
+    return ['acknowledge', 'close', 'reopen'];
+  })();
 
-  const statusActionMap: Record<string, ActionType[]> =
-    from === 'alarm'
-      ? {
-        unassigned: ['assign'],
-        pending: ['acknowledge'],
-        processing: ['reassign', 'close'],
-        closed: [],
-        auto_close: [],
-      }
-      : {
-        pending: ['acknowledge'],
-        processing: ['close'],
-        closed: ['reopen'],
-        auto_close: [],
-      };
+  let statusActionMap: Record<string, ActionType[]>;
+  if (from === 'alarm') {
+    statusActionMap = {
+      unassigned: ['assign'],
+      pending: ['acknowledge'],
+      processing: ['reassign', 'close'],
+      closed: [],
+      auto_close: [],
+    };
+  } else {
+    statusActionMap = {
+      pending: ['acknowledge'],
+      processing: ['close'],
+      closed: ['reopen'],
+      auto_close: [],
+    };
+  }
 
-  const validStatusMap: Record<string, string[]> =
-    from === 'alarm'
-      ? {
-        assign: ['unassigned'],
-        acknowledge: ['pending'],
-        reassign: ['processing'],
-        close: ['processing'],
-        auto_close: ['processing'],
-      }
-      : {
-        acknowledge: ['pending'],
-        close: ['processing'],
-        reopen: ['closed'],
-      };
+  let validStatusMap: Record<string, string[]>;
+  if (from === 'alarm') {
+    validStatusMap = {
+      assign: ['unassigned'],
+      acknowledge: ['pending'],
+      reassign: ['processing'],
+      close: ['processing'],
+      auto_close: ['processing'],
+    };
+  } else {
+    validStatusMap = {
+      acknowledge: ['pending'],
+      close: ['processing'],
+      reopen: ['closed'],
+    };
+  }
 
-  const availableTypes = showAll
-    ? allTypes
-    : rowData[0]?.status
-      ? statusActionMap?.[rowData[0].status] || []
-      : [];
+  let availableTypes: ActionType[];
+  if (showAll) {
+    availableTypes = allTypes;
+  } else if (rowData[0]?.status) {
+    availableTypes = statusActionMap?.[rowData[0].status] || [];
+  } else {
+    availableTypes = [];
+  }
 
   const handleOperate = (type: ActionType) => {
     if (!['acknowledge', 'close', 'reopen'].includes(type)) {
@@ -121,64 +130,59 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
     });
   };
 
+  const renderActionButton = (type: ActionType) => {
+    const allStatusValid = rowData.every((item) =>
+      validStatusMap[type]?.includes(item.status)
+    );
+    const needMine =
+      from === 'alarm' && ['acknowledge', 'reassign'].includes(type);
+    const disabled =
+      !rowData.length || !allStatusValid || (needMine && !isMine());
+    
+    return (
+      <PermissionWrapper requiredPermissions={['Edit']} key={type}>
+        <Button
+          size={btnSize}
+          type="link"
+          className="mr10"
+          disabled={disabled}
+          onClick={() => handleOperate(type)}
+        >
+          {t(`alarms.${type}`)}
+        </Button>
+      </PermissionWrapper>
+    );
+  };
+
   const actionButtons = (
     <>
-      {availableTypes.map((type) => {
-        const allStatusValid = rowData.every((item) =>
-          validStatusMap[type]?.includes(item.status)
-        );
-        const needMine =
-          from === 'alarm' && ['acknowledge', 'reassign'].includes(type);
-        const disabled =
-          !rowData.length || !allStatusValid || (needMine && !isMine());
-        return (
-          <PermissionWrapper requiredPermissions={['Edit']} key={type}>
-            <Button
-              size={btnSize}
-              type="link"
-              className="mr10"
-              disabled={disabled}
-              onClick={() => handleOperate(type)}
-            >
-              {t(`alarms.${type}`)}
-            </Button>
-          </PermissionWrapper>
-        );
-      })}
+      {availableTypes.map(renderActionButton)}
     </>
   );
 
-  const flattenChildren = (nodes: React.ReactNode): React.ReactElement[] => {
-    const items: React.ReactElement[] = [];
-    React.Children.forEach(nodes, (child) => {
-      if (React.isValidElement(child)) {
-        if (child.type === React.Fragment) {
-          items.push(...flattenChildren(child.props.children));
-        } else {
-          items.push(child);
-        }
-      }
-    });
-    return items;
-  };
+  const menuItems = availableTypes.map((type, idx) => {
+    const allStatusValid = rowData.every((item) =>
+      validStatusMap[type]?.includes(item.status)
+    );
+    const needMine =
+      from === 'alarm' && ['acknowledge', 'reassign'].includes(type);
+    const disabled =
+      !rowData.length || !allStatusValid || (needMine && !isMine());
 
-  const items = flattenChildren(actionButtons);
-  const menuItems = items.map((child, idx) => {
-    const isValid = React.isValidElement(child);
     return {
       key: idx.toString(),
       label: (
-        <div className="flex flex-col">
-          {(() => {
-            if (isValid) {
-              return React.cloneElement(child as React.ReactElement, {
-                type: 'text',
-                size: 'small',
-              });
-            }
-            return child;
-          })()}
-        </div>
+        <PermissionWrapper requiredPermissions={['Edit']}>
+          <Button
+            type="text"
+            size="small"
+            disabled={disabled}
+            onClick={() => handleOperate(type)}
+            className="w-full text-left"
+          >
+            {t(`alarms.${type}`)}
+          </Button>
+        </PermissionWrapper>
       ),
     };
   });

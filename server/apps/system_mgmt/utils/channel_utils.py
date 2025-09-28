@@ -10,12 +10,13 @@ from apps.core.logger import system_mgmt_logger as logger
 from apps.system_mgmt.models import Channel
 
 
-def send_wechat(channel_obj: Channel, content, receivers):
+def send_wechat(channel_obj: Channel, content, user_list):
     """发送企业微信消息"""
     channel_config = channel_obj.config
     channel_obj.decrypt_field("secret", channel_config)
     channel_obj.decrypt_field("token", channel_config)
     channel_obj.decrypt_field("aes_key", channel_config)
+    receivers = user_list.values_list("")
     try:
         # 创建企业微信客户端
         client = WeChatClient(corp_id=channel_config["corp_id"], secret=channel_config["secret"])
@@ -28,17 +29,18 @@ def send_wechat(channel_obj: Channel, content, receivers):
         return {"result": False, "message": f"Error sending WeChat message: {str(e)}"}
 
 
-def send_email(channel_obj: Channel, title, content, receivers):
+def send_email(channel_obj: Channel, title, content, user_list):
     """发送邮件"""
     channel_config = channel_obj.config
     channel_obj.decrypt_field("smtp_pwd", channel_config)
+    receivers = list(user_list.values_list("email", flat=True).distinct())
     try:
         msg = MIMEMultipart()
         msg["From"] = channel_config["mail_sender"]
         msg["To"] = ",".join(receivers)
         msg["Subject"] = title
 
-        msg.attach(MIMEText(content, "plain", "utf-8"))
+        msg.attach(MIMEText(content, "html", "utf-8"))
 
         # 根据配置决定使用 SSL 还是普通连接
         if channel_config.get("smtp_usessl", False):
@@ -59,12 +61,15 @@ def send_email(channel_obj: Channel, title, content, receivers):
         return {"result": False, "message": f"Error sending email: {str(e)}"}
 
 
-def send_by_bot(channel_obj: Channel, content):
+def send_by_bot(channel_obj: Channel, content, receivers: list):
+    if receivers:
+        to_user_mentions = " ".join(f"@{user}" for user in receivers)
+        content = f"{content}\nTo: {to_user_mentions}"
     channel_config = channel_obj.config
     channel_obj.decrypt_field("bot_key", channel_config)
     bot_key = channel_config["bot_key"]
     url = f"https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={bot_key}"
-    res = requests.post(url, json={"msgtype": "text", "text": {"content": content}})
+    res = requests.post(url, json={"msgtype": "markdown", "markdown": {"content": content}})
     try:
         res = res.json()
         return res

@@ -1,33 +1,16 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import { Spin } from 'antd';
+import { Spin, Empty } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { GraphNode, GraphEdge, GraphData, KnowledgeGraphViewProps } from '@/app/opspilot/types/knowledge';
 
 const generateMockData = (): GraphData => {
   const nodes: GraphNode[] = [
-    { id: '1', label: 'DevOps工作流', labels: ['Episodic'] },
-    { id: '2', label: 'CI/CD流程', labels: ['Episodic'] },
-    { id: '3', label: 'Jenkins服务器', labels: ['Entity'] },
-    { id: '4', label: 'Docker容器', labels: ['Entity']},
-    { id: '5', label: 'Kubernetes集群', labels: ['Entity',]},
-    { id: '6', label: '运维团队', labels: ['Group'] },
-    { id: '7', label: '开发团队', labels: ['Group'] },
-    { id: '8', label: '微服务架构', labels: ['Episodic'] },
-    { id: '9', label: 'API网关', labels: ['Entity'] },
-    { id: '10', label: '监控系统', labels: ['Entity'] },
+    // { id: '1', label: 'DevOps工作流', labels: ['Episodic'] },
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', source: '1', target: '2', label: '包含', type: 'relation' },
-    { id: 'e2', source: '2', target: '3', label: '使用', type: 'relation' },
-    { id: 'e3', source: '2', target: '4', label: '依赖', type: 'relation' },
-    { id: 'e4', source: '4', target: '5', label: '部署到', type: 'relation' },
-    { id: 'e5', source: '6', target: '5', label: '相关', type: 'reference' },
-    { id: 'e6', source: '7', target: '2', label: '描述', type: 'reference' },
-    { id: 'e7', source: '1', target: '8', label: '支持', type: 'relation' },
-    { id: 'e8', source: '8', target: '9', label: '需要', type: 'relation' },
-    { id: 'e9', source: '8', target: '10', label: '产生', type: 'relation' },
+    // { id: 'e1', source: '1', target: '2', label: '包含', type: 'relation' },
   ];
 
   return { nodes, edges };
@@ -527,7 +510,10 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   if (!graphData.nodes.length) {
     return (
       <div className="flex items-center justify-center text-gray-500" style={{ height }}>
-        {t('knowledge.knowledgeGraph.noGraphData')}
+        <Empty
+          description={t('knowledge.knowledgeGraph.noGraphData')}
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
       </div>
     );
   }
@@ -535,7 +521,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   return (
     <div
       ref={containerRef}
-      className="w-full border border-gray-200 rounded bg-white"
+      className="w-full border border-gray-200 rounded"
       style={{ height, minHeight: height }}
     />
   );

@@ -12,11 +12,10 @@ include(
     "components/celery.py",
     "components/database.py",
     "components/drf.py",
-    "components/keycloak.py",
     "components/log.py",
     "components/minio.py",
     "components/nats.py",
-    "components/unfold.py",
     "components/extra.py",
     "components/mlflow.py",
+    "components/docker_simple.py",
 )

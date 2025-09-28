@@ -33,7 +33,7 @@ class UserViewSet(ViewSetUtils):
         roles = Role.objects.all().values("id", "name", "app")
         role_map = {}
         for i in roles:
-            role_map[i["id"]] = f"{i['app']}-{i['name']}"
+            role_map[i["id"]] = f"{i['app']}@@{i['name']}"
         data, total = self.search_by_page(queryset.order_by("-id"), request, User.display_fields())
         for i in data:
             i["roles"] = [role_map.get(role_id, "") for role_id in i["role_list"]]

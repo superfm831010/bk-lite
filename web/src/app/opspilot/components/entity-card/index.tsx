@@ -23,6 +23,7 @@ interface EntityCardProps {
   modelName?: string;
   skillType?: string;
   skill_type?: number;
+  bot_type?: number;
   botType?: string;
   permissions?: string[];
   onMenuClick: (action: string, entity: any) => void;
@@ -41,6 +42,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
   modelName,
   skillType,
   skill_type,
+  bot_type,
   botType,
   permissions,
   onMenuClick,
@@ -56,14 +58,42 @@ const EntityCard: React.FC<EntityCardProps> = ({
         <PermissionWrapper
           requiredPermissions={['Edit']}
           instPermissions={permissions}>
-          <span className="block" onClick={() => onMenuClick('edit', { id, name, introduction, created_by, team_name, team, online, skill_type })}>{t('common.edit')}</span>
+          <span 
+            className="block" 
+            onClick={() => onMenuClick('edit', { 
+              id, 
+              name, 
+              introduction, 
+              created_by, 
+              team_name, 
+              team, 
+              online, 
+              skill_type, 
+              bot_type 
+            })}>
+            {t('common.edit')}
+          </span>
         </PermissionWrapper>
       </Menu.Item>
       <Menu.Item key={`delete-${id}`}>
         <PermissionWrapper 
           requiredPermissions={['Delete']} 
           instPermissions={permissions}>
-          <span className="block" onClick={() => onMenuClick('delete', { id, name, introduction, created_by, team_name, team, online, skill_type })}>{t('common.delete')}</span>
+          <span 
+            className="block" 
+            onClick={() => onMenuClick('delete', { 
+              id, 
+              name, 
+              introduction, 
+              created_by, 
+              team_name, 
+              team, 
+              online, 
+              skill_type, 
+              bot_type 
+            })}>
+            {t('common.delete')}
+          </span>
         </PermissionWrapper>
       </Menu.Item>
     </Menu>
@@ -77,7 +107,21 @@ const EntityCard: React.FC<EntityCardProps> = ({
     return Math.abs(hash) % max;
   };
 
-  const iconType = iconTypeMapping[getStableRandom(id, iconTypeMapping.length)];
+  const getIconType = () => {
+    if (bot_type !== undefined) {
+      const botTypeMap: { [key: number]: string } = {
+        1: 'Copilot',
+        2: 'icon-192x192',
+        3: 'Chatflow'
+      };
+
+      return botTypeMap[bot_type] || iconTypeMapping[getStableRandom(id, iconTypeMapping.length)];
+    }
+    
+    return iconTypeMapping[getStableRandom(id, iconTypeMapping.length)];
+  };
+
+  const iconType = getIconType();
   const avatar = getStableRandom(id + 'avatar', 2) === 0 ? '/app/banner_bg_1.jpg' : '/app/banner_bg_2.jpg';
 
   return (

@@ -7,13 +7,12 @@ import { ArrowRightOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import {
   AttrFieldType,
   UserItem,
-  Organization,
-  ModelItem,
 } from '@/app/cmdb/types/assetManage';
 import { Spin, Input, Tabs, Button, Tag, Empty } from 'antd';
 import useApiClient from '@/utils/request';
 import { useCommon } from '@/app/cmdb/context/common';
 import { deepClone, getFieldItem } from '@/app/cmdb/utils/common';
+import { useModelApi, useInstanceApi } from '@/app/cmdb/api';
 const { Search } = Input;
 interface AssetListItem {
   model_id: string;
@@ -34,18 +33,20 @@ interface TabJsxItem {
 
 const AssetSearch = () => {
   const { t } = useTranslation();
-  const { get, post, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
   const commonContext = useCommon();
-  const authList = useRef(commonContext?.authOrganizations || []);
-  const organizationList: Organization[] = authList.current;
+
+  const { getModelAttrList } = useModelApi();
+  const { fulltextSearchInstances } = useInstanceApi();
+
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
+  const modelList = commonContext?.modelList || [];
   const [propertyList, setPropertyList] = useState<AttrFieldType[]>([]);
   const [searchText, setSearchText] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('');
   const [items, setItems] = useState<TabJsxItem[]>([]);
   const [showSearch, setShowSearch] = useState<boolean>(true);
-  const [modelList, setModelList] = useState<ModelItem[]>([]);
   const [instDetail, setInstDetail] = useState<TabJsxItem[]>([]);
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [activeInstItem, setActiveInstItem] = useState<number>(-1);
@@ -53,9 +54,8 @@ const AssetSearch = () => {
   const [historyList, setHistoryList] = useState<string[]>([]);
 
   useEffect(() => {
-    if (isLoading) return;
-    getInitData();
-  }, [isLoading]);
+    if (isLoading || !modelList.length) return;
+  }, [isLoading, modelList]);
 
   useEffect(() => {
     const histories = localStorage.getItem('assetSearchHistory');
@@ -73,16 +73,6 @@ const AssetSearch = () => {
     setSearchText(e.target.value);
   };
 
-  const getInitData = async () => {
-    setPageLoading(true);
-    try {
-      const data = await get('/cmdb/api/model/');
-      setModelList(data);
-    } finally {
-      setPageLoading(false);
-    }
-  };
-
   const handleSearch = async () => {
     setShowSearch(!searchText);
     if (!searchText) return;
@@ -97,24 +87,37 @@ const AssetSearch = () => {
     setHistoryList(histories);
     setPageLoading(true);
     try {
-      const data: AssetListItem[] = await post(
-        '/cmdb/api/instance/fulltext_search/',
-        {
-          search: searchText,
-        }
-      );
+      const data: AssetListItem[] = await fulltextSearchInstances({
+        search: searchText,
+      });
       const tabItems: TabItem[] = getAssetList(data);
       const defaultTab = tabItems[0]?.key || '';
-      if (!defaultTab) {
+
+      if (!defaultTab || !data.length) {
+        // 清空所有相关数据
+        setInstData([]);
+        setItems([]);
+        setPropertyList([]);
+        setActiveTab('');
+        setInstDetail([]);
+        setActiveInstItem(-1);
         setPageLoading(false);
         return;
       }
-      const attrList = await get(`/cmdb/api/model/${defaultTab}/attr_list/`);
+      const attrList = await getModelAttrList(defaultTab);
       setPropertyList(attrList);
       setInstData(tabItems);
       setActiveTab(defaultTab);
+      setActiveInstItem(-1); 
       setPageLoading(false);
     } catch {
+      // 搜索失败时也要清空数据
+      setInstData([]);
+      setItems([]);
+      setPropertyList([]);
+      setActiveTab('');
+      setInstDetail([]);
+      setActiveInstItem(-1);
       setPageLoading(false);
     }
   };
@@ -182,20 +185,20 @@ const AssetSearch = () => {
                       getFieldItem({
                         fieldItem,
                         userList,
-                        groupList: organizationList,
                         isEdit: false,
                         value: list.children,
                         hideUserAvatar: true,
-                      }).toString() || '--';
-                    return fieldVal.includes(searchText) ||
+                      }) || '--';
+                    const isStrField =
+                      typeof fieldVal === 'string' &&
+                      fieldVal.includes(searchText);
+                    return isStrField ||
                       ['inst_name', 'organization'].includes(list.key) ? (
                         <li key={list.key}>
-                          <span>{list.label}</span>:
+                          <span>{list.label}</span>：
                           <span
                             className={
-                              fieldVal.includes(searchText)
-                                ? 'text-[var(--color-primary)]'
-                                : ''
+                              isStrField ? 'text-[var(--color-primary)]' : ''
                             }
                           >
                             {fieldVal}
@@ -233,11 +236,12 @@ const AssetSearch = () => {
                   getFieldItem({
                     fieldItem,
                     userList,
-                    groupList: organizationList,
                     isEdit: false,
                     value: list.children,
                     hideUserAvatar: true,
-                  }).toString() || '--';
+                  }) || '--';
+                const isStrField =
+                  typeof fieldVal === 'string' && fieldVal.includes(searchText);
                 return (
                   <li
                     key={list.key}
@@ -250,14 +254,12 @@ const AssetSearch = () => {
                       >
                         {list.label}
                       </span>
-                      <span className={assetSearchStyle.labelColon}>:</span>
+                      <span className={assetSearchStyle.labelColon}>：</span>
                     </span>
                     <span
                       title={fieldVal}
                       className={`${
-                        fieldVal.includes(searchText)
-                          ? 'text-[var(--color-primary)]'
-                          : ''
+                        isStrField ? 'text-[var(--color-primary)]' : ''
                       } ${assetSearchStyle.listItemValue}`}
                     >
                       {fieldVal}
@@ -303,7 +305,7 @@ const AssetSearch = () => {
     setActiveTab(key);
     setPageLoading(true);
     try {
-      const attrList = await get(`/cmdb/api/model/${key}/attr_list/`);
+      const attrList = await getModelAttrList(key);
       setPropertyList(attrList);
       setActiveInstItem(-1);
     } finally {

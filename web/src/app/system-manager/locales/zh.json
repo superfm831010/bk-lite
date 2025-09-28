@@ -60,7 +60,8 @@
         "lastName": "姓名",
         "email": "邮箱",
         "number": "号码",
-        "role": "角色"
+        "role": "角色",
+        "lastLogin": "最后登录时间"
       },
       "passwordTitle": "设置密码",
       "form": {
@@ -198,7 +199,8 @@
       "description": "描述",
       "descriptionMaxLength": "描述不能超过500个字符",
       "selectIcon": "选择图标",
-      "searchIcon": "搜索图标"
+      "searchIcon": "搜索图标",
+      "builtinAppClickTip": "非内置的应用不可点击"
     },
     "security": {
       "settings": "安全设置",

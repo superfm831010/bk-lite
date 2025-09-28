@@ -1,4 +1,9 @@
-import { CascaderItem, SubGroupItem } from '@/app/log/types';
+import {
+  CascaderItem,
+  SubGroupItem,
+  TimeValuesProps,
+  TreeItem,
+} from '@/app/log/types';
 import { Group } from '@/types';
 import { DetailItem, LogStream } from '@/app/log/types/search';
 import dayjs from 'dayjs';
@@ -125,4 +130,107 @@ export const aggregateLogs = (logs: LogStream[]) => {
 // 数组转义
 export const escapeArrayToJson = (arr: React.Key[]) => {
   return JSON.stringify(arr).replace(/"/g, '\\"');
+};
+
+// 树形组件根据id查其title
+export const findLabelById = (data: any[], key: string): string | null => {
+  for (const node of data) {
+    if (node.key === key) {
+      return node.label;
+    }
+    if (node.children) {
+      const result = findLabelById(node.children, key);
+      if (result) {
+        return result;
+      }
+    }
+  }
+  return null;
+};
+
+export const findTreeParentKey = (
+  treeData: TreeItem[],
+  targetKey: React.Key
+): React.Key | null => {
+  let parentKey: React.Key | null = null;
+  const loop = (nodes: TreeItem[], parent: React.Key | null) => {
+    for (const node of nodes) {
+      if (node.key === targetKey) {
+        parentKey = parent;
+        return;
+      }
+      if (node.children) {
+        loop(node.children, node.key); // 递归遍历子节点
+      }
+    }
+  };
+  loop(treeData, null); // 初始父节点为 null
+  return parentKey;
+};
+
+export const getRecentTimeRange = (timeValues: TimeValuesProps) => {
+  if (timeValues.originValue) {
+    const beginTime: number = dayjs()
+      .subtract(timeValues.originValue, 'minute')
+      .valueOf();
+    const lastTime: number = dayjs().valueOf();
+    return [beginTime, lastTime];
+  }
+  return timeValues.timeRange;
+};
+
+// 判断一个字符串是否是JSON
+export const isJSON = (input: string): boolean => {
+  try {
+    if (typeof input !== 'string') {
+      return false;
+    }
+    const parsed = JSON.parse(input);
+    return !!parsed;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * 判断值是否可以转换为数字，如果可以则保留两位小数，否则返回原值
+ * @param value 要处理的值
+ * @returns 如果是数字则返回保留两位小数的数字，否则返回原值
+ */
+export const formatNumericValue = (value: any): string | number => {
+  try {
+    // 处理 null、undefined、空字符串等特殊情况
+    if (value === null || value === undefined || value === '') {
+      return '--';
+    }
+    // 如果已经是数字类型
+    if (typeof value === 'number') {
+      // 检查是否为有效数字（排除 NaN、Infinity 等）
+      if (isFinite(value)) {
+        return Number(value.toFixed(2));
+      }
+      return value;
+    }
+    // 如果是字符串，尝试转换为数字
+    if (typeof value === 'string') {
+      // 去除首尾空格
+      const trimmedValue = value.trim();
+      // 空字符串直接返回
+      if (trimmedValue === '') {
+        return value;
+      }
+      // 尝试转换为数字
+      const numValue = Number(trimmedValue);
+      // 检查转换结果是否为有效数字
+      if (!isNaN(numValue) && isFinite(numValue)) {
+        return Number(numValue.toFixed(2));
+      }
+    }
+    // 如果不是数字或无法转换，返回原值
+    return value;
+  } catch (error) {
+    // 发生任何错误时，返回原值
+    console.warn('Error in formatNumericValue:', error);
+    return value;
+  }
 };

@@ -2,26 +2,11 @@ networks:
   prod:
 
 volumes:
-  minio:
   rabbitmq:
   elasticsearch:
+  falkordb-opspilot:
 
 services:
-  minio:
-    image: ${DOCKER_IMAGE_MINIO}
-    restart: always
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio:/data
-    networks:
-      - prod
-    profiles:
-      - opspilot
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/ready"]
   
   rabbitmq:
     image: ${DOCKER_IMAGE_RABBITMQ}
@@ -33,46 +18,27 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASSWORD}
     ports:
       - "5672:5672"
-    profiles:
-      - opspilot
     networks:
       - prod
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
   
-  elasticsearch:
-    image: ${DOCKER_IMAGE_ELASTICSEARCH}
-    restart: always
-    volumes:
-      - elasticsearch:/usr/share/elasticsearch/data
-    environment:
-      discovery.type: single-node
-      xpack.security.enabled: true
-      xpack.security.transport.ssl.enabled: false
-      xpack.security.http.ssl.enabled: false
-      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
-      ES_JAVA_OPTS: -Xms2g -Xmx2g
-    networks:
-      - prod
-    profiles:
-      - opspilot
-    healthcheck:
-      test: ["CMD", "curl", "-f", "-u", "${ELASTIC_PASSWORD}:", "http://127.0.0.1:9200/_cluster/health"]
-  
   metis:
     image: ${DOCKER_IMAGE_METIS}
     restart: always
     environment:
-      DB_URI: postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@postgres:5432/metis
-      ELASTICSEARCH_URL: http://elasticsearch:9200
-      ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD}
+      DB_URI: postgresql+psycopg://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@pgvector:5432/metis
       SECRET_KEY: ${SECRET_KEY}
       MODE: DEBUG
       TRANSFORMERS_OFFLINE: true
       HF_DATASETS_OFFLINE: true
       ADMIN_PASSWORD: password
-    profiles:
-      - opspilot
+      KNOWLEDGE_GRAPH_HOST: falkordb-opspilot
+      KNOWLEDGE_GRAPH_PASSWORD: ${FALKORDB_PASSWORD}
+      KNOWLEDGE_GRAPH_PORT: 6379
+      GRAPHITI_TELEMETRY_ENABLED: "false"
+      OPENAI_API_KEY: ""
+      UV_OFFLINE: true
     networks:
       - prod
     depends_on:
@@ -80,3 +46,33 @@ services:
         condition: service_healthy
       server:
         condition: service_healthy
+      falkordb-opspilot:
+        condition: service_healthy
+
+  pgvector:
+    image: ${DOCKER_IMAGE_PGVECTOR}
+    restart: always
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: metis
+    networks:
+      - prod
+
+  falkordb-opspilot:
+    image: ${DOCKER_IMAGE_FALKORDB}
+    restart: always
+    environment:
+      - REDIS_ARGS=--requirepass ${FALKORDB_PASSWORD}
+      - FALKORDB_ARGS=THREAD_COUNT 4
+    networks:
+      - prod
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "redis", "-p", "6379", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - falkordb-opspilot:/var/lib/falkordb/data

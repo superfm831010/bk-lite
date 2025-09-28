@@ -11,6 +11,9 @@ export interface DatasourceItem {
   desc: string;
   is_active: boolean;
   params: ParamItem[];
+  chart_type: any[];
+  namespaces: number[];
+  tag: any[];
 }
 
 export interface OperateModalProps {
@@ -21,12 +24,13 @@ export interface OperateModalProps {
 }
 
 export interface ParamItem {
+  id?: string;
   name: string;
   value: any;
   alias_name: string;
-  type?: string; 
-  id?: string;
+  type?: string;
+  filterType?: string;
   desc?: string;
   required?: boolean;
-  options?: Array<{ label: string; value: any }>;
+  options?: any[];
 }
