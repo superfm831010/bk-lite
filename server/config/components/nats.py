@@ -13,8 +13,8 @@ def _create_ssl_context():
     环境变量说明：
     - NATS_TLS_ENABLED: 是否启用 TLS (true/false)，默认 false
     - NATS_TLS_INSECURE: 是否跳过证书验证 (true/false)，默认 false
+    - NATS_TLS_CA_FILE: 自定义 CA 证书文件路径（可选，用于企业内部CA或自签名证书）
     - NATS_TLS_HOSTNAME: 强制指定证书验证的主机名（可选）
-    - NATS_TLS_HANDSHAKE_FIRST: 是否立即进行TLS握手 (true/false)，默认 false
     - NATS_TLS_CERT_FILE: 客户端证书文件路径（可选）
     - NATS_TLS_KEY_FILE: 客户端私钥文件路径（可选）
     """
@@ -23,6 +23,12 @@ def _create_ssl_context():
 
     # 创建 SSL 上下文
     ssl_context = ssl.create_default_context()
+
+    # 自定义 CA 证书文件（企业内部 CA 或自签名证书）
+    ca_file = os.getenv("NATS_TLS_CA_FILE")
+    if ca_file and Path(ca_file).exists():
+        # 清空默认 CA 证书，只信任指定的 CA
+        ssl_context = ssl.create_default_context(cafile=ca_file)
 
     # 是否跳过证书验证（用于测试环境）
     if os.getenv("NATS_TLS_INSECURE", "false").lower() == "true":
@@ -43,7 +49,6 @@ NATS_OPTIONS = {
     # TLS 配置
     "tls": _create_ssl_context(),
     "tls_hostname": os.getenv("NATS_TLS_HOSTNAME"),  # 证书验证主机名（通过IP连接域名证书时需要）
-    "tls_handshake_first": os.getenv("NATS_TLS_HANDSHAKE_FIRST", "false").lower() == "true",  # 立即TLS握手
 
     # 基础连接配置
     "connect_timeout": int(os.getenv("NATS_CONNECT_TIMEOUT", "5")),  # 连接超时（秒）
