@@ -127,13 +127,14 @@ const EventHeatMap: React.FC<EventHeatMapProps> = ({
 
   // 获取格子的颜色
   const getCellColor = useCallback((count: number, mode: 'month' | 'day') => {
+    if (count === 0) return 'var(--color-fill-4)';
     if (mode === 'month') {
-      if (count <= 10) return 'var(--color-fill-4)';
-      if (count <= 20) return '#f4968d';
+      if (count <= 5) return '#ffd6cc';
+      if (count <= 15) return '#ff9d8a';
       return 'var(--color-fail)';
     } else {
-      if (count <= 3) return 'var(--color-fill-4)';
-      if (count <= 5) return '#f4968d';
+      if (count <= 2) return '#ffd6cc';
+      if (count <= 5) return '#ff9d8a';
       return 'var(--color-fail)';
     }
   }, []);
@@ -142,15 +143,17 @@ const EventHeatMap: React.FC<EventHeatMapProps> = ({
   const legendConfig = useMemo(() => {
     if (viewMode === 'month') {
       return [
-        { color: 'var(--color-fill-4)', label: '0-10' },
-        { color: '#f4968d', label: '10-20' },
-        { color: 'var(--color-fail)', label: '20+' },
+        { color: 'var(--color-fill-4)', label: '0' },
+        { color: '#ffd6cc', label: '1-5' },
+        { color: '#ff9d8a', label: '6-15' },
+        { color: 'var(--color-fail)', label: '16+' },
       ];
     } else {
       return [
-        { color: 'var(--color-fill-4)', label: '0-3' },
-        { color: '#f4968d', label: '3-5' },
-        { color: 'var(--color-fail)', label: '5+' },
+        { color: 'var(--color-fill-4)', label: '0' },
+        { color: '#ffd6cc', label: '1-2' },
+        { color: '#ff9d8a', label: '3-5' },
+        { color: 'var(--color-fail)', label: '6+' },
       ];
     }
   }, [viewMode]);
@@ -308,12 +311,37 @@ const EventHeatMap: React.FC<EventHeatMapProps> = ({
 
             return (
               <Tooltip key={index} title={tooltipTitle}>
-                <div
-                  className="h-6 rounded transition-all duration-200 hover:scale-105 hover:shadow-md"
-                  style={{
-                    backgroundColor: color,
-                  }}
-                ></div>
+                <div className="flex flex-col items-center">
+                  <div
+                    className="h-6 rounded transition-all duration-200 hover:scale-105 hover:shadow-md flex items-center justify-center relative w-full"
+                    style={{
+                      backgroundColor: color,
+                    }}
+                  >
+                    <span
+                      className="text-[12px] font-medium select-none"
+                      style={{ color: 'var(--color-bg)' }}
+                    >
+                      {cellData.count}
+                    </span>
+                  </div>
+                  <div
+                    className="text-[12px] font-medium select-none text-center mt-[2px]"
+                    style={{ color: 'var(--color-text-3)' }}
+                  >
+                    {
+                      viewMode === 'month'
+                        ? `Day${dayjs(cellData.date).date()}` // 显示day+日期数字
+                        : `${dayjs(cellData.date)
+                          .hour()
+                          .toString()
+                          .padStart(2, '0')}:00-${dayjs(cellData.date)
+                          .hour()
+                          .toString()
+                          .padStart(2, '0')}:59` // 显示时间段
+                    }
+                  </div>
+                </div>
               </Tooltip>
             );
           })}
