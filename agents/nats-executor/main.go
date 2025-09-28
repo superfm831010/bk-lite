@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
 	"log"
@@ -18,6 +20,14 @@ type Config struct {
 	NATSUrls        string `yaml:"nats_urls"`
 	NATSInstanceID  string `yaml:"nats_instanceId"`
 	NatsConnTimeout int    `yaml:"nats_conn_timeout"`
+
+	// TLS 配置
+	TLSEnabled    bool   `yaml:"tls_enabled"`
+	TLSHostname   string `yaml:"tls_hostname"`
+	TLSCAFile     string `yaml:"tls_ca_file"`
+	TLSCertFile   string `yaml:"tls_cert_file"`
+	TLSKeyFile    string `yaml:"tls_key_file"`
+	TLSSkipVerify bool   `yaml:"tls_skip_verify"`
 }
 
 func loadConfig(path string) (*Config, error) {
@@ -51,6 +61,44 @@ func main() {
 		nats.Name("nats-executor"),
 		nats.Compression(true),
 		nats.Timeout(time.Duration(cfg.NatsConnTimeout) * time.Second),
+	}
+
+	// 添加 TLS 配置
+	if cfg.TLSEnabled {
+		tlsConfig := &tls.Config{
+			InsecureSkipVerify: cfg.TLSSkipVerify,
+		}
+
+		// 如果指定了 hostname，设置 ServerName
+		if cfg.TLSHostname != "" {
+			tlsConfig.ServerName = cfg.TLSHostname
+		}
+
+		// 如果提供了证书文件，加载客户端证书
+		if cfg.TLSCertFile != "" && cfg.TLSKeyFile != "" {
+			cert, err := tls.LoadX509KeyPair(cfg.TLSCertFile, cfg.TLSKeyFile)
+			if err != nil {
+				log.Fatalf("Failed to load client certificate: %v", err)
+			}
+			tlsConfig.Certificates = []tls.Certificate{cert}
+		}
+
+		// 如果提供了 CA 证书文件，加载 CA 证书
+		if cfg.TLSCAFile != "" {
+			caCert, err := os.ReadFile(cfg.TLSCAFile)
+			if err != nil {
+				log.Fatalf("Failed to read CA certificate file: %v", err)
+			}
+			caCertPool := x509.NewCertPool()
+			if !caCertPool.AppendCertsFromPEM(caCert) {
+				log.Fatalf("Failed to append CA certificate")
+			}
+			tlsConfig.RootCAs = caCertPool
+		}
+
+		// 添加 TLS 选项到连接选项中
+		opts = append(opts, nats.Secure(tlsConfig))
+		log.Println("TLS enabled for NATS connection")
 	}
 
 	nc, err := nats.Connect(cfg.NATSUrls, opts...)
