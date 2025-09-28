@@ -367,7 +367,7 @@ const LineChart: React.FC<LineChartProps> = memo(
                 )}
               </AreaChart>
             </ResponsiveContainer>
-            {eventData?.length && (
+            {eventData?.length > 0 && (
               <div className="flex w-[100%] pl-14 pr-[15px] justify-between">
                 {boxItems?.map((item, index) => {
                   return (
