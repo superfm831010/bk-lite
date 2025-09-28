@@ -67,12 +67,12 @@ def decode_token(token: str, secret: str = SECRET_KEY):
     try:
         # 解码 token
         decoded_data = base64.urlsafe_b64decode(token)
-
+        
         # 分割签名和数据，处理格式错误的情况
         parts = decoded_data.split(b".", 1)
         if len(parts) != 2:
             raise BaseAppException("token 格式错误")
-
+        
         signature, json_data = parts
 
         # 验证签名
