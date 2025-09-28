@@ -1,7 +1,5 @@
 import datetime
 
-import pytz
-
 from core.config import YamlConfig
 from common.cmp.driver import CMPDriver
 from sanic import Blueprint
@@ -33,8 +31,7 @@ def get_time_range(minutes: int):
     :param minutes: int, number of minutes to go back from current time
     :return: tuple (start_time, end_time)
     """
-    tz = pytz.timezone("Asia/Shanghai")  # UTC+8 时区
-    end_time = datetime.datetime.now(tz)
+    end_time = datetime.datetime.now()
     start_time = end_time - datetime.timedelta(minutes=int(minutes))
     start_time_str = start_time.strftime("%Y-%m-%d %H:%M") + ":00"
     end_time_str = end_time.strftime("%Y-%m-%d %H:%M") + ":00"
@@ -135,6 +132,17 @@ async def vmware_metrics(request):
         logger.info(f"Processing '{object_id}': {len(resource_ids)} resources")
 
         try:
+
+            logger.info("--------------")
+            logger.info(dict(
+                resourceId=",".join(resource_ids),
+                StartTime=start_time_str,
+                EndTime=end_time_str,
+                Period=300,
+                Metrics=[],
+                context={"resources": [{"bk_obj_id": object_id}]}
+            ))
+
             data = driver.get_weops_monitor_data(
                 resourceId=",".join(resource_ids),
                 StartTime=start_time_str,
