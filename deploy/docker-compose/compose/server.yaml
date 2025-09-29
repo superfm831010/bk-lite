@@ -8,7 +8,9 @@ services:
       - DEBUG=True
       - SECRET_KEY=${SECRET_KEY}
       - JWT_ALGORITHM=HS256
-      - NATS_SERVERS=nats://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
+      - NATS_SERVERS=tls://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
+      - NATS_TLS_ENABLED=true
+      - NATS_TLS_CA_FILE=/etc/nats/certs/ca.crt
       - NATS_NAMESPACE=bklite
       - DB_ENGINE=postgresql
       - DB_NAME=bklite
@@ -68,6 +70,7 @@ services:
       - prod
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ../conf/nats/certs:/etc/nats/certs:ro
       - ../pkgs:/apps/pkgs
     labels:
       - "traefik.enable=true"
