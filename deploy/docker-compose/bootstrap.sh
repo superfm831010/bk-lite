@@ -483,7 +483,7 @@ EOF
 
 if [ -z "${SIDECAR_NODE_ID:-}" ]; then
     log "WARNING" "重新初始化 Sidecar Node ID 和 Token，可能会导致已注册的 Sidecar 失效"
-    mapfile -t ARR < <(docker-compose exec -T server /bin/bash -c 'uv run manage.py node_token_init --ip default' 2>&1| grep -oP 'node_id: \K[0-9a-f]+|token: \K\S+')
+    mapfile -t ARR < <($DOCKER_COMPOSE_CMD exec -T server /bin/bash -c 'uv run manage.py node_token_init --ip default' 2>&1| grep -oP 'node_id: \K[0-9a-f]+|token: \K\S+')
     SIDECAR_NODE_ID=${ARR[0]}
     SIDECAR_INIT_TOKEN=${ARR[1]}
     log "SUCCESS" "Sidecar Node ID: $SIDECAR_NODE_ID, Token: $SIDECAR_INIT_TOKEN"
