@@ -86,6 +86,8 @@ class InstanceConfigService:
 
         rules = []
 
+        _monitor_instance_id = tuple(monitor_instance_id)[0]
+
         for child_obj in child_objs:
             metric_obj = Metric.objects.filter(monitor_object_id=child_obj.id).first()
             rules.append(MonitorObjectOrganizationRule(
@@ -94,7 +96,7 @@ class InstanceConfigService:
                 rule={
                     "type": "metric",
                     "metric_id": metric_obj.id,
-                    "filter": [{"name": "instance_id", "method": "==",  "value": monitor_instance_id}]
+                    "filter": [{"name": "instance_id", "method": "==",  "value": _monitor_instance_id}]
                 },
                 organizations=group_ids
             ))
