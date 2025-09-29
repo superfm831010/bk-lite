@@ -295,6 +295,11 @@ const useMlopsManageApi = () => {
     return await get(`/mlops/timeseries_predict_train_data/${id}?include_train_data=${include_train_data}&include_metadata=${include_metadata}`);
   };
 
+  // 获取指定分类任务样本的详情
+  const getClassificationTrainDataInfo = async (id: number | string, include_train_data?: boolean, include_metadata?: boolean) => {
+    return await get(`/mlops/classification_train_data/${id}?include_train_data=${include_train_data}&include_metadata=${include_metadata}`);
+  };
+
   // 新增异常检测数据集
   const addAnomalyDatasets = async (params: {
     name: string;
@@ -704,6 +709,7 @@ const useMlopsManageApi = () => {
     getClassificationTrainData,
     getLogClusteringTrainDataInfo,
     getTimeSeriesPredictTrainDataInfo,
+    getClassificationTrainDataInfo,
     addAnomalyDatasets,
     addLogClusteringDatasets,
     addTimeSeriesPredictDatasets,
