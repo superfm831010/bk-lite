@@ -86,7 +86,7 @@ class InstanceConfigService:
 
         rules = []
 
-        _monitor_instance_id = tuple(monitor_instance_id)[0]
+        _monitor_instance_id = ast.literal_eval(monitor_instance_id)[0]
 
         for child_obj in child_objs:
             metric_obj = Metric.objects.filter(monitor_object_id=child_obj.id).first()
