@@ -487,6 +487,14 @@ if [ -z "${SIDECAR_NODE_ID:-}" ]; then
     SIDECAR_NODE_ID=${ARR[0]}
     SIDECAR_INIT_TOKEN=${ARR[1]}
     log "SUCCESS" "Sidecar Node ID: $SIDECAR_NODE_ID, Token: $SIDECAR_INIT_TOKEN"
+    # 如果里面没有SIDECAR_INIT_TOKEN变量，则添加，有则更新
+    if ! grep -q "^SIDECAR_INIT_TOKEN=" common.env; then
+        echo "export SIDECAR_INIT_TOKEN=$SIDECAR_INIT_TOKEN" >> common.env
+    else
+        sed -i "s/^export SIDECAR_INIT_TOKEN=.*$/export SIDECAR_INIT_TOKEN=\"$SIDECAR_INIT_TOKEN\"/g" common.env
+    fi
+    echo "export SIDECAR_NODE_ID=$SIDECAR_NODE_ID" >> common.env
+    log "SUCCESS" "已将 Sidecar Node ID 和 Token 保存到 common.env 文件"
 else
     log "SUCCESS" "检测到 SIDECAR_INIT_TOKEN 环境变量，跳过 Sidecar Token 初始化"
 fi
