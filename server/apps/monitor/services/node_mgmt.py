@@ -98,7 +98,8 @@ class InstanceConfigService:
                     "metric_id": metric_obj.id,
                     "filter": [{"name": "instance_id", "method": "==",  "value": _monitor_instance_id}]
                 },
-                organizations=group_ids
+                organizations=group_ids,
+                monitor_instance_id=monitor_instance_id,
             ))
         MonitorObjectOrganizationRule.objects.bulk_create(rules, batch_size=200)
 
