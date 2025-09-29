@@ -118,7 +118,7 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
             config_objs.delete()
 
         # 同步删除实例关联的分组规则
-        MonitorObjectOrganizationRule.objects.filter(id__in=instance_ids).delete()
+        MonitorObjectOrganizationRule.objects.filter(monitor_instance_id__in=instance_ids).delete()
         return WebUtils.response_success()
 
     @action(methods=['post'], detail=False, url_path='update_monitor_instance')
