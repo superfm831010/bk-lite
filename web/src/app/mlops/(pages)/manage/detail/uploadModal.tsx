@@ -81,10 +81,6 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
 
         const data = lines.slice(1).map((line, index) => {
           const values = line.split(',');
-          
-          if (values.length !== headers.length) {
-            throw new Error(`第${index + 2}行数据列数不匹配`);
-          }
 
           return headers.reduce((obj: Record<string, any>, key, idx) => {
             const value = values[idx];
