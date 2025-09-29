@@ -253,34 +253,39 @@ EOF
 fi
 
 generate_tls_certs() {
-  : "${HOST_IP:?HOST_IP 未设置}"
-  log "INFO" "生成自签名 TLS 证书..."
-  mkdir -p ./conf/nats/certs
-  local dir=./conf/nats/certs
-  local san="DNS:nats,DNS:localhost,IP:127.0.0.1,IP:${HOST_IP}"
-  local cn="nats"
+    : "${HOST_IP:?HOST_IP 未设置}"
+    local dir=./conf/nats/certs
+    local san="DNS:nats,DNS:localhost,IP:127.0.0.1,IP:${HOST_IP}"
+    local cn="nats"
+    # 当存在server.crt时，跳过生成
+    if [ -f "$dir/server.crt" ] && [ -f "$dir/server.key" ] && [ -f "$dir/ca.crt" ]; then
+        log "SUCCESS" "TLS 证书已存在，跳过生成步骤..."
+        return
+    fi
+    log "INFO" "生成自签名 TLS 证书..."
+    mkdir -p ./conf/nats/certs
 
-  # CA
-  openssl genrsa -out "$dir/ca.key" 2048
-  openssl req -x509 -new -nodes -key "$dir/ca.key" -sha256 -days 3650 \
-    -subj "/CN=Blueking Lite" -out "$dir/ca.crt"
+    # CA
+    openssl genrsa -out "$dir/ca.key" 2048
+    openssl req -x509 -new -nodes -key "$dir/ca.key" -sha256 -days 3650 \
+        -subj "/CN=Blueking Lite" -out "$dir/ca.crt"
 
-  # Server key
-  openssl genrsa -out "$dir/server.key" 2048
+    # Server key
+    openssl genrsa -out "$dir/server.key" 2048
 
-  # 用进程替代传 config，CSR 走 stdout
-  openssl req -new -key "$dir/server.key" -out - \
-    -config <(printf '[req]\ndistinguished_name=req\nreq_extensions=req_ext\nprompt=no\n[req_ext]\nsubjectAltName=%s\n[keyUsage]\n[dn]\n' "$san") \
-    -subj "/CN=${cn}" \
-  | openssl x509 -req -CA "$dir/ca.crt" -CAkey "$dir/ca.key" -CAcreateserial \
-      -days 825 -sha256 -out "$dir/server.crt" \
-      -extfile <(printf '%s\n%s\n%s\n%s\n' \
-        "subjectAltName=${san}" \
-        "basicConstraints=CA:FALSE" \
-        "keyUsage=digitalSignature,keyEncipherment,keyAgreement" \
-        "extendedKeyUsage=serverAuth")
+    # 用进程替代传 config，CSR 走 stdout
+    openssl req -new -key "$dir/server.key" -out - \
+        -config <(printf '[req]\ndistinguished_name=req\nreq_extensions=req_ext\nprompt=no\n[req_ext]\nsubjectAltName=%s\n[keyUsage]\n[dn]\n' "$san") \
+        -subj "/CN=${cn}" \
+    | openssl x509 -req -CA "$dir/ca.crt" -CAkey "$dir/ca.key" -CAcreateserial \
+        -days 825 -sha256 -out "$dir/server.crt" \
+        -extfile <(printf '%s\n%s\n%s\n%s\n' \
+            "subjectAltName=${san}" \
+            "basicConstraints=CA:FALSE" \
+            "keyUsage=digitalSignature,keyEncipherment,keyAgreement" \
+            "extendedKeyUsage=serverAuth")
 
-  log "SUCCESS" "TLS 证书生成完成：$(ls -1 $dir/server.crt)"
+    log "SUCCESS" "TLS 证书生成完成：$(ls -1 $dir/server.crt)"
 }
 
 # 检查common.env文件是否存在，存在则加载，不存在则生成
