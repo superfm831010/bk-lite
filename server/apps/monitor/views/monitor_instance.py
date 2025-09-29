@@ -5,7 +5,7 @@ from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.utils.permission_utils import get_permission_rules, permission_filter
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.constants import INSTANCE_MODULE, DEFAULT_PERMISSION
-from apps.monitor.models import MonitorInstance, MonitorObject, CollectConfig
+from apps.monitor.models import MonitorInstance, MonitorObject, CollectConfig, MonitorObjectOrganizationRule
 from apps.monitor.services.monitor_instance import InstanceSearch
 from apps.monitor.services.monitor_object import MonitorObjectService
 from apps.rpc.node_mgmt import NodeMgmt
@@ -116,6 +116,9 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
             NodeMgmt().delete_configs(configs)
             # 删除配置对象
             config_objs.delete()
+
+        # 同步删除实例关联的分组规则
+        MonitorObjectOrganizationRule.objects.filter(id__in=instance_ids).delete()
         return WebUtils.response_success()
 
     @action(methods=['post'], detail=False, url_path='update_monitor_instance')
