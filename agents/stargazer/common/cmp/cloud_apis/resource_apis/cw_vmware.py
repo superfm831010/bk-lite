@@ -753,13 +753,6 @@ class Vmware(PrivateCloudManage):
                     "disk_used_average",
                     "disk_free_average",
                     "store_accessible",
-                    # 添加新的数据存储相关指标
-                    "datastore_io_read_latency",
-                    "datastore_io_write_latency",
-                    "datastore_iops_read",
-                    "datastore_iops_write",
-                    "datastore_throughput_read",
-                    "datastore_throughput_write",
                 ],
             )
         else:

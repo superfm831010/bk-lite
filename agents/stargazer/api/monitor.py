@@ -132,17 +132,6 @@ async def vmware_metrics(request):
         logger.info(f"Processing '{object_id}': {len(resource_ids)} resources")
 
         try:
-
-            logger.info("--------------")
-            logger.info(dict(
-                resourceId=",".join(resource_ids),
-                StartTime=start_time_str,
-                EndTime=end_time_str,
-                Period=300,
-                Metrics=[],
-                context={"resources": [{"bk_obj_id": object_id}]}
-            ))
-
             data = driver.get_weops_monitor_data(
                 resourceId=",".join(resource_ids),
                 StartTime=start_time_str,
