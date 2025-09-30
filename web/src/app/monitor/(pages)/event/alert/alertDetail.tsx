@@ -20,13 +20,14 @@ import {
   Pagination,
   TimeLineItem,
 } from '@/app/monitor/types';
+import { HeatMapDataItem } from '@/types';
 import { MetricItem } from '@/app/monitor/types/monitor';
 import { AlertOutlined } from '@ant-design/icons';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { useAlertDetailTabs } from '@/app/monitor/hooks/event';
 import useMonitorApi from '@/app/monitor/api/index';
 import Information from './information';
-import EventHeatMap from './eventHeatMap';
+import EventHeatMap from '@/components/heat-map';
 import { getEnumValueUnit, renderChart } from '@/app/monitor/utils/common';
 import {
   LEVEL_MAP,
@@ -63,7 +64,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const [pageLoading, setPageLoading] = useState<boolean>(false);
     const tabs: TabItem[] = useAlertDetailTabs();
     const [timeLineData, setTimeLineData] = useState<TimeLineItem[]>([]);
-    const [eventData, setEventData] = useState<TableDataItem[]>([]);
+    const [eventData, setEventData] = useState<HeatMapDataItem[]>([]);
     const timelineRef = useRef<HTMLDivElement>(null); // 用于引用 Timeline 容器
     const isFetchingRef = useRef<boolean>(false); // 用于标记是否正在加载数据
 

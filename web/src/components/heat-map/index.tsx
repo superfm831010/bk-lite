@@ -9,7 +9,7 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import isBetween from 'dayjs/plugin/isBetween';
 import minMax from 'dayjs/plugin/minMax';
 import { useTranslation } from '@/utils/i18n';
-import { TableDataItem } from '@/app/monitor/types';
+import { HeatMapDataItem } from '@/types';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -17,7 +17,7 @@ dayjs.extend(isBetween);
 dayjs.extend(minMax);
 
 interface EventHeatMapProps {
-  data: TableDataItem[];
+  data: HeatMapDataItem[];
   className?: string;
 }
 
@@ -231,10 +231,10 @@ const EventHeatMap: React.FC<EventHeatMapProps> = ({
             size="small"
           >
             <Radio.Button value="month">
-              {t('monitor.events.heatMap.monthDisplay')}
+              {t('common.heatMap.monthDisplay')}
             </Radio.Button>
             <Radio.Button value="day">
-              {t('monitor.events.heatMap.dayDisplay')}
+              {t('common.heatMap.dayDisplay')}
             </Radio.Button>
           </Radio.Group>
         </div>
@@ -253,8 +253,8 @@ const EventHeatMap: React.FC<EventHeatMapProps> = ({
             format={viewMode === 'month' ? 'YYYY-MM' : 'YYYY-MM-DD'}
             placeholder={
               viewMode === 'month'
-                ? t('monitor.events.heatMap.selectMonth')
-                : t('monitor.events.heatMap.selectDate')
+                ? t('common.heatMap.selectMonth')
+                : t('common.heatMap.selectDate')
             }
             allowClear={false}
             className="min-w-[120px]"
@@ -288,7 +288,7 @@ const EventHeatMap: React.FC<EventHeatMapProps> = ({
                 <div>
                   <div>{dateStr}</div>
                   <div>
-                    {t('monitor.events.heatMap.quantity')}：{cellData.count}
+                    {t('common.heatMap.quantity')}：{cellData.count}
                   </div>
                 </div>
               );
@@ -303,7 +303,7 @@ const EventHeatMap: React.FC<EventHeatMapProps> = ({
                     {hour.toString().padStart(2, '0')}:59:59
                   </div>
                   <div>
-                    {t('monitor.events.heatMap.quantity')}：{cellData.count}
+                    {t('common.heatMap.quantity')}：{cellData.count}
                   </div>
                 </div>
               );
