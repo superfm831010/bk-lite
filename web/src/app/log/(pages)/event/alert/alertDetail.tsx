@@ -19,6 +19,7 @@ import {
   Pagination,
   TimeLineItem,
 } from '@/app/log/types';
+import { HeatMapDataItem } from '@/types';
 import { AlertOutlined } from '@ant-design/icons';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { useAlertDetailTabs } from '@/app/log/hooks/event';
@@ -27,7 +28,7 @@ import Information from './information';
 import EventDetail from './eventDetail';
 import { LEVEL_MAP } from '@/app/log/constants';
 import { useLevelList, useStateMap } from '@/app/log/hooks/event';
-import EventHeatMap from './eventHeatMap';
+import EventHeatMap from '@/components/heat-map';
 
 const AlertDetail = forwardRef<ModalRef, ModalConfig>(
   ({ userList, onSuccess }, ref) => {
@@ -54,7 +55,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const [tableLoading, setTableLoading] = useState<boolean>(false);
     const tabs: TabItem[] = useAlertDetailTabs();
     const [timeLineData, setTimeLineData] = useState<TimeLineItem[]>([]);
-    const [chartData, setChartData] = useState<TableDataItem[]>([]);
+    const [chartData, setChartData] = useState<HeatMapDataItem[]>([]);
 
     useImperativeHandle(ref, () => ({
       showModal: ({ title, form }) => {

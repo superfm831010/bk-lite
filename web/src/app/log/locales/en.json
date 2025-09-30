@@ -371,14 +371,7 @@
       "systemManage": "system management",
       "config": "to configure it.",
       "displayFields": "display fields",
-      "displayFieldsDes": "Please select the display fields in the alarm details table for the alarms generated in the log, in order to obtain more information for alarm analysis.",
-      "heatMap": {
-        "monthDisplay": "Monthly Display",
-        "dayDisplay": "Daily Display",
-        "selectMonth": "Select Month",
-        "selectDate": "Select Date",
-        "quantity": "Quantity"
-      }
+      "displayFieldsDes": "Please select the display fields in the alarm details table for the alarms generated in the log, in order to obtain more information for alarm analysis."
     }
   }
 }
