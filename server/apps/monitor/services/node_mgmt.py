@@ -96,7 +96,7 @@ class InstanceConfigService:
                 rule={
                     "type": "metric",
                     "metric_id": metric_obj.id,
-                    "filter": [{"name": "instance_id", "method": "==",  "value": _monitor_instance_id}]
+                    "filter": [{"name": "instance_id", "method": "=",  "value": _monitor_instance_id}]
                 },
                 organizations=group_ids,
                 monitor_instance_id=monitor_instance_id,
