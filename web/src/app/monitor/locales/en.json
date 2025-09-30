@@ -356,14 +356,7 @@
       "alarmLevel": "Alarm Level",
       "noticeWay": "There is currently no notification channel available. You can go to the",
       "systemManage": "system management",
-      "config": "to configure it.",
-      "heatMap": {
-        "monthDisplay": "Monthly Display",
-        "dayDisplay": "Daily Display",
-        "selectMonth": "Select Month",
-        "selectDate": "Select Date",
-        "quantity": "Quantity"
-      }
+      "config": "to configure it."
     },
     "intergrations": {
       "intergration": "Intergration",

@@ -356,14 +356,7 @@
       "alarmLevel": "告警级别",
       "noticeWay": "暂无通知渠道，可去",
       "systemManage": "系统管理",
-      "config": "配置。",
-      "heatMap": {
-        "monthDisplay": "按月展示",
-        "dayDisplay": "按天展示",
-        "selectMonth": "选择月份",
-        "selectDate": "选择日期",
-        "quantity": "数量"
-      }
+      "config": "配置。"
     },
     "intergrations": {
       "intergration": "集成",
