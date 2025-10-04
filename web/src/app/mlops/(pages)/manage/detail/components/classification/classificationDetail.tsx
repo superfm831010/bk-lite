@@ -4,7 +4,7 @@ import { useTranslation } from "@/utils/i18n";
 import useMlopsManageApi from '@/app/mlops/api/manage';
 import CustomTable from "@/components/custom-table";
 import PermissionWrapper from '@/components/permission';
-import UploadModal from "./uploadModal";
+import UploadModal from "../../uploadModal";
 import OperateModal from "@/components/operate-modal";
 import {
   Input,
@@ -20,12 +20,12 @@ import { TYPE_CONTENT, TYPE_COLOR } from "@/app/mlops/constants";
 import { ColumnItem, ModalRef, Pagination, TableData } from '@/app/mlops/types';
 const { Search } = Input;
 
-const LogDetail = () => {
+const ClassificationDetail = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const modalRef = useRef<ModalRef>(null);
   const searchParams = useSearchParams();
-  const { getLogClusteringTrainData, deleteLogClusteringTrainData, updateLogClusteringTrainData } = useMlopsManageApi();
+  const { getClassificationTrainData, deleteClassificationTrainData, updateClassificationTrainData } = useMlopsManageApi();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [currentData, setCurrentData] = useState<any>(null);
@@ -138,7 +138,7 @@ const LogDetail = () => {
   const getDataset = useCallback(async (search: string = '') => {
     setLoading(true);
     try {
-      const { count, items } = await getLogClusteringTrainData({
+      const { count, items } = await getClassificationTrainData({
         name: search,
         dataset: folder_id as string,
         page: pagination.current,
@@ -181,7 +181,7 @@ const LogDetail = () => {
   const onDelete = async (data: any) => {
     setConfirmLoading(true);
     try {
-      await deleteLogClusteringTrainData(data.id);
+      await deleteClassificationTrainData(data.id);
     } catch (e) {
       console.log(e);
     } finally {
@@ -207,7 +207,7 @@ const LogDetail = () => {
           is_val_data: selectedTags.includes('is_val_data'),
           is_test_data: selectedTags.includes('is_test_data')
         };
-        await updateLogClusteringTrainData(currentData?.id, params);
+        await updateClassificationTrainData(currentData?.id, params);
         message.success(t(`common.updateSuccess`));
         setModalOpen(false);
         getDataset();
@@ -292,4 +292,4 @@ const LogDetail = () => {
   )
 };
 
-export default LogDetail;
+export default ClassificationDetail;

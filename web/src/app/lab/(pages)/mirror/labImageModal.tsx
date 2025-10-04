@@ -22,6 +22,7 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 interface LabImageProps {
+  activeTap: string;
   onSuccess?: () => void;
 }
 
@@ -44,7 +45,7 @@ interface LabImageFormData {
   }>;
 }
 
-const LabImageModal = forwardRef<ModalRef, LabImageProps>(({ onSuccess }, ref) => {
+const LabImageModal = forwardRef<ModalRef, LabImageProps>(({ activeTap, onSuccess }, ref) => {
   const { t } = useTranslation();
   const { addImage, updateImage } = useLabManage();
   const [open, setOpen] = useState(false);
@@ -76,7 +77,7 @@ const LabImageModal = forwardRef<ModalRef, LabImageProps>(({ onSuccess }, ref) =
         form.resetFields();
         form.setFieldsValue({
           default_port: 8888,
-          image_type: 'ide',
+          image_type: activeTap,
           default_env_pairs: [],
           default_command_pairs: [],
           default_args_pairs: [],
@@ -91,6 +92,8 @@ const LabImageModal = forwardRef<ModalRef, LabImageProps>(({ onSuccess }, ref) =
     try {
       setLoading(true);
       const values = await form.validateFields();
+      console.log(values);
+      // return;
 
       // 处理环境变量格式
       const default_env: Record<string, string> = {};
@@ -213,7 +216,7 @@ const LabImageModal = forwardRef<ModalRef, LabImageProps>(({ onSuccess }, ref) =
                 { max: 100, message: t(`lab.manage.nameCharMsg`) }
               ]}
             >
-              <Input placeholder={t(`lab.manage.nameMsg`)}/>
+              <Input placeholder={t(`lab.manage.nameMsg`)} />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -237,7 +240,7 @@ const LabImageModal = forwardRef<ModalRef, LabImageProps>(({ onSuccess }, ref) =
               label={t(`lab.manage.imageType`)}
               rules={[{ required: true, message: t(`lab.manage.imageType`) }]}
             >
-              <Select placeholder={t(`lab.manage.imageType`) }>
+              <Select placeholder={t(`lab.manage.imageType`)}>
                 <Option value="ide">{t(`lab.manage.ide`)}</Option>
                 <Option value="infra">{t(`lab.manage.infra`)}</Option>
               </Select>
@@ -263,7 +266,7 @@ const LabImageModal = forwardRef<ModalRef, LabImageProps>(({ onSuccess }, ref) =
           name="image"
           label={t(`lab.manage.imageUrl`)}
           rules={[
-            { required: true, message: t(`lab.manage.urlMsg`)},
+            { required: true, message: t(`lab.manage.urlMsg`) },
             { max: 200, message: t(`lab.manage.urlCharMsg`) }
           ]}
         >

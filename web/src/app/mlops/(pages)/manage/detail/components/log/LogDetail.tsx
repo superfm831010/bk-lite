@@ -4,7 +4,7 @@ import { useTranslation } from "@/utils/i18n";
 import useMlopsManageApi from '@/app/mlops/api/manage';
 import CustomTable from "@/components/custom-table";
 import PermissionWrapper from '@/components/permission';
-import UploadModal from "./uploadModal";
+import UploadModal from "../../uploadModal";
 import OperateModal from "@/components/operate-modal";
 import {
   Input,
@@ -20,12 +20,12 @@ import { TYPE_CONTENT, TYPE_COLOR } from "@/app/mlops/constants";
 import { ColumnItem, ModalRef, Pagination, TableData } from '@/app/mlops/types';
 const { Search } = Input;
 
-const TimeSeriesPredict = () => {
+const LogDetail = () => {
   const { t } = useTranslation();
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const { getTimeSeriesPredictTrainData, deleteTimeSeriesPredictTrainData, updateTimeSeriesPredictTrainData } = useMlopsManageApi();
   const modalRef = useRef<ModalRef>(null);
+  const searchParams = useSearchParams();
+  const { getLogClusteringTrainData, deleteLogClusteringTrainData, updateLogClusteringTrainData } = useMlopsManageApi();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [currentData, setCurrentData] = useState<any>(null);
@@ -60,15 +60,12 @@ const TimeSeriesPredict = () => {
       title: t('datasets.trainFileType'),
       key: 'type',
       dataIndex: 'type',
-      render(_, record) {
+      render: (_, record) => {
         const activeTypes = Object.entries(record.type)
           .filter(([, value]) => value === true)
           .map(([key]) => <Tag key={key} color={TYPE_COLOR[key]}>{t(`datasets.${TYPE_CONTENT[key]}`)}</Tag>);
-        return (
-          <>
-            {activeTypes.length ? activeTypes : '--'}
-          </>
-        )
+
+        return (<>{activeTypes.length ? activeTypes : '--'}</>)
       },
     },
     {
@@ -141,7 +138,7 @@ const TimeSeriesPredict = () => {
   const getDataset = useCallback(async (search: string = '') => {
     setLoading(true);
     try {
-      const { count, items } = await getTimeSeriesPredictTrainData({
+      const { count, items } = await getLogClusteringTrainData({
         name: search,
         dataset: folder_id as string,
         page: pagination.current,
@@ -184,7 +181,7 @@ const TimeSeriesPredict = () => {
   const onDelete = async (data: any) => {
     setConfirmLoading(true);
     try {
-      await deleteTimeSeriesPredictTrainData(data.id);
+      await deleteLogClusteringTrainData(data.id);
     } catch (e) {
       console.log(e);
     } finally {
@@ -204,13 +201,13 @@ const TimeSeriesPredict = () => {
   const handleSubmit = async () => {
     setConfirmLoading(true);
     try {
-      if (activeTap === 'timeseries_predict') {
+      if (activeTap === 'log_clustering') {
         const params = {
           is_train_data: selectedTags.includes('is_train_data'),
           is_val_data: selectedTags.includes('is_val_data'),
           is_test_data: selectedTags.includes('is_test_data')
         };
-        await updateTimeSeriesPredictTrainData(currentData?.id, params);
+        await updateLogClusteringTrainData(currentData?.id, params);
         message.success(t(`common.updateSuccess`));
         setModalOpen(false);
         getDataset();
@@ -239,12 +236,8 @@ const TimeSeriesPredict = () => {
           <Breadcrumb
             separator=">"
             items={[
-              {
-                title: <a href="#" onClick={() => router.push(`/mlops/manage/list`)}>{t(`datasets.datasets`)}</a>
-              },
-              {
-                title: t(`datasets.datasetsDetail`)
-              }
+              { title: <a href="#" onClick={() => router.push(`/mlops/manage/list`)}>{t(`datasets.datasets`)}</a> },
+              { title: t(`datasets.datasetsDetail`) }
             ]}
           />
         </div>
@@ -299,4 +292,4 @@ const TimeSeriesPredict = () => {
   )
 };
 
-export default TimeSeriesPredict;
+export default LogDetail;

@@ -4,7 +4,7 @@ import { useTranslation } from "@/utils/i18n";
 import useMlopsManageApi from '@/app/mlops/api/manage';
 import CustomTable from "@/components/custom-table";
 import PermissionWrapper from '@/components/permission';
-import UploadModal from "./uploadModal";
+import UploadModal from "../../uploadModal";
 import OperateModal from "@/components/operate-modal";
 import {
   Input,
