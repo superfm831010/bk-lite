@@ -3,13 +3,13 @@ from langgraph.graph import StateGraph
 from langgraph.types import RetryPolicy
 from sanic.log import logger
 
-from src.core.llm.graph.tools_graph import ToolsGraph
+from src.core.llm.graph.basic_graph import BasicGraph
 from src.web.entity.agent.react_agent.react_agent_request import ReActAgentRequest
 from src.core.agent.react_agent.react_agent_node import ReActAgentNode
 from src.core.agent.react_agent.react_agent_state import ReActAgentState
 
 
-class ReActAgentGraph(ToolsGraph):
+class ReActAgentGraph(BasicGraph):
     """ReAct Agent 图执行器 - 使用可复用的 ReAct 节点组合"""
 
     async def compile_graph(self, request: ReActAgentRequest):

@@ -10,11 +10,11 @@ from sanic.log import logger
 
 from src.core.agent.lats_agent.lats_agent_node import LatsAgentNode
 from src.core.agent.lats_agent.lats_agent_state import LatsAgentState
-from src.core.llm.graph.tools_graph import ToolsGraph
+from src.core.llm.graph.basic_graph import BasicGraph
 from src.web.entity.agent.lats_agent.lats_agent_request import LatsAgentRequest
 
 
-class LatsAgentGraph(ToolsGraph):
+class LatsAgentGraph(BasicGraph):
     """LATS Agent 图执行器 - 优化版本"""
 
     async def compile_graph(self, request: LatsAgentRequest) -> StateGraph:

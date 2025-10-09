@@ -4,11 +4,11 @@ from sanic.log import logger
 
 from src.core.agent.plan_and_execute_agent.plan_and_execute_agent_node import PlanAndExecuteAgentNode
 from src.core.agent.plan_and_execute_agent.plan_and_execute_agent_state import PlanAndExecuteAgentState
-from src.core.llm.graph.tools_graph import ToolsGraph
+from src.core.llm.graph.basic_graph import BasicGraph
 from src.web.entity.agent.plan_and_execute_agent.plan_and_execute_agent_request import PlanAndExecuteAgentRequest
 
 
-class PlanAndExecuteAgentGraph(ToolsGraph):
+class PlanAndExecuteAgentGraph(BasicGraph):
     """Plan and Execute Agent的图实现 - 简化版本
 
     使用抽象的 ReAct 节点组合和 chat_node 大幅简化实现
