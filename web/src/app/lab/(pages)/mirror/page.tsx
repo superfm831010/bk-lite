@@ -106,10 +106,9 @@ const MirrorManage = () => {
     setLoading(true);
     try {
       await deleteImage(id);
+      fetchImages(activeTab);
     } catch (e) {
       console.log(e);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -134,7 +133,7 @@ const MirrorManage = () => {
           />
         </div>
       </div>
-      <LabImageModal ref={modalRef} onSuccess={() => fetchImages(activeTab)} />
+      <LabImageModal ref={modalRef} activeTap={activeTab} onSuccess={() => fetchImages(activeTab)} />
     </>
   )
 };
