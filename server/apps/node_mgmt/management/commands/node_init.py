@@ -1,8 +1,8 @@
 from django.core.management import BaseCommand
-from apps.node_mgmt.node_init.cloud_init import cloud_init
-from apps.node_mgmt.node_init.collector_init import collector_init
-from apps.node_mgmt.node_init.controller_init import controller_init
 from apps.core.logger import node_logger as logger
+from apps.node_mgmt.management.services.node_init.cloud_init import cloud_init
+from apps.node_mgmt.management.services.node_init.collector_init import collector_init
+from apps.node_mgmt.management.services.node_init.controller_init import controller_init
 
 
 class Command(BaseCommand):

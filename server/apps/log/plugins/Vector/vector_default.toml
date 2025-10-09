@@ -28,11 +28,22 @@ if !exists(.timestamp) {
 type = "nats"
 inputs = ["default_enrich"]
 subject = "vector"
-url = "nats://${NATS_SERVERS}"
+url = "${NATS_PROTOCOL}://${NATS_SERVERS}"
+
 [sinks.default_vmlogs.auth]
 strategy = "user_password"
+
 [sinks.default_vmlogs.auth.user_password]
 user = "${NATS_USERNAME}"
 password = "${NATS_PASSWORD}"
+
+{% if NATS_PROTOCOL == "tls" %}
+# TLS 配置
+[sinks.default_vmlogs.tls]
+enabled = true
+skip_cert_verify = false
+ca_file = "${NATS_TLS_CA_FILE}"
+{% endif %}
+
 [sinks.default_vmlogs.encoding]
 codec = "json"
