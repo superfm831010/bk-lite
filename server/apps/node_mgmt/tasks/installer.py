@@ -200,7 +200,7 @@ def install_collector(task_id):
                 executable_name = package_obj.name
 
             # Linux操作系统赋予执行权限
-            if package_obj.os in LINUX_OS:
+            if package_obj.os in NodeConstants.LINUX_OS:
                 action = "set_exe"
                 executable_path = f"{collector_install_dir}/{executable_name}"
                 # 检查是文件还是目录，并相应设置执行权限

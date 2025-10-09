@@ -60,6 +60,7 @@ dependencies = [
     "openpyxl==3.1.5",
     "setuptools==80.9.0",
     "attrs==25.3.0",
+    "loguru==0.7.3",
 ]
 
 [project.optional-dependencies]
