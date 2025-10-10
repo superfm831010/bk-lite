@@ -54,7 +54,7 @@ const DeleteRuleModal = forwardRef<ModalRef, ModalProps>(
     return (
       <div>
         <OperateModal
-          width={416}
+          width={430}
           closable={false}
           customHeaderClass=""
           title={

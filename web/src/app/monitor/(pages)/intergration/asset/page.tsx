@@ -209,7 +209,7 @@ const Asset = () => {
         title: t('common.action'),
         key: 'action',
         dataIndex: 'action',
-        width: 140,
+        width: 160,
         fixed: 'right',
         render: (_, record) => (
           <>
