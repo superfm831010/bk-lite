@@ -1,3 +1,4 @@
+import os
 from celery.app import shared_task
 from fastapi.background import P
 import pandas as pd
@@ -52,15 +53,13 @@ def start_anomaly_detection_train(train_job_id: int) -> dict:
             'train_data_id', 'val_data_id', 'test_data_id'
         ).get(id=train_job_id)
 
-        logger.info(f"获取到训练任务: {train_job.id}, 任务名称: {train_job.name}")
-
-        # 检查必要的数据是否存在（先检查ID再访问对象）
-        if not train_job.train_data_id_id:
-            raise ValueError("训练数据ID不存在")
-        if not train_job.val_data_id_id:
-            raise ValueError("验证数据ID不存在")
-        if not train_job.test_data_id_id:
-            raise ValueError("测试数据ID不存在")
+        # 检查必要的数据是否存在
+        if not train_job.train_data_id:
+            raise ValueError("训练数据不存在")
+        if not train_job.val_data_id:
+            raise ValueError("验证数据不存在")
+        if not train_job.test_data_id:
+            raise ValueError("测试数据不存在")
 
         # 更新任务状态为训练中
         train_job.status = 'running'
@@ -132,10 +131,8 @@ def start_anomaly_detection_train(train_job_id: int) -> dict:
         }
 
     except AnomalyDetectionTrainJob.DoesNotExist:
-        logger.error(f"训练任务 ID {train_job_id} 不存在")
         raise ValueError(f"训练任务 ID {train_job_id} 不存在")
     except Exception as e:
-        logger.error(f"训练任务 {train_job_id} 执行失败: {str(e)}")
         # 训练失败，更新状态
         if 'train_job' in locals():
             train_job.status = 'failed'
