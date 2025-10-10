@@ -14,7 +14,6 @@ RUN pip install uv
 RUN uv sync --all-groups
 RUN uv sync --all-extras
 
-RUN uv run playwright install chromium
 ADD ./support-files/service.conf /etc/supervisor/conf.d/service.conf
 
 ADD . .

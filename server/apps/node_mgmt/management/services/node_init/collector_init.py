@@ -16,7 +16,7 @@ COLLECTORS = [
         "introduction": "NATS Executor is a task scheduling and management tool that automates data storage, backup, and distributed file processing tasks.",
         "enabled_default_config": True,
         "default_config": {
-        "nats": """nats_urls: "nats://${NATS_USERNAME}:${NATS_PASSWORD}@${NATS_SERVERS}"
+        "nats": """nats_urls: "${NATS_PROTOCOL}://${NATS_USERNAME}:${NATS_PASSWORD}@${NATS_SERVERS}"
 nats_instanceId: "${node.id}"
 nats_conn_timeout: 600
 tls_enabled: "${TLS_ENABLED}" 
@@ -42,7 +42,7 @@ tls_key_file: "${TLS_KEY_FILE}"
         "introduction": "NATS Executor is a task scheduling and management tool that automates data storage, backup, and distributed file processing tasks.",
         "enabled_default_config": True,
         "default_config": {
-        "nats": """nats_urls: "nats://${NATS_USERNAME}:${NATS_PASSWORD}@${NATS_SERVERS}"
+        "nats": """nats_urls: "${NATS_PROTOCOL}://${NATS_USERNAME}:${NATS_PASSWORD}@${NATS_SERVERS}"
 nats_instanceId: "${node.id}"
 nats_conn_timeout: 600
 tls_enabled: ${TLS_ENABLED}
