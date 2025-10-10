@@ -1,4 +1,3 @@
-import os
 from celery.app import shared_task
 from fastapi.background import P
 import pandas as pd
@@ -108,7 +107,6 @@ def start_anomaly_detection_train(train_job_id: int) -> dict:
             mlflow_tracking_url=MLFLOW_TRACKER_URL,
             experiment_name=experiment_name,
             max_evals=train_job.max_evals,
-            n_jobs=os.cpu_count(),
             primary_metric="f1"  # 默认使用f1作为主要指标
         )
 
