@@ -11,12 +11,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info("初始化默认云区域！")
         cloud_init()
-        logger.info("初始化默认云区域完成！")
 
         logger.info("初始化控制器！")
         controller_init()
-        logger.info("初始化控制器完成！")
 
         logger.info("初始化采集器！")
         collector_init()
-        logger.info("初始化采集器完成！")
