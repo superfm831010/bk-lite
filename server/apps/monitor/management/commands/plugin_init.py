@@ -9,7 +9,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logger.info("初始化监控插件开始！")
-        migrate_collector()
         migrate_plugin()
         migrate_policy()
         logger.info("初始化监控插件完成！")
