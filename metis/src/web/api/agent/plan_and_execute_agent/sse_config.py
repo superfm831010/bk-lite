@@ -49,7 +49,6 @@ class SSEDisplayConfig:
             self.tool_display_names = {
                 "naive_rag_search": "🔍 智能知识库搜索",
                 "web_search": "🌐 网络信息搜索",
-                "playwright_tools": "🎭 网页自动化操作",
                 "python_repl": "🐍 Python 代码执行",
                 "file_reader": "📄 文件内容读取",
                 "calculator": "🔢 数学计算器",
