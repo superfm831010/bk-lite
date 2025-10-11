@@ -261,14 +261,14 @@ const useMiddleWareFields = (): ObjectIconMap => {
   const { t } = useTranslation();
   return useMemo(
     () => ({
-      ClickHouse: t('monitor.intergrations.servers'),
-      Consul: t('monitor.intergrations.address'),
-      Zookeeper: t('monitor.intergrations.servers'),
-      default: t('monitor.intergrations.url'),
-      defaultDes: t('monitor.intergrations.urlDes'),
-      ClickHouseDes: t('monitor.intergrations.serversDes'),
-      ConsulDes: t('monitor.intergrations.addressDes'),
-      ZookeeperDes: t('monitor.intergrations.serversDes'),
+      ClickHouse: t('monitor.integrations.servers'),
+      Consul: t('monitor.integrations.address'),
+      Zookeeper: t('monitor.integrations.servers'),
+      default: t('monitor.integrations.url'),
+      defaultDes: t('monitor.integrations.urlDes'),
+      ClickHouseDes: t('monitor.integrations.serversDes'),
+      ConsulDes: t('monitor.integrations.addressDes'),
+      ZookeeperDes: t('monitor.integrations.serversDes'),
     }),
     [t]
   );

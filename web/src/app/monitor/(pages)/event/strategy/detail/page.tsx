@@ -39,7 +39,7 @@ import {
 } from '@/app/monitor/types/monitor';
 import { useCommon } from '@/app/monitor/context/common';
 import { deepClone } from '@/app/monitor/utils/common';
-import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/integration/common/getObjectConfig';
 import strategyStyle from '../index.module.scss';
 import { PlusOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import SelectAssets from '../selectAssets';
@@ -986,7 +986,7 @@ const StrategyOperation = () => {
                                     name="no_data_period"
                                     label={
                                       <span className="w-[100px]">
-                                        {t('monitor.intergrations.condition')}
+                                        {t('monitor.integrations.condition')}
                                       </span>
                                     }
                                     rules={[
