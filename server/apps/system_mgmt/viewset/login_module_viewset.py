@@ -1,10 +1,10 @@
 from django.http import JsonResponse
 from django_celery_beat.models import PeriodicTask
 
+from apps.core.viewsets.base_viewset import BaseSystemMgmtViewSet
 from apps.system_mgmt.models import Group, LoginModule, User
 from apps.system_mgmt.serializers.login_module_serializer import LoginModuleSerializer
 from apps.system_mgmt.tasks import sync_user_and_group_by_login_module
-from apps.system_mgmt.viewset.base_viewset import BaseSystemMgmtViewSet
 
 
 class LoginModuleViewSet(BaseSystemMgmtViewSet):

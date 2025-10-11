@@ -1,9 +1,9 @@
 from django.http import JsonResponse
 
 from apps.core.decorators.api_permission import HasPermission
+from apps.core.viewsets.base_viewset import BaseSystemMgmtViewSet
 from apps.system_mgmt.models import App
 from apps.system_mgmt.serializers.app_serializer import AppSerializer
-from apps.system_mgmt.viewset.base_viewset import BaseSystemMgmtViewSet
 
 
 class AppViewSet(BaseSystemMgmtViewSet):

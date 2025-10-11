@@ -4,6 +4,7 @@ from django_filters.rest_framework import FilterSet
 from rest_framework.decorators import action
 
 from apps.core.decorators.api_permission import HasPermission
+from apps.core.viewsets.base_viewset import BaseSystemMgmtViewSet
 from apps.rpc.cmdb import CMDB
 from apps.rpc.log import Log
 from apps.rpc.monitor import Monitor
@@ -12,7 +13,6 @@ from apps.rpc.opspilot import OpsPilot
 from apps.rpc.system_mgmt import SystemMgmt
 from apps.system_mgmt.models import GroupDataRule
 from apps.system_mgmt.serializers import GroupDataRuleSerializer
-from apps.system_mgmt.viewset.base_viewset import BaseSystemMgmtViewSet
 
 
 class GroupDataRuleFilter(FilterSet):
