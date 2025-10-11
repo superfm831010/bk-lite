@@ -5,7 +5,7 @@ from apps.node_mgmt.models.sidecar import Collector
 from apps.core.logger import node_logger as logger
 
 
-PLUGIN_DIRECTORY = 'apps/node_mgmt/management/services/node_init/collectors'
+PLUGIN_DIRECTORY = 'apps/node_mgmt/support-files/collectors'
 
 
 def import_collector(collectors):

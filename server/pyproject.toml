@@ -87,7 +87,7 @@ dev = [
 ]
 
 mlops = [
-    "neco[mlops]==0.0.0.post7",
+    "neco[mlops]==0.0.0.post11",
 ]
 
 opspilot = [

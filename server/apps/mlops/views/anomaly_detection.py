@@ -14,7 +14,7 @@ from django.http import Http404
 import pandas as pd
 import numpy as np
 from rest_framework.decorators import action
-from neco.mlops.algorithm.random_forest_detector import RandomForestAnomalyDetector
+from neco.mlops.anomaly_detection.random_forest_detector import RandomForestAnomalyDetector
 from apps.mlops.tasks.anomaly_detection_train_task import start_anomaly_detection_train
 
 
