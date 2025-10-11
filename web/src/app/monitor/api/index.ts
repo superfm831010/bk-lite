@@ -4,7 +4,7 @@ import {
   SearchParams,
   NodeConfigInfo,
   TreeSortData,
-  IntergrationMonitoredObject,
+  IntegrationMonitoredObject,
   InstanceInfo,
   SourceFeild,
 } from '@/app/monitor/types/monitor';
@@ -19,7 +19,7 @@ interface NodeConfigParam {
   configs?: any;
   collect_type?: string;
   monitor_object_id?: number;
-  instances?: Omit<IntergrationMonitoredObject, 'key'>[];
+  instances?: Omit<IntegrationMonitoredObject, 'key'>[];
 }
 
 interface MetricsParam {
