@@ -33,7 +33,7 @@ import { useTranslation } from '@/utils/i18n';
 import type { ColorPickerProps } from 'antd';
 import { generate, green, presetPalettes, red } from '@ant-design/colors';
 import { deepClone, findCascaderPath } from '@/app/monitor/utils/common';
-import { UNIT_LIST } from '@/app/monitor/constants/monitor';
+import { UNIT_LIST } from '@/app/monitor/constants';
 const { Option } = Select;
 
 interface ModalProps {

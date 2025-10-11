@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Button, message, InputNumber, Select } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { TIMEOUT_UNITS } from '@/app/monitor/constants/monitor';
+import { TIMEOUT_UNITS } from '@/app/monitor/constants/integration';
 import { useSearchParams } from 'next/navigation';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';

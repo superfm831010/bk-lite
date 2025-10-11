@@ -14,7 +14,7 @@ import OperateModal from '@/components/operate-modal';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
 import { useMonitorConfig } from '@/app/monitor/hooks/integration/index';
-import { TIMEOUT_UNITS } from '@/app/monitor/constants/monitor';
+import { TIMEOUT_UNITS } from '@/app/monitor/constants/integration';
 const { Option } = Select;
 
 const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {

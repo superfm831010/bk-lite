@@ -31,7 +31,7 @@ import { useSearchParams } from 'next/navigation';
 import { deepClone } from '@/app/monitor/utils/common';
 import { useUserInfoContext } from '@/context/userInfo';
 import Permission from '@/components/permission';
-import { NEED_TAGS_ENTRY_OBJECTS } from '@/app/monitor/constants/monitor';
+import { NEED_TAGS_ENTRY_OBJECTS } from '@/app/monitor/constants/integration';
 
 const Configure = () => {
   const { isLoading } = useApiClient();

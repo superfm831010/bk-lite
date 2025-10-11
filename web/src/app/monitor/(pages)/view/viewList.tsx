@@ -34,7 +34,7 @@ import { ListItem } from '@/types';
 import {
   OBJECT_DEFAULT_ICON,
   DERIVATIVE_OBJECTS,
-} from '@/app/monitor/constants/monitor';
+} from '@/app/monitor/constants';
 const { Option } = Select;
 
 const ViewList: React.FC<ViewListProps> = ({

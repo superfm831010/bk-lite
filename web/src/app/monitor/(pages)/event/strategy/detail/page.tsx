@@ -46,12 +46,9 @@ import SelectAssets from '../selectAssets';
 import SelectCards from './selectCard';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useUserInfoContext } from '@/context/userInfo';
-import {
-  useScheduleList,
-  useMethodList,
-  useLevelList,
-  SCHEDULE_UNIT_MAP,
-} from '@/app/monitor/constants/monitor';
+import { useScheduleList, useMethodList } from '@/app/monitor/hooks/event';
+import { useLevelList } from '@/app/monitor/hooks';
+import { SCHEDULE_UNIT_MAP } from '@/app/monitor/constants/event';
 import ThresholdList from './thresholdList';
 import ConditionSelector from './conditionSelector';
 const { Option } = Select;
