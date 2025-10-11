@@ -4,7 +4,7 @@ import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Button, message, Upload } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import { useTranslation } from '@/utils/i18n';
-import useMonitorApi from '@/app/monitor/api';
+import useIntegrationApi from '@/app/monitor/api/integration';
 import { ModalRef, ModalConfig } from '@/app/monitor/types';
 import type { UploadProps } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
@@ -16,7 +16,7 @@ const ImportModal = forwardRef<ModalRef, ModalConfig>(({ onSuccess }, ref) => {
   const [fileList, setFileList] = useState<any[]>([]);
   const [parsedData, setParsedData] = useState<any>(null); // 新增状态用于存储解析后的数据
   const { t } = useTranslation();
-  const { importMonitorPlugin } = useMonitorApi();
+  const { importMonitorPlugin } = useIntegrationApi();
   const { Dragger } = Upload;
 
   useImperativeHandle(ref, () => ({

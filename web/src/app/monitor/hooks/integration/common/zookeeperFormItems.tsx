@@ -1,7 +1,7 @@
 import React from 'react';
 import { Form, InputNumber, Select } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { TIMEOUT_UNITS } from '@/app/monitor/constants/monitor';
+import { TIMEOUT_UNITS } from '@/app/monitor/constants/integration';
 
 const { Option } = Select;
 

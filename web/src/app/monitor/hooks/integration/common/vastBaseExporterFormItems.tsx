@@ -6,7 +6,7 @@ const { Option } = Select;
 import {
   TIMEOUT_UNITS,
   CONNECTION_LIFETIME_UNITS,
-} from '@/app/monitor/constants/monitor';
+} from '@/app/monitor/constants/integration';
 
 const useVastBaseExporterFormItems = () => {
   const { t } = useTranslation();

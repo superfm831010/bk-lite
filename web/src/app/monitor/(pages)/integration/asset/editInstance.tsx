@@ -11,7 +11,7 @@ import React, {
 import { Button, Form, message, Input } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
-import useMonitorApi from '@/app/monitor/api';
+import useIntegrationApi from '@/app/monitor/api/integration';
 import { ModalRef, Organization } from '@/app/monitor/types';
 import { InstanceInfo } from '@/app/monitor/types/monitor';
 import { useTranslation } from '@/utils/i18n';
@@ -24,7 +24,7 @@ interface ModalProps {
 }
 
 const EditInstance = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
-  const { updateMonitorInstance, setInstancesGroup } = useMonitorApi();
+  const { updateMonitorInstance, setInstancesGroup } = useIntegrationApi();
   const { t } = useTranslation();
   const formRef = useRef<FormInstance>(null);
   const [visible, setVisible] = useState<boolean>(false);
