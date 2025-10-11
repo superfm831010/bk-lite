@@ -5,7 +5,7 @@ import pandas as pd
 from apps import log
 from apps.mlops.models.anomaly_detection import AnomalyDetectionTrainJob
 from loguru import logger
-from neco.mlops.algorithm.random_forest_detector import RandomForestAnomalyDetector
+from neco.mlops.anomaly_detection.random_forest_detector import RandomForestAnomalyDetector
 from config.components.mlflow import MLFLOW_TRACKER_URL
 
 
