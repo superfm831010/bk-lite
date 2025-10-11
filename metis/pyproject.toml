@@ -58,6 +58,7 @@ dependencies = [
     "ansible-runner==2.4.1",
     "mlflow==3.3.2",
     "graphiti-core==0.20.4",
+    "agno==2.1.4",
 ]
 
 [project.optional-dependencies]
