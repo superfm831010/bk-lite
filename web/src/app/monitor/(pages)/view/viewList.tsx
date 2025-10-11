@@ -11,10 +11,10 @@ import {
   getK8SData,
   getBaseInstanceColumn,
 } from '@/app/monitor/utils/common';
-import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/integration/common/getObjectConfig';
 import { useRouter } from 'next/navigation';
 import {
-  IntergrationItem,
+  IntegrationItem,
   ObjectItem,
   MetricItem,
   ViewListProps,
@@ -66,7 +66,7 @@ const ViewList: React.FC<ViewListProps> = ({
     pageSize: 20,
   });
   const [frequence, setFrequence] = useState<number>(0);
-  const [plugins, setPlugins] = useState<IntergrationItem[]>([]);
+  const [plugins, setPlugins] = useState<IntegrationItem[]>([]);
   const columns: ColumnItem[] = [
     {
       title: t('monitor.views.reportTime'),
@@ -79,13 +79,13 @@ const ViewList: React.FC<ViewListProps> = ({
       ),
     },
     {
-      title: t('monitor.intergrations.reportingStatus'),
+      title: t('monitor.integrations.reportingStatus'),
       dataIndex: 'status',
       key: 'status',
       width: 160,
       render: (_, record) => (
         <>
-          {record?.status ? t(`monitor.intergrations.${record.status}`) : '--'}
+          {record?.status ? t(`monitor.integrations.${record.status}`) : '--'}
         </>
       ),
     },
@@ -262,7 +262,7 @@ const ViewList: React.FC<ViewListProps> = ({
         ? getK8SData(k8sQuery || {})
         : (k8sQuery || []).map((item: string) => ({ id: item, child: [] }));
       setQueryData(queryForm);
-      const _plugins = res[1].map((item: IntergrationItem) => ({
+      const _plugins = res[1].map((item: IntegrationItem) => ({
         label: getCollectType(objName as string, item.name as string),
         value: item.id,
       }));
