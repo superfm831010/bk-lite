@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { TIMEOUT_UNITS } from '@/app/monitor/constants/integration';
 import { useSearchParams, useRouter } from 'next/navigation';
 import useApiClient from '@/utils/request';
-import useMonitorApi from '@/app/monitor/api';
+import useIntegrationApi from '@/app/monitor/api/integration';
 import { TableDataItem } from '@/app/monitor/types';
 import {
   IntegrationAccessProps,
@@ -27,7 +27,7 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = ({
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const { isLoading } = useApiClient();
-  const { getMonitorNodeList, updateNodeChildConfig } = useMonitorApi();
+  const { getMonitorNodeList, updateNodeChildConfig } = useIntegrationApi();
   const router = useRouter();
   const configs = useMonitorConfig();
   const columnsConfig = useCommonColumns();

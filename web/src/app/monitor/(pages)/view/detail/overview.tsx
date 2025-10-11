@@ -10,6 +10,7 @@ import GuageChart from '@/app/monitor/components/charts/guageChart';
 import SingleValue from '@/app/monitor/components/charts/singleValue';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
+import useViewApi from '@/app/monitor/api/view';
 import {
   MetricItem,
   ChartDataItem,
@@ -46,7 +47,8 @@ const Overview: React.FC<ViewDetailProps> = ({
   instanceId,
 }) => {
   const { isLoading } = useApiClient();
-  const { getMonitorMetrics, getInstanceQuery } = useMonitorApi();
+  const { getMonitorMetrics } = useMonitorApi();
+  const { getInstanceQuery } = useViewApi();
   const { getDashboardDisplay } = useObjectConfigInfo();
   const { t } = useTranslation();
   const INTERFACE_LABEL_MAP = useInterfaceLabelMap();

@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Input, Button, Progress, Select } from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
+import useViewApi from '@/app/monitor/api/view';
 import { useTranslation } from '@/utils/i18n';
 import {
   deepClone,
@@ -44,13 +45,9 @@ const ViewList: React.FC<ViewListProps> = ({
   updateTree,
 }) => {
   const { isLoading } = useApiClient();
-  const {
-    getMonitorMetrics,
-    getInstanceList,
-    getInstanceSearch,
-    getInstanceQueryParams,
-    getMonitorPlugin,
-  } = useMonitorApi();
+  const { getMonitorMetrics, getInstanceList, getMonitorPlugin } =
+    useMonitorApi();
+  const { getInstanceSearch, getInstanceQueryParams } = useViewApi();
   const { t } = useTranslation();
   const router = useRouter();
   const { convertToLocalizedTime } = useLocalizedTime();

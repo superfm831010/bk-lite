@@ -13,6 +13,7 @@ import {
 } from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
+import useIntegrationApi from '@/app/monitor/api/integration';
 import assetStyle from './index.module.scss';
 import { useTranslation } from '@/utils/i18n';
 import {
@@ -57,13 +58,12 @@ type TableRowSelection<T extends object = object> =
 
 const Asset = () => {
   const { isLoading } = useApiClient();
+  const { getInstanceList, getMonitorObject } = useMonitorApi();
   const {
-    getInstanceList,
     getInstanceGroupRule,
-    getMonitorObject,
     getInstanceChildConfig,
     deleteMonitorInstance,
-  } = useMonitorApi();
+  } = useIntegrationApi();
   const { t } = useTranslation();
   const commonContext = useCommon();
   const { convertToLocalizedTime } = useLocalizedTime();

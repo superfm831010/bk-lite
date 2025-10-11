@@ -4,7 +4,7 @@ import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Button, message } from 'antd';
 import { ExclamationCircleFilled } from '@ant-design/icons';
 import OperateModal from '@/components/operate-modal';
-import useMonitorApi from '@/app/monitor/api';
+import useIntegrationApi from '@/app/monitor/api/integration';
 import { ModalRef } from '@/app/monitor/types';
 import { useTranslation } from '@/utils/i18n';
 import { cloneDeep } from 'lodash';
@@ -15,7 +15,7 @@ interface ModalProps {
 
 const DeleteRuleModal = forwardRef<ModalRef, ModalProps>(
   ({ onSuccess }, ref) => {
-    const { deleteInstanceGroupRule } = useMonitorApi();
+    const { deleteInstanceGroupRule } = useIntegrationApi();
     const { t } = useTranslation();
     const [visible, setVisible] = useState<boolean>(false);
     const [deleteRuleLoading, setDeleteRuleLoading] = useState<boolean>(false);

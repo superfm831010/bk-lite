@@ -4,7 +4,7 @@ import { useTranslation } from '@/utils/i18n';
 import { TIMEOUT_UNITS } from '@/app/monitor/constants/integration';
 import { useSearchParams } from 'next/navigation';
 import useApiClient from '@/utils/request';
-import useMonitorApi from '@/app/monitor/api';
+import useIntegrationApi from '@/app/monitor/api/integration';
 import CodeEditor from '@/app/monitor/components/codeEditor';
 import { TableDataItem } from '@/app/monitor/types';
 const { Option } = Select;
@@ -20,7 +20,7 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = ({
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const { isLoading } = useApiClient();
-  const { checkMonitorInstance } = useMonitorApi();
+  const { checkMonitorInstance } = useIntegrationApi();
   const configs = useMonitorConfig();
   const pluginName = searchParams.get('plugin_name') || '';
   const objId = searchParams.get('id') || '';

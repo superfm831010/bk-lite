@@ -16,6 +16,7 @@ import {
 } from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
+import useEventApi from '@/app/monitor/api/event';
 import { useTranslation } from '@/utils/i18n';
 import {
   ModalRef,
@@ -59,13 +60,12 @@ const StrategyOperation = () => {
   const { t } = useTranslation();
   const { post, put, isLoading } = useApiClient();
   const {
-    getSystemChannelList,
     getMetricsGroup,
     getMonitorMetrics,
     getMonitorPlugin,
-    getMonitorPolicy,
     getMonitorObject,
   } = useMonitorApi();
+  const { getMonitorPolicy, getSystemChannelList } = useEventApi();
   const METHOD_LIST = useMethodList();
   const LEVEL_LIST = useLevelList();
   const SCHEDULE_LIST = useScheduleList();
