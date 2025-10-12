@@ -8,7 +8,7 @@ from src.core.chunk.fixed_size_chunk import FixedSizeChunk
 from src.core.chunk.full_chunk import FullChunk
 from src.core.chunk.recursive_chunk import RecursiveChunk
 from src.core.chunk.semantic_chunk import SemanticChunk
-from src.core.embed.embed_builder import EmbedBuilder
+from neco.llm.embed.embed_manager import EmbedManager
 from src.core.loader.doc_loader import DocLoader
 from src.core.loader.excel_loader import ExcelLoader
 from src.core.loader.markdown_loader import MarkdownLoader
@@ -211,9 +211,9 @@ class RagService:
                 f"使用语义分块，模型: {semantic_chunk_model}, URL: {semantic_chunk_model_base_url}")
             semantic_chunk_model_api_key = request.form.get(
                 'semantic_chunk_model_api_key')
-            embeddings = EmbedBuilder.get_embed(protocol=semantic_chunk_model_base_url, model_name=semantic_chunk_model,
-                                                model_api_key=semantic_chunk_model_api_key,
-                                                model_base_url=semantic_chunk_model_base_url)
+            embeddings = EmbedManager().get_embed(protocol=semantic_chunk_model_base_url, model_name=semantic_chunk_model,
+                                                  model_api_key=semantic_chunk_model_api_key,
+                                                  model_base_url=semantic_chunk_model_base_url)
             return SemanticChunk(embeddings)
         else:
             error_msg = f"不支持的分块模式: {chunk_mode}"

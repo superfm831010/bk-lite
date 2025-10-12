@@ -7,7 +7,7 @@ from langchain_core.documents import Document
 from langchain_postgres import PGVector
 from sanic.log import logger
 
-from src.core.embed.embed_builder import EmbedBuilder
+from neco.llm.embed.embed_manager import EmbedManager
 from src.core.rerank.rerank_manager import ReRankManager
 from src.core.sanic_plus.env.core_settings import core_settings
 from src.core.sanic_plus.utils.timing_decorator import timeit
@@ -131,7 +131,7 @@ class PgvectorRag():
 
     def _create_vector_store(self, req: DocumentRetrieverRequest) -> PGVector:
         """创建向量存储实例"""
-        embedding = EmbedBuilder.get_embed(
+        embedding = EmbedManager().get_embed(
             req.embed_model_base_url,
             req.embed_model_name,
             req.embed_model_api_key,
@@ -525,7 +525,7 @@ class PgvectorRag():
             logger.info(
                 f"覆盖模式清理完成 - 索引: {req.index_name}, 清理记录: {affected_rows}")
 
-        embedding = EmbedBuilder.get_embed(
+        embedding = EmbedManager().get_embed(
             req.embed_model_base_url,
             req.embed_model_name,
             req.embed_model_api_key,

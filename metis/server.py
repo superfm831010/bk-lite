@@ -7,7 +7,7 @@ from sanic.log import logger
 from sanic.logging.default import LOGGING_CONFIG_DEFAULTS
 import logging
 
-from src.core.embed.embed_builder import EmbedBuilder
+from neco.llm.embed.embed_manager import EmbedManager
 from src.core.rerank.rerank_manager import ReRankManager
 from src.web.api import api
 from src.core.sanic_plus.env.core_settings import core_settings
@@ -132,8 +132,8 @@ def bootstrap() -> Sanic:
     @app.command
     async def download_models():
         logger.info("download HuggingFace Embed Models")
-        EmbedBuilder().get_embed('local:huggingface_embedding:BAAI/bge-small-zh-v1.5')
-        EmbedBuilder().get_embed('local:huggingface_embedding:maidalun1020/bce-embedding-base_v1')
+        EmbedManager().get_embed('local:huggingface_embedding:BAAI/bge-small-zh-v1.5')
+        EmbedManager().get_embed('local:huggingface_embedding:maidalun1020/bce-embedding-base_v1')
 
         logger.info("download BCE ReRank Models")
         ReRankManager.get_local_rerank_instance(

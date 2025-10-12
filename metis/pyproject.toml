@@ -13,6 +13,7 @@ description = "Metis"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "neco[llm]==0.0.0.post16",
     "python-dotenv==1.1.0",
     "tqdm==4.66.4",
     "jinja2==3.1.4",
@@ -28,13 +29,11 @@ dependencies = [
     "sanic-ext==23.12.0",
     "Sanic-HTTPAuth==0.2.0",
     "langchain==0.3.27",
-    "langchain-openai==0.3.28",
     "langchain-community==0.3.27",
     "langchain-experimental==0.3.4",
     "langchain-mcp-adapters==0.1.9",
     "langgraph==0.6.2",
     "langgraph-checkpoint-postgres==2.0.21",
-    "langchain-huggingface==0.1.2",
     "json-repair==0.39.1",
     "neo4j-graphrag==1.7.0",
     "diskcache==5.6.3",

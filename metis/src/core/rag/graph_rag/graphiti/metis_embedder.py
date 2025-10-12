@@ -1,17 +1,12 @@
 from typing import Iterable
 from sanic.log import logger
 from graphiti_core.embedder.client import EmbedderClient
-from src.core.embed.embed_builder import EmbedBuilder
+from neco.llm.embed.embed_manager import EmbedManager
 from src.core.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderConfig
 from src.core.sanic_plus.utils.timing_decorator import timeit
 
 
 class MetisEmbedder(EmbedderClient):
-    """Metis嵌入器实现，适配Graphiti的EmbedderClient接口。
-
-    该类封装了EmbedBuilder，为Graphiti提供统一的嵌入服务接口。
-    """
-
     def __init__(self, config: MetisEmbedderConfig):
         """初始化Metis嵌入器。
 
@@ -28,7 +23,7 @@ class MetisEmbedder(EmbedderClient):
         try:
             logger.info(f"初始化Metis嵌入器，模型: {config.model_name}")
             # 修复：移除重复的config.url参数
-            self.embed = EmbedBuilder.get_embed(
+            self.embed = EmbedManager().get_embed(
                 config.url, config.model_name,
                 config.api_key, config.url if config.url.startswith(
                     ('http://', 'https://')) else ''
