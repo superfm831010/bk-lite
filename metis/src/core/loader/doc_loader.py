@@ -6,7 +6,7 @@ from langchain_core.documents import Document
 from sanic.log import logger
 from tqdm import tqdm
 
-from src.core.ocr.base_ocr import BaseOCR
+from neco.ocr.base_ocr import BaseOCR
 
 
 class DocLoader:
