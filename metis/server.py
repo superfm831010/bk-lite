@@ -14,7 +14,7 @@ from src.core.sanic_plus.env.core_settings import core_settings
 from src.core.sanic_plus.auth.api_auth import auth
 from src.core.sanic_plus.utils.config import YamlConfig
 from src.core.sanic_plus.utils.crypto import PasswordCrypto
-from src.core.ocr.pp_ocr import PPOcr
+from neco.ocr.pp_ocr import PPOcr
 import mlflow
 import os
 

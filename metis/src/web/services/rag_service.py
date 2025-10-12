@@ -1,3 +1,4 @@
+from pyexpat import model
 import time
 import uuid
 from datetime import datetime
@@ -14,7 +15,7 @@ from src.core.loader.excel_loader import ExcelLoader
 from src.core.loader.markdown_loader import MarkdownLoader
 from src.core.loader.pdf_loader import PDFLoader
 from src.core.loader.text_loader import TextLoader
-from src.core.ocr.ocr_manager import OcrManager
+from neco.ocr.ocr_manager import OcrManager
 from src.web.entity.rag.base.document_ingest_request import DocumentIngestRequest
 from src.core.loader.image_loader import ImageLoader
 from src.core.loader.ppt_loader import PPTLoader
@@ -227,15 +228,16 @@ class RagService:
         在内部初始化OCR，支持paddle_ocr、olm_ocr、azure_ocr
         """
         logger.debug(f"为文件 {file_path} (类型: {file_extension}) 初始化加载器")
-        # 初始化OCR
-        ocr = OcrManager.load_ocr(ocr_type=request.form.get('ocr_type'),
-                                  olm_base_url=request.form.get(
-                                      'olm_base_url'),
-                                  olm_api_key=request.form.get('olm_api_key'),
-                                  olm_model=request.form.get('olm_model'),
-                                  azure_base_url=request.form.get(
-                                      'azure_base_url'),
-                                  azure_api_key=request.form.get('azure_api_key'))
+
+        oct_type = request.form.get('ocr_type')
+        base_url = request.form.get(
+            'olm_base_url') or request.form.get('azure_base_url')
+        model = request.form.get('olm_model')
+        api_key = request.form.get(
+            'olm_api_key') or request.form.get('azure_api_key')
+
+        ocr = OcrManager.load_ocr(ocr_type=oct_type, model=model,
+                                  base_url=base_url, api_key=api_key)
 
         if file_extension in ['docx', 'doc']:
             return DocLoader(file_path, ocr, load_mode)
