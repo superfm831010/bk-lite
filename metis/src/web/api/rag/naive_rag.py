@@ -6,8 +6,8 @@ from sanic.log import logger
 from sanic import Blueprint, json
 from sanic_ext import validate
 
-from src.core.loader.raw_loader import RawLoader
-from src.core.loader.website_loader import WebSiteLoader
+from neco.llm.loader.raw_loader import RawLoader
+from neco.llm.loader.website_loader import WebSiteLoader
 from src.core.sanic_plus.auth.api_auth import auth
 from src.web.entity.rag.base.document_count_request import DocumentCountRequest
 from src.web.entity.rag.base.document_delete_request import DocumentDeleteRequest

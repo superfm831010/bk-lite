@@ -1,24 +1,23 @@
-from pyexpat import model
 import time
 import uuid
 from datetime import datetime
 
 from sanic.log import logger
 
-from src.core.chunk.fixed_size_chunk import FixedSizeChunk
-from src.core.chunk.full_chunk import FullChunk
-from src.core.chunk.recursive_chunk import RecursiveChunk
-from src.core.chunk.semantic_chunk import SemanticChunk
+from neco.llm.chunk.fixed_size_chunk import FixedSizeChunk
+from neco.llm.chunk.full_chunk import FullChunk
+from neco.llm.chunk.recursive_chunk import RecursiveChunk
+from neco.llm.chunk.semantic_chunk import SemanticChunk
 from neco.llm.embed.embed_manager import EmbedManager
-from src.core.loader.doc_loader import DocLoader
-from src.core.loader.excel_loader import ExcelLoader
-from src.core.loader.markdown_loader import MarkdownLoader
-from src.core.loader.pdf_loader import PDFLoader
-from src.core.loader.text_loader import TextLoader
+from neco.llm.loader.doc_loader import DocLoader
+from neco.llm.loader.excel_loader import ExcelLoader
+from neco.llm.loader.markdown_loader import MarkdownLoader
+from neco.llm.loader.pdf_loader import PDFLoader
+from neco.llm.loader.text_loader import TextLoader
 from neco.ocr.ocr_manager import OcrManager
 from src.web.entity.rag.base.document_ingest_request import DocumentIngestRequest
-from src.core.loader.image_loader import ImageLoader
-from src.core.loader.ppt_loader import PPTLoader
+from neco.llm.loader.image_loader import ImageLoader
+from neco.llm.loader.ppt_loader import PPTLoader
 from src.core.rag.naive_rag.pgvector.pgvector_rag import PgvectorRag
 
 

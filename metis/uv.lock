@@ -2203,24 +2203,26 @@ name = "metis"
 version = "3.7.0"
 source = { editable = "." }
 dependencies = [
-    { name = "neco", extra = ["devops", "doc-parser", "llm", "mlflow", "ocr", "sanic"] },
+    { name = "neco", extra = ["core", "devops", "doc-parser", "llm", "mlflow", "ocr", "sanic"] },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "neco", extras = ["llm", "mlflow", "sanic", "doc-parser", "devops", "ocr"], specifier = "==0.0.0.post17" }]
+requires-dist = [{ name = "neco", extras = ["core", "llm", "mlflow", "sanic", "doc-parser", "devops", "ocr"], specifier = "==0.0.0.post23" }]
 
 [[package]]
 name = "mlflow"
-version = "3.1.0"
+version = "3.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
+    { name = "cryptography" },
     { name = "docker" },
     { name = "flask" },
     { name = "graphene" },
     { name = "gunicorn", marker = "sys_platform != 'win32'" },
     { name = "matplotlib" },
     { name = "mlflow-skinny" },
+    { name = "mlflow-tracing" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "pyarrow" },
@@ -2229,14 +2231,14 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "waitress", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/51/97/84f1433ca87b15357a7f2b01e8b1d2605856e3430ceeee7cc4620127fe8c/mlflow-3.1.0.tar.gz", hash = "sha256:de0b90aa058b532738081deec791bb2fca35abcca0fd9358da75fefe0a6170f4", size = 24096293, upload-time = "2025-06-10T21:07:28.219Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/eb/e3/05447a6c0a00b7ede38832d5c05904ccb83ae991d5792222849b25067b65/mlflow-3.3.2.tar.gz", hash = "sha256:ab9a5ffda0c05c6ba40e3c1ba4beef8f29fef0d61454f8c9485b54b1ec3e6894", size = 25788411, upload-time = "2025-08-27T13:16:17.622Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2d/8f/108be720d392b0785156a3911ea24843f890178a647b5a7f1fe569fa1e26/mlflow-3.1.0-py3-none-any.whl", hash = "sha256:4101d027b548afacc263b76617098454ce5281e23021bc44f11edc684495e63d", size = 24669206, upload-time = "2025-06-10T21:07:25.082Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/16/57765db94704f001fe68a9d5545a883a8ccf6bb6629603c20736f2e388c4/mlflow-3.3.2-py3-none-any.whl", hash = "sha256:df2bfb11bf0ed3a39cf3cefd1a114ecdcd9c44291358b4b818e3bed50878b444", size = 26417769, upload-time = "2025-08-27T13:16:14.532Z" },
 ]
 
 [[package]]
 name = "mlflow-skinny"
-version = "3.1.0"
+version = "3.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cachetools" },
@@ -2257,9 +2259,27 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e7/9f/0d4ab8b8207b2e770a184c7397cd2bbe64f5fd835001f97cd7e4f5585a0a/mlflow_skinny-3.1.0.tar.gz", hash = "sha256:20c58f89d75b2f21f09b5584ca79c715e328e35e9472b644c4ec3c80e501b2ad", size = 1600720, upload-time = "2025-06-10T20:33:09.886Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/39/ef/94ce1a8db3ae3f94a73f6841fa804b3d2c48e177861cb0883ae367411996/mlflow_skinny-3.3.2.tar.gz", hash = "sha256:cf9ad0acb753bafdcdc60d9d18a7357f2627fb0c627ab3e3b97f632958a1008b", size = 1685895, upload-time = "2025-08-27T12:34:54.677Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b0/cc/467f4081ea6e29d875791ee9d7f0f71e3ebbeb84ee8239ab81d201b96a82/mlflow_skinny-3.1.0-py3-none-any.whl", hash = "sha256:d6221d55df49bfb9546594bad82a9608c016e71267fd9ad7bfac17ea299f327e", size = 1922688, upload-time = "2025-06-10T20:33:06.459Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/06/805b94473d6222249b87fa415d047b34db1e6eb24385783b6d1bc89f6ea8/mlflow_skinny-3.3.2-py3-none-any.whl", hash = "sha256:e565b08de309b9716d4f89362e0a9217d82a3c28d8d553988e0eaad6cbfe4eea", size = 2024570, upload-time = "2025-08-27T12:34:52.563Z" },
+]
+
+[[package]]
+name = "mlflow-tracing"
+version = "3.3.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cachetools" },
+    { name = "databricks-sdk" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-sdk" },
+    { name = "packaging" },
+    { name = "protobuf" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a2/23/bf70405a194906b4fa809be79dfa4486406385f5f578157d947fdc741ef5/mlflow_tracing-3.3.2.tar.gz", hash = "sha256:003ad9c66f884e8e8bb2f5d219b5be9bcd41bb65d77a7264d8aaada853d64050", size = 926718, upload-time = "2025-08-27T12:32:14.801Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5e/86/396a17af4e994c7ffa65609739baddc17f4436aec9511478816e157a1bda/mlflow_tracing-3.3.2-py3-none-any.whl", hash = "sha256:9a3175fb3b069c9f541c7a60a663f482b3fcb4ca8f3583da3fdf036a50179e05", size = 1120520, upload-time = "2025-08-27T12:32:13.539Z" },
 ]
 
 [[package]]
@@ -2412,9 +2432,15 @@ wheels = [
 
 [[package]]
 name = "neco"
-version = "0.0.0.post17"
+version = "0.0.0.post23"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
+sdist = { url = "https://files.pythonhosted.org/packages/66/d6/6a07eac154b97eb1db5709f8de60384d85a8182f8bbd5f632615f82b75ae/neco-0.0.0.post23.tar.gz", hash = "sha256:a19f27c4d88c008b7af4e374ca580db5649873211d9e805f96ffbeb88a1ac54c", size = 28050, upload-time = "2025-10-12T10:41:22.863Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/1b/47ab2f96680b0d94e97ac5cb3cdf9251cf8abe2e4fdca4286f8906d6cc9c/neco-0.0.0.post23-py3-none-any.whl", hash = "sha256:1263c60fb771cc8718bf85cff6bc74de9c90821fed806a0cd1ea07066e48771b", size = 41319, upload-time = "2025-10-12T10:41:21.516Z" },
+]
+
+[package.optional-dependencies]
+core = [
     { name = "diskcache" },
     { name = "falkordb" },
     { name = "jieba" },
@@ -2431,12 +2457,6 @@ dependencies = [
     { name = "singleton-decorator" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/76/2f/67bfdf5ff449f8851d9f03302b48c73db7f49408e7271e5fda69c306ee77/neco-0.0.0.post17.tar.gz", hash = "sha256:ecba54017e140506e1eceb6678002c7ff34964e489545acfd13123455698098c", size = 14595, upload-time = "2025-10-12T03:36:11.834Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/13/e6/ccf9a747ed51b015c367e028efb0ddccc13ef9b632c0bbf211725f4dc80b/neco-0.0.0.post17-py3-none-any.whl", hash = "sha256:7e5f89cfa080a0e72f2e2f30f46a4c44e3f22eed9ed8954174c04dd1b3c646fc", size = 19081, upload-time = "2025-10-12T03:36:10.328Z" },
-]
-
-[package.optional-dependencies]
 devops = [
     { name = "ansible" },
     { name = "ansible-runner" },
