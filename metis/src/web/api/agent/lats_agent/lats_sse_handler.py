@@ -9,7 +9,7 @@ import json
 from typing import Dict, Any, List
 from datetime import datetime
 
-from sanic.log import logger
+from loguru import logger
 from src.web.api.agent.lats_agent.lats_sse_formatter import LatsSSEFormatter
 
 

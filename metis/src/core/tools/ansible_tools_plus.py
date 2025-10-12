@@ -10,7 +10,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 import ansible_runner
 
-from sanic.log import logger
+from loguru import logger
 
 # 常量定义
 DEFAULT_TIMEOUT = 60

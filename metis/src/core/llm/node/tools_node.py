@@ -1,5 +1,5 @@
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from sanic.log import logger
+from loguru import logger
 from src.core.llm.node.structured_output_parser import StructuredOutputParser
 from src.core.tools.tools_loader import ToolsLoader
 from src.core.llm.node.basic_node import BasicNode
@@ -134,7 +134,7 @@ class ToolsNodes(BasicNode):
                     ])
                 else:
                     # 使用专门的ReAct Agent模板系统
-                    from src.core.sanic_plus.utils.template_loader import TemplateLoader
+                    from neco.core.utils.template_loader import TemplateLoader
                     system_message_prompt = TemplateLoader.render_template(
                         'prompts/graph/react_agent_system_message', {
                             "user_system_message": getattr(graph_request, 'system_message_prompt', "你是一个智能助手，能够使用工具来帮助解决问题。请仔细分析问题，按照ReAct模式工作：先获取必要信息（如当前时间），然后使用合适的工具，最后提供完整的解答。")

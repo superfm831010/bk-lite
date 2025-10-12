@@ -1,9 +1,9 @@
 from typing import List, Dict, Any, Optional
 import psycopg
-from sanic.log import logger
+from loguru import logger
 
 from src.core.rag.naive_rag.pgvector.database_connection_pool import DatabaseConnectionPool
-from src.core.sanic_plus.utils.timing_decorator import timeit
+from neco.core.utils.timing_decorator import timeit
 
 
 class DatabaseManager:

@@ -1,10 +1,10 @@
-from sanic.log import logger
+from loguru import logger
 from sanic import Blueprint, json
 from sanic_ext import validate
 from src.core.agent.plan_and_execute_agent.plan_and_execute_agent_graph import PlanAndExecuteAgentGraph
 from src.web.api.agent.plan_and_execute_agent.plan_execute_sse_handler import stream_plan_execute_response
 from src.web.api.agent.plan_and_execute_agent.plan_execute_response_formatter import PlanExecuteResponseFormatter
-from src.core.sanic_plus.auth.api_auth import auth
+from neco.sanic.auth.api_auth import auth
 from src.web.entity.agent.plan_and_execute_agent.plan_and_execute_agent_request import PlanAndExecuteAgentRequest
 from src.web.services.agent_service import AgentService
 from sanic.response import ResponseStream

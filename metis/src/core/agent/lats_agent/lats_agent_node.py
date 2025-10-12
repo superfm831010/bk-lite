@@ -12,11 +12,11 @@ from langchain_core.output_parsers import JsonOutputToolsParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableConfig
 from langgraph.prebuilt import ToolNode
-from sanic.log import logger
+from loguru import logger
 
 from src.core.agent.lats_agent.lats_agent_state import LatsAgentState, Node, Reflection
 from src.core.llm.node.tools_node import ToolsNodes
-from src.core.sanic_plus.utils.template_loader import TemplateLoader
+from neco.core.utils.template_loader import TemplateLoader
 
 
 class LatsAgentNode(ToolsNodes):

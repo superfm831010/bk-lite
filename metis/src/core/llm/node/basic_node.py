@@ -6,10 +6,10 @@ from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 
 from src.core.llm.entity.basic_llm_request import BasicLLMRequest
-from src.core.sanic_plus.utils.template_loader import TemplateLoader
+from neco.core.utils.template_loader import TemplateLoader
 from src.core.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
 from src.core.rag.naive_rag.pgvector.pgvector_rag import PgvectorRag
-from sanic.log import logger
+from loguru import logger
 
 
 class BasicNode:

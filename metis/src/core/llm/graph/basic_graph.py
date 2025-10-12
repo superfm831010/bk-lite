@@ -4,10 +4,10 @@ from abc import ABC, abstractmethod
 import tiktoken
 from langchain_core.messages import AIMessageChunk, AIMessage
 from langgraph.constants import START
-from sanic.log import logger
+from loguru import logger
 from src.core.llm.entity.basic_llm_request import BasicLLMRequest
 from src.core.llm.entity.basic_llm_response import BasicLLMResponse
-from src.core.sanic_plus.env.core_settings import core_settings
+from src.core_settings import core_settings
 
 
 class BasicGraph(ABC):

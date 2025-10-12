@@ -1,7 +1,7 @@
 from langgraph.constants import END
 from langgraph.graph import StateGraph
 from langgraph.types import RetryPolicy
-from sanic.log import logger
+from loguru import logger
 
 from src.core.llm.graph.basic_graph import BasicGraph
 from src.web.entity.agent.react_agent.react_agent_request import ReActAgentRequest

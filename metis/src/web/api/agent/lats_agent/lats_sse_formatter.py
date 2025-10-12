@@ -11,7 +11,7 @@ from typing import Dict, Any, List
 from enum import Enum
 from dataclasses import dataclass
 
-from sanic.log import logger
+from loguru import logger
 
 
 class SearchPhase(Enum):

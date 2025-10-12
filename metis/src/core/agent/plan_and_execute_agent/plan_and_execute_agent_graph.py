@@ -1,6 +1,6 @@
 from langgraph.constants import END
 from langgraph.graph import StateGraph
-from sanic.log import logger
+from loguru import logger
 
 from src.core.agent.plan_and_execute_agent.plan_and_execute_agent_node import PlanAndExecuteAgentNode
 from src.core.agent.plan_and_execute_agent.plan_and_execute_agent_state import PlanAndExecuteAgentState

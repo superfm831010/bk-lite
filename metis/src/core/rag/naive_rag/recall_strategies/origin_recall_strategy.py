@@ -1,7 +1,7 @@
 from typing import List, TYPE_CHECKING
 
 from langchain_core.documents import Document
-from sanic.log import logger
+from loguru import logger
 
 from src.web.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
 from src.web.entity.rag.base.document_list_request import DocumentListRequest

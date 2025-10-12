@@ -2,7 +2,7 @@ import time
 import uuid
 from datetime import datetime
 
-from sanic.log import logger
+from loguru import logger
 
 from neco.llm.chunk.fixed_size_chunk import FixedSizeChunk
 from neco.llm.chunk.full_chunk import FullChunk

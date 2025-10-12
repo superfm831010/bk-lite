@@ -3,7 +3,7 @@ from io import StringIO
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langchain_experimental.utilities import PythonREPL
-from sanic.log import logger
+from loguru import logger
 
 
 @tool(parse_docstring=True)

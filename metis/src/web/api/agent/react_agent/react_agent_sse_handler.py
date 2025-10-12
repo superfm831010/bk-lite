@@ -2,7 +2,7 @@ from datetime import datetime
 import uuid
 import json as json_util
 from langchain_core.messages import AIMessageChunk, ToolMessage, AIMessage
-from sanic.log import logger
+from loguru import logger
 
 
 async def react_agent_stream_response(workflow, body, res):

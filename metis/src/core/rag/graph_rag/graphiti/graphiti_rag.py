@@ -9,7 +9,7 @@ from graphiti_core import Graphiti
 from graphiti_core.nodes import EpisodeType
 from graphiti_core.llm_client import OpenAIClient, LLMConfig
 
-from src.core.sanic_plus.env.core_settings import core_settings
+from src.core_settings import core_settings
 from src.core.rag.graph_rag.graphiti.openai_client_patch import apply_openai_client_patch
 from src.web.entity.rag.graphiti.document_delete_request import DocumentDeleteRequest
 from src.web.entity.rag.graphiti.index_delete_request import IndexDeleteRequest
@@ -20,8 +20,8 @@ from src.core.rag.graph_rag.graphiti.metis_embedder import MetisEmbedder
 from src.core.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderConfig
 from src.core.rag.graph_rag.graphiti.metis_reranker_config import MetisRerankerConfig
 from src.core.rag.graph_rag.graphiti.metis_reranker_client import MetisRerankerClient
-from src.core.sanic_plus.utils.timing_decorator import timeit
-from sanic.log import logger
+from neco.core.utils.timing_decorator import timeit
+from loguru import logger
 from graphiti_core.driver.falkordb_driver import FalkorDriver
 
 

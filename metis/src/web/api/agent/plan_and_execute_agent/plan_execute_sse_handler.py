@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any, AsyncGenerator
 from datetime import datetime
 
-from sanic.log import logger
+from loguru import logger
 
 
 async def stream_plan_execute_response(

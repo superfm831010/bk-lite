@@ -4,7 +4,7 @@ from typing import List, Tuple
 from graphiti_core.cross_encoder.client import CrossEncoderClient
 from langchain_core.documents import Document
 from src.core.rag.graph_rag.graphiti.metis_reranker_config import MetisRerankerConfig
-from sanic.log import logger
+from loguru import logger
 
 from neco.llm.rerank.rerank_config import ReRankConfig
 from neco.llm.rerank.rerank_manager import ReRankManager

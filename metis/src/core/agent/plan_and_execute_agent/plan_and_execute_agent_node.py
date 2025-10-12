@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from src.core.agent.plan_and_execute_agent.plan_and_execute_agent_state import PlanAndExecuteAgentState
 from src.core.llm.node.tools_node import ToolsNodes
-from src.core.sanic_plus.utils.template_loader import TemplateLoader
+from neco.core.utils.template_loader import TemplateLoader
 
 
 class Plan(BaseModel):

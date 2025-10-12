@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 import requests
 from langchain_core.tools import tool
-from sanic.log import logger
+from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 # 安全配置

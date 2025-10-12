@@ -1,6 +1,6 @@
 from sanic import Blueprint, json
 from sanic_ext import validate
-from src.core.sanic_plus.auth.api_auth import auth
+from neco.sanic.auth.api_auth import auth
 from src.web.entity.rag.graphiti.index_delete_request import IndexDeleteRequest
 from src.web.entity.rag.graphiti.document_delete_request import DocumentDeleteRequest
 from src.web.entity.rag.graphiti.document_ingest_request import GraphitiRagDocumentIngestRequest
@@ -16,7 +16,7 @@ graph_rag_api_router = Blueprint(
 @auth.login_required
 @validate(json=GraphitiRagDocumentIngestRequest)
 async def ingest(request, body: GraphitiRagDocumentIngestRequest):
-    from sanic.log import logger
+    from loguru import logger
     import asyncio
 
     logger.info(f"接收到文档摄取请求: group_id={body.group_id}, 文档数量={len(body.docs)}")

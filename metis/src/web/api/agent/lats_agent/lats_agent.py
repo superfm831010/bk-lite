@@ -4,7 +4,7 @@ LATS Agent 路由器 - 简化优化版本
 提供简洁的 LATS Agent API 接口
 优化代码结构，提升可读性和维护性
 """
-from sanic.log import logger
+from loguru import logger
 from sanic import Blueprint, json
 from sanic_ext import validate
 from sanic.response import ResponseStream
@@ -12,7 +12,7 @@ import uuid
 
 from src.core.agent.lats_agent.lats_agent_graph import LatsAgentGraph
 from src.web.api.agent.lats_agent.lats_sse_handler import stream_lats_response
-from src.core.sanic_plus.auth.api_auth import auth
+from neco.sanic.auth.api_auth import auth
 from src.web.entity.agent.lats_agent.lats_agent_request import LatsAgentRequest
 from src.web.services.agent_service import AgentService
 

@@ -1,7 +1,7 @@
 from sanic import Blueprint, json
 from sanic_ext import validate
 
-from src.core.sanic_plus.auth.api_auth import auth
+from neco.sanic.auth.api_auth import auth
 from src.web.entity.rag.enhance.answer_generate_request import AnswerGenerateRequest
 from src.web.services.qa_enhance_service import QAEnhanceService
 from src.web.entity.rag.enhance.qa_enhance_request import QAEnhanceRequest

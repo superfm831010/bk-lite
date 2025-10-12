@@ -2,10 +2,10 @@ import importlib
 import inspect
 from pathlib import Path
 import copy
-from sanic.log import logger
+from loguru import logger
 
 from src.core.llm.entity.tools_server import ToolsServer
-from src.core.sanic_plus.utils.template_loader import TemplateLoader
+from neco.core.utils.template_loader import TemplateLoader
 
 
 class ToolsLoader:
@@ -181,7 +181,7 @@ class ToolsLoader:
         if hasattr(tool_server, 'extra_param_prompt') and tool_server.extra_param_prompt:
             param_descriptions = [f"{key}:{value}" for key,
                                   value in tool_server.extra_param_prompt.items()]
-            
+
             # 使用模板加载器生成动态参数提示
             final_prompt = TemplateLoader.render_template(
                 "prompts/tools/dynamic_param_generation",

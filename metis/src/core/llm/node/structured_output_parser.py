@@ -5,9 +5,9 @@ from typing import Type, TypeVar, Dict, List, Union
 import json_repair
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
-from sanic.log import logger
+from loguru import logger
 
-from src.core.sanic_plus.utils.template_loader import TemplateLoader
+from neco.core.utils.template_loader import TemplateLoader
 
 T = TypeVar('T', bound=BaseModel)
 

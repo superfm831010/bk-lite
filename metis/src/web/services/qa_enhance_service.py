@@ -2,7 +2,7 @@ import json_repair
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_openai import ChatOpenAI
 
-from src.core.sanic_plus.utils.template_loader import TemplateLoader
+from neco.core.utils.template_loader import TemplateLoader
 from src.web.entity.rag.enhance.answer_generate_request import AnswerGenerateRequest
 from src.web.entity.rag.enhance.qa_enhance_request import QAEnhanceRequest
 from src.web.entity.rag.enhance.question_generate_request import QuestionGenerateRequest
@@ -10,11 +10,12 @@ from src.web.entity.rag.enhance.question_generate_request import QuestionGenerat
 
 class QAEnhanceService:
     @staticmethod
-    def generate_answer(req:AnswerGenerateRequest):
-        system_prompt = TemplateLoader.render_template("prompts/answer_generation/system_prompt")
+    def generate_answer(req: AnswerGenerateRequest):
+        system_prompt = TemplateLoader.render_template(
+            "prompts/answer_generation/system_prompt")
         input_prompt = TemplateLoader.render_template("prompts/answer_generation/input_prompt",
                                                       context={
-                                                          "context":req.context,
+                                                          "context": req.context,
                                                           "text": req.content,
                                                           "extra_prompt": req.extra_prompt
                                                       })
@@ -35,8 +36,9 @@ class QAEnhanceService:
         return json_repair.loads(result.content)
 
     @staticmethod
-    def generate_question(req:QuestionGenerateRequest):
-        system_prompt = TemplateLoader.render_template("prompts/question_generation/system_prompt")
+    def generate_question(req: QuestionGenerateRequest):
+        system_prompt = TemplateLoader.render_template(
+            "prompts/question_generation/system_prompt")
         input_prompt = TemplateLoader.render_template("prompts/question_generation/input_prompt",
                                                       context={
                                                           "text": req.content,
@@ -61,7 +63,8 @@ class QAEnhanceService:
 
     @staticmethod
     def generate_qa(req: QAEnhanceRequest):
-        system_prompt = TemplateLoader.render_template("prompts/qa_pair/system_prompt")
+        system_prompt = TemplateLoader.render_template(
+            "prompts/qa_pair/system_prompt")
         input_prompt = TemplateLoader.render_template("prompts/qa_pair/input_prompt",
                                                       context={
                                                           "text": req.content,

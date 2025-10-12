@@ -5,12 +5,12 @@ from typing import List, Dict, Any, Optional, Union
 import psycopg
 from langchain_core.documents import Document
 from langchain_postgres import PGVector
-from sanic.log import logger
+from loguru import logger
 
 from neco.llm.embed.embed_manager import EmbedManager
 from neco.llm.rerank.rerank_manager import ReRankManager
-from src.core.sanic_plus.env.core_settings import core_settings
-from src.core.sanic_plus.utils.timing_decorator import timeit
+from src.core_settings import core_settings
+from neco.core.utils.timing_decorator import timeit
 from src.web.entity.rag.base.document_count_request import DocumentCountRequest
 from src.web.entity.rag.base.document_delete_request import DocumentDeleteRequest
 from src.web.entity.rag.base.document_ingest_request import DocumentIngestRequest

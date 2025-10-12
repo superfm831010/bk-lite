@@ -1,4 +1,4 @@
-from sanic.log import logger
+from loguru import logger
 from sanic import Blueprint, json
 from sanic_ext import validate
 from src.core.agent.chatbot_workflow.chatbot_workflow_graph import ChatBotWorkflowGraph
@@ -6,7 +6,7 @@ from src.web.api.agent.chatbot_workflow.chatbot_workflow_sse_handler import chat
 from src.web.entity.agent.chatbot_workflow.chatbot_workflow_request import ChatBotWorkflowRequest
 from src.web.services.agent_service import AgentService
 from sanic.response import ResponseStream
-from src.core.sanic_plus.auth.api_auth import auth
+from neco.sanic.auth.api_auth import auth
 
 chatbot_workflow_api_router = Blueprint(
     "chatbot_workflow_api_router", url_prefix="/agent")

@@ -6,7 +6,7 @@ LATS Agent 图执行器 - 简化优化版本
 """
 from langgraph.constants import END
 from langgraph.graph import StateGraph
-from sanic.log import logger
+from loguru import logger
 
 from src.core.agent.lats_agent.lats_agent_node import LatsAgentNode
 from src.core.agent.lats_agent.lats_agent_state import LatsAgentState

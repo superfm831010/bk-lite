@@ -1,9 +1,9 @@
 from typing import Iterable
-from sanic.log import logger
+from loguru import logger
 from graphiti_core.embedder.client import EmbedderClient
 from neco.llm.embed.embed_manager import EmbedManager
 from src.core.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderConfig
-from src.core.sanic_plus.utils.timing_decorator import timeit
+from neco.core.utils.timing_decorator import timeit
 
 
 class MetisEmbedder(EmbedderClient):

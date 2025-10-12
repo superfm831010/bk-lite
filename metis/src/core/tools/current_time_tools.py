@@ -2,7 +2,7 @@ from datetime import datetime
 
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
-from sanic.log import logger
+from loguru import logger
 
 
 @tool()

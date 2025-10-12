@@ -2,13 +2,13 @@ import json as js
 import tempfile
 from typing import Dict, Any
 
-from sanic.log import logger
+from loguru import logger
 from sanic import Blueprint, json
 from sanic_ext import validate
 
 from neco.llm.loader.raw_loader import RawLoader
 from neco.llm.loader.website_loader import WebSiteLoader
-from src.core.sanic_plus.auth.api_auth import auth
+from neco.sanic.auth.api_auth import auth
 from src.web.entity.rag.base.document_count_request import DocumentCountRequest
 from src.web.entity.rag.base.document_delete_request import DocumentDeleteRequest
 from src.web.entity.rag.base.document_list_request import DocumentListRequest

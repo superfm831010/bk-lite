@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from threading import Lock
 import psycopg
-from sanic.log import logger
+from loguru import logger
 
 
 class DatabaseConnectionPool:

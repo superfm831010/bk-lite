@@ -3,17 +3,17 @@ import traceback
 
 from sanic import Sanic
 from sanic import json
-from sanic.log import logger
+from loguru import logger
 from sanic.logging.default import LOGGING_CONFIG_DEFAULTS
 import logging
 
 from neco.llm.embed.embed_manager import EmbedManager
 from neco.llm.rerank.rerank_manager import ReRankManager
 from src.web.api import api
-from src.core.sanic_plus.env.core_settings import core_settings
-from src.core.sanic_plus.auth.api_auth import auth
-from src.core.sanic_plus.utils.config import YamlConfig
-from src.core.sanic_plus.utils.crypto import PasswordCrypto
+from src.core_settings import core_settings
+from neco.sanic.auth.api_auth import auth
+from neco.sanic.utils.config import YamlConfig
+from neco.core.utils.crypto import PasswordCrypto
 from neco.ocr.pp_ocr import PPOcr
 import mlflow
 import os
@@ -93,10 +93,10 @@ def bootstrap() -> Sanic:
 
     logging.basicConfig(level=logging.INFO)
     LOGGING_CONFIG_DEFAULTS['formatters']['generic'] = {
-        'class': 'src.core.sanic_plus.log.sanic_log_formater.SanicLogFormatter',
+        'class': 'neco.sanic.log.sanic_log_formater.SanicLogFormatter',
     }
     LOGGING_CONFIG_DEFAULTS['formatters']['access'] = {
-        'class': 'src.core.sanic_plus.log.sanic_log_formater.SanicAccessFormatter',
+        'class': 'neco.sanic.log.sanic_log_formater.SanicAccessFormatter',
     }
 
     # 禁用 Sanic access 日志
