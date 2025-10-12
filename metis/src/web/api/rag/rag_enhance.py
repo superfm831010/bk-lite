@@ -6,16 +6,15 @@ from src.web.entity.rag.enhance.answer_generate_request import AnswerGenerateReq
 from src.web.services.qa_enhance_service import QAEnhanceService
 from src.web.entity.rag.enhance.qa_enhance_request import QAEnhanceRequest
 from src.web.entity.rag.enhance.question_generate_request import QuestionGenerateRequest
-from src.web.entity.rag.enhance.summarize_enhance_request import SummarizeEnhanceRequest
-from src.core.summarize.summarize_manager import SummarizeManager
+from neco.mlops.summarize.summarize_manager import SummarizeManager, SummarizeRequest
 
 rag_enhance_api_router = Blueprint("rag_enhance_api_router", url_prefix="/rag")
 
 
 @rag_enhance_api_router.post("/summarize_enhance")
 @auth.login_required
-@validate(json=SummarizeEnhanceRequest)
-async def summarize_enhance(request, body: SummarizeEnhanceRequest):
+@validate(json=SummarizeRequest)
+async def summarize_enhance(request, body: SummarizeRequest):
     result = SummarizeManager.summarize(body)
     return json({"status": "success", "message": result})
 
@@ -34,6 +33,7 @@ async def qa_pair_generate(request, body: QAEnhanceRequest):
 async def question_generation(request, body: QuestionGenerateRequest):
     result = QAEnhanceService.generate_question(body)
     return json({"status": "success", "message": result})
+
 
 @rag_enhance_api_router.post("/answer_generation")
 @auth.login_required
