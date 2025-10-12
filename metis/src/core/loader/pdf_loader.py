@@ -11,7 +11,7 @@ from tabula.io import read_pdf
 from tqdm import tqdm
 from sanic.log import logger
 
-from src.core.ocr.base_ocr import BaseOCR
+from neco.ocr.base_ocr import BaseOCR
 
 
 class PDFLoader:

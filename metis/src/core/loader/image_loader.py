@@ -3,7 +3,7 @@ import base64
 from langchain_core.documents import Document
 from sanic.log import logger
 
-from src.core.ocr.base_ocr import BaseOCR
+from neco.ocr.base_ocr import BaseOCR
 
 
 class ImageLoader:
@@ -20,6 +20,7 @@ class ImageLoader:
         with open(self.path, "rb") as image_file:
             image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
 
-        doc = Document(page_content=result, metadata={"format": "image", "image_base64": image_base64})
+        doc = Document(page_content=result, metadata={
+                       "format": "image", "image_base64": image_base64})
         docs.append(doc)
         return docs
