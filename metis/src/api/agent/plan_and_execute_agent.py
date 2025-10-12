@@ -1,29 +1,20 @@
 from loguru import logger
 from sanic import Blueprint, json
 from sanic_ext import validate
+from sanic.response import ResponseStream
 from neco.sanic.auth.api_auth import auth
 from src.services.agent_service import AgentService
-from sanic.response import ResponseStream
-from typing import Dict, Any
-import json
-from datetime import datetime
-from typing import Dict, Any, List
+from neco.llm.agent.plan_and_execute_agent import *
+from typing import Dict, Any, List, AsyncGenerator
 from dataclasses import dataclass
 from enum import Enum
-from dataclasses import dataclass
-from typing import Dict, List
-
+from datetime import datetime
 import asyncio
 import json
-from typing import Dict, Any, AsyncGenerator
-from datetime import datetime
-
-from loguru import logger
-from neco.llm.agent.plan_and_execute_agent import *
-
 
 plan_and_execute_agent_router = Blueprint(
-    "plan_and_execute_agent_router", url_prefix="/agent")
+    "plan_and_execute_agent_router", url_prefix="/agent"
+)
 
 
 @dataclass
