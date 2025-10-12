@@ -8,7 +8,7 @@ from langchain_postgres import PGVector
 from sanic.log import logger
 
 from neco.llm.embed.embed_manager import EmbedManager
-from src.core.rerank.rerank_manager import ReRankManager
+from neco.llm.rerank.rerank_manager import ReRankManager
 from src.core.sanic_plus.env.core_settings import core_settings
 from src.core.sanic_plus.utils.timing_decorator import timeit
 from src.web.entity.rag.base.document_count_request import DocumentCountRequest

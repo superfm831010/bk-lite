@@ -8,7 +8,7 @@ from sanic.logging.default import LOGGING_CONFIG_DEFAULTS
 import logging
 
 from neco.llm.embed.embed_manager import EmbedManager
-from src.core.rerank.rerank_manager import ReRankManager
+from neco.llm.rerank.rerank_manager import ReRankManager
 from src.web.api import api
 from src.core.sanic_plus.env.core_settings import core_settings
 from src.core.sanic_plus.auth.api_auth import auth
