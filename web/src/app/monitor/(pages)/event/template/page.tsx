@@ -5,14 +5,11 @@ import useMonitorApi from '@/app/monitor/api';
 import useEventApi from '@/app/monitor/api/event';
 import templateStyle from './index.module.scss';
 import { TreeItem, TableDataItem, ObjectItem } from '@/app/monitor/types';
-import {
-  deepClone,
-  findLabelById,
-  getIconByObjectName,
-} from '@/app/monitor/utils/common';
+import { findLabelById, getIconByObjectName } from '@/app/monitor/utils/common';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EntityList from '@/components/entity-list';
+import { cloneDeep } from 'lodash';
 
 const Template: React.FC = () => {
   const { isLoading } = useApiClient();
@@ -72,7 +69,7 @@ const Template: React.FC = () => {
           (res[1] || []).includes(item.id)
         );
         setObjects(monitorObjects);
-        const _treeData = getTreeData(deepClone(monitorObjects));
+        const _treeData = getTreeData(cloneDeep(monitorObjects));
         const defaulltId = (_treeData[0]?.children || [])[0]?.key;
         setDefaultSelectObj(objId ? +objId : defaulltId);
         setTreeData(_treeData);

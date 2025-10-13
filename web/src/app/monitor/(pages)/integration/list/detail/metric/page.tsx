@@ -29,10 +29,10 @@ import Collapse from '@/components/collapse';
 import GroupModal from './groupModal';
 import MetricModal from './metricModal';
 import { useSearchParams } from 'next/navigation';
-import { deepClone } from '@/app/monitor/utils/common';
 import { useUserInfoContext } from '@/context/userInfo';
 import Permission from '@/components/permission';
 import { NEED_TAGS_ENTRY_OBJECTS } from '@/app/monitor/constants/integration';
+import { cloneDeep } from 'lodash';
 
 const Configure = () => {
   const { isLoading } = useApiClient();
@@ -346,7 +346,7 @@ const Configure = () => {
         (item) => item.id === draggingItemId
       );
       const targetIndex = metricData.findIndex((item) => item.id === targetId);
-      const reorderedData = deepClone(metricData);
+      const reorderedData: any = cloneDeep(metricData);
       const [draggedItem] = reorderedData.splice(draggingIndex, 1);
       reorderedData.splice(targetIndex, 0, draggedItem);
       if (draggingIndex !== -1 && targetIndex !== -1) {

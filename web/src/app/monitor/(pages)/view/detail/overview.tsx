@@ -22,7 +22,6 @@ import {
 } from '@/app/monitor/types';
 import { useTranslation } from '@/utils/i18n';
 import {
-  deepClone,
   findUnitNameById,
   calculateMetrics,
   getEnumValueUnit,
@@ -35,6 +34,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { useInterfaceLabelMap } from '@/app/monitor/hooks/view';
 import Icon from '@/components/icon';
 import { ColumnItem } from '@/types';
+import { cloneDeep } from 'lodash';
 
 const Overview: React.FC<ViewDetailProps> = ({
   monitorObjectId,
@@ -246,7 +246,7 @@ const Overview: React.FC<ViewDetailProps> = ({
   };
 
   const handleSearch = (type: string) => {
-    const _metricData = deepClone(originMetricData);
+    const _metricData = cloneDeep(originMetricData);
     fetchViewData(_metricData, type);
   };
 
