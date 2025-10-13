@@ -16,6 +16,7 @@ import {
 } from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
+import useEventApi from '@/app/monitor/api/event';
 import { useTranslation } from '@/utils/i18n';
 import {
   ModalRef,
@@ -46,12 +47,9 @@ import SelectAssets from '../selectAssets';
 import SelectCards from './selectCard';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useUserInfoContext } from '@/context/userInfo';
-import {
-  useScheduleList,
-  useMethodList,
-  useLevelList,
-  SCHEDULE_UNIT_MAP,
-} from '@/app/monitor/constants/monitor';
+import { useScheduleList, useMethodList } from '@/app/monitor/hooks/event';
+import { useLevelList } from '@/app/monitor/hooks';
+import { SCHEDULE_UNIT_MAP } from '@/app/monitor/constants/event';
 import ThresholdList from './thresholdList';
 import ConditionSelector from './conditionSelector';
 const { Option } = Select;
@@ -62,13 +60,12 @@ const StrategyOperation = () => {
   const { t } = useTranslation();
   const { post, put, isLoading } = useApiClient();
   const {
-    getSystemChannelList,
     getMetricsGroup,
     getMonitorMetrics,
     getMonitorPlugin,
-    getMonitorPolicy,
     getMonitorObject,
   } = useMonitorApi();
+  const { getMonitorPolicy, getSystemChannelList } = useEventApi();
   const METHOD_LIST = useMethodList();
   const LEVEL_LIST = useLevelList();
   const SCHEDULE_LIST = useScheduleList();

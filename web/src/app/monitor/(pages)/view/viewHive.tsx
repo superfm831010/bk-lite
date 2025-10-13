@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
+import useViewApi from '@/app/monitor/api/view';
 import { useTranslation } from '@/utils/i18n';
 import {
   MetricItem,
@@ -40,8 +41,8 @@ const HEXAGON_AREA = 6400; // 格子的面积
 
 const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
   const { isLoading } = useApiClient();
-  const { getInstanceSearch, getInstanceQueryParams, getMonitorMetrics } =
-    useMonitorApi();
+  const { getMonitorMetrics } = useMonitorApi();
+  const { getInstanceQueryParams, getInstanceSearch } = useViewApi();
   const { t } = useTranslation();
   const { getTableDiaplay } = useObjectConfigInfo();
   const timerRef = useRef<NodeJS.Timeout | null>(null);

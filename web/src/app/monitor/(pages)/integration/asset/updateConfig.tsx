@@ -12,16 +12,16 @@ import React, {
 import { useTranslation } from '@/utils/i18n';
 import OperateModal from '@/components/operate-modal';
 import useApiClient from '@/utils/request';
-import useMonitorApi from '@/app/monitor/api';
+import useIntegrationApi from '@/app/monitor/api/integration';
 import { useMonitorConfig } from '@/app/monitor/hooks/integration/index';
-import { TIMEOUT_UNITS } from '@/app/monitor/constants/monitor';
+import { TIMEOUT_UNITS } from '@/app/monitor/constants/integration';
 const { Option } = Select;
 
 const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   const [form] = Form.useForm();
   const { t } = useTranslation();
   const { post } = useApiClient();
-  const { getConfigContent } = useMonitorApi();
+  const { getConfigContent } = useIntegrationApi();
   const configs = useMonitorConfig();
   const formRef = useRef(null);
   const [pluginName, setPluginName] = useState<string>('');

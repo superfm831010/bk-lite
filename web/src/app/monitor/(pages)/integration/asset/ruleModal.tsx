@@ -28,7 +28,7 @@ import { useTranslation } from '@/utils/i18n';
 import { deepClone } from '@/app/monitor/utils/common';
 import GroupTreeSelector from '@/components/group-tree-select';
 import useMonitorApi from '@/app/monitor/api';
-import { useConditionList } from '@/app/monitor/constants/monitor';
+import { useConditionList } from '@/app/monitor/hooks';
 import strategyStyle from './index.module.scss';
 const { Option } = Select;
 

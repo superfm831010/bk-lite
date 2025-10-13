@@ -3,7 +3,7 @@ import { Form, Input, InputNumber, Select } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import Password from '@/app/monitor/components/password';
 const { Option } = Select;
-import { TIMEOUT_UNITS } from '@/app/monitor/constants/monitor';
+import { TIMEOUT_UNITS } from '@/app/monitor/constants/integration';
 
 const useRabbitMQExporterFormItems = () => {
   const { t } = useTranslation();

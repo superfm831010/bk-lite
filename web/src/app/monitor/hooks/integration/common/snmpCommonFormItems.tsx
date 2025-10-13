@@ -1,7 +1,7 @@
 import React from 'react';
 import { Form, Input, InputNumber, Select } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { TIMEOUT_UNITS } from '@/app/monitor/constants/monitor';
+import { TIMEOUT_UNITS } from '@/app/monitor/constants/integration';
 import Password from '@/app/monitor/components/password';
 
 const { Option } = Select;
@@ -67,10 +67,7 @@ const useSnmpCommonFormItems = () => {
           >
             {({ getFieldValue }) =>
               getFieldValue('version') === 2 ? (
-                <Form.Item
-                  required
-                  label={t('monitor.integrations.community')}
-                >
+                <Form.Item required label={t('monitor.integrations.community')}>
                   <Form.Item
                     noStyle
                     name="community"
