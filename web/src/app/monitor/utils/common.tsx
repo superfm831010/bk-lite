@@ -9,15 +9,13 @@ import {
   TreeItem,
   TableDataItem,
   TimeValuesProps,
-} from '@/app/monitor/types';
-import { Group } from '@/types';
-import {
+  ChartProps,
+  ObjectItem,
   MetricItem,
   ChartDataItem,
-  ChartProps,
   NodeWorkload,
-  ObjectItem,
-} from '@/app/monitor/types/monitor';
+} from '@/app/monitor/types';
+import { Group } from '@/types';
 import {
   UNIT_LIST,
   APPOINT_METRIC_IDS,

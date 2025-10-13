@@ -16,15 +16,15 @@ import useIntegrationApi from '@/app/monitor/api/integration';
 import metricStyle from './index.module.scss';
 import { useTranslation } from '@/utils/i18n';
 import CustomTable from '@/components/custom-table';
-import { ColumnItem, ModalRef } from '@/app/monitor/types';
 import {
-  DimensionItem,
-  MetricItem,
+  ColumnItem,
+  ModalRef,
   GroupInfo,
   IntegrationItem,
   ObjectItem,
-  MetricListItem,
-} from '@/app/monitor/types/monitor';
+  MetricItem,
+} from '@/app/monitor/types';
+import { MetricListItem, DimensionItem } from '@/app/monitor/types/integration';
 import Collapse from '@/components/collapse';
 import GroupModal from './groupModal';
 import MetricModal from './metricModal';

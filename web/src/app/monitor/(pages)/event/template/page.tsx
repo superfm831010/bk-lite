@@ -4,8 +4,7 @@ import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
 import useEventApi from '@/app/monitor/api/event';
 import templateStyle from './index.module.scss';
-import { TreeItem, TableDataItem } from '@/app/monitor/types';
-import { ObjectItem } from '@/app/monitor/types/monitor';
+import { TreeItem, TableDataItem, ObjectItem } from '@/app/monitor/types';
 import {
   deepClone,
   findLabelById,

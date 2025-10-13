@@ -24,20 +24,20 @@ import {
   UserItem,
   SegmentedItem,
   TableDataItem,
+  GroupInfo,
+  ObjectItem,
+  MetricItem,
+  IndexViewItem,
+  ThresholdField,
+  FilterItem,
 } from '@/app/monitor/types';
 import GroupTreeSelector from '@/components/group-tree-select';
 import {
-  StrategyFields,
-  SourceFeild,
-  MetricItem,
-  FilterItem,
-  ThresholdField,
   PluginItem,
-  IndexViewItem,
-  GroupInfo,
+  SourceFeild,
+  StrategyFields,
   ChannelItem,
-  ObjectItem,
-} from '@/app/monitor/types/monitor';
+} from '@/app/monitor/types/event';
 import { useCommon } from '@/app/monitor/context/common';
 import { deepClone } from '@/app/monitor/utils/common';
 import { useObjectConfigInfo } from '@/app/monitor/hooks/integration/common/getObjectConfig';

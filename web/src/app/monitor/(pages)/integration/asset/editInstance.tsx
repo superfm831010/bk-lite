@@ -13,7 +13,7 @@ import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import useIntegrationApi from '@/app/monitor/api/integration';
 import { ModalRef, Organization } from '@/app/monitor/types';
-import { InstanceInfo } from '@/app/monitor/types/monitor';
+import { InstanceInfo } from '@/app/monitor/types/integration';
 import { useTranslation } from '@/utils/i18n';
 import { deepClone } from '@/app/monitor/utils/common';
 import GroupTreeSelector from '@/components/group-tree-select';

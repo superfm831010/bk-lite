@@ -10,13 +10,11 @@ import {
   ColumnItem,
   TreeItem,
   Pagination,
-  ModalRef,
-} from '@/app/monitor/types';
-import {
   ObjectItem,
+  ModalRef,
   TableDataItem,
-  SourceFeild,
-} from '@/app/monitor/types/monitor';
+} from '@/app/monitor/types';
+import { SourceFeild } from '@/app/monitor/types/event';
 import CustomTable from '@/components/custom-table';
 import SelectAssets from './selectAssets';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';

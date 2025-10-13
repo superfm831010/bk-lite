@@ -11,8 +11,13 @@ import Icon from '@/components/icon';
 import { deepClone, getIconByObjectName } from '@/app/monitor/utils/common';
 import { useObjectConfigInfo } from '@/app/monitor/hooks/integration/common/getObjectConfig';
 import { useRouter } from 'next/navigation';
-import { ObjectItem, TreeSortData } from '@/app/monitor/types/monitor';
-import { ModalRef, TableDataItem, TreeItem } from '@/app/monitor/types';
+import {
+  ModalRef,
+  TableDataItem,
+  TreeItem,
+  TreeSortData,
+  ObjectItem,
+} from '@/app/monitor/types';
 import ImportModal from './importModal';
 import axios from 'axios';
 import { useAuth } from '@/context/auth';

@@ -29,10 +29,10 @@ import {
   TimeSelectorDefaultValue,
   TimeValuesProps,
   TreeItem,
+  ObjectItem,
 } from '@/app/monitor/types';
-import { ObjectItem } from '@/app/monitor/types/monitor';
 import { AlertOutlined } from '@ant-design/icons';
-import { FiltersConfig } from '@/app/monitor/types/monitor';
+import { FiltersConfig } from '@/app/monitor/types/event';
 import CustomTable from '@/components/custom-table';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import TimeSelector from '@/components/time-selector';
