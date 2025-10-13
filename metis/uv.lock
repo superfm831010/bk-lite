@@ -2207,7 +2207,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "neco", extras = ["core", "llm", "mlflow", "sanic", "doc-parser", "devops", "ocr"], specifier = "==0.0.0.post32" }]
+requires-dist = [{ name = "neco", extras = ["core", "llm", "mlflow", "sanic", "doc-parser", "devops", "ocr"], specifier = "==0.0.0.post33" }]
 
 [[package]]
 name = "mlflow"
@@ -2432,11 +2432,11 @@ wheels = [
 
 [[package]]
 name = "neco"
-version = "0.0.0.post32"
+version = "0.0.0.post33"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/12/92/99a97d6e11056a4b006e7dd3957c2ad7b4b7b3a99fb62c1054e690cb0a0f/neco-0.0.0.post32.tar.gz", hash = "sha256:f8769f9d0a9589f59f56d2ac93ceb6fc3c868d08178ecee0ed3d703d64d98d49", size = 124287, upload-time = "2025-10-12T14:58:47.123Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/13/1bb4d66d283382669d367b9b558426469460f1e523134c48174e282ed3d6/neco-0.0.0.post33.tar.gz", hash = "sha256:de7dabc345f8f3101d122a38ffa0c23573eceb6933b4b68ba09649d45b1515d2", size = 124290, upload-time = "2025-10-13T02:52:39.428Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/ef/71f6419c714b1d42e8130ba1daa2d7a93522d4d21f78f617ba078f406e6e/neco-0.0.0.post32-py3-none-any.whl", hash = "sha256:c2159714bf12f3e662ff83041a312c5c2ef507449333f9b2712a87fa8ccb5350", size = 181550, upload-time = "2025-10-12T14:58:45.244Z" },
+    { url = "https://files.pythonhosted.org/packages/58/4e/8f65b6ba978f5a36a38ca879b8d45816811812c34d40b09573db8d69504a/neco-0.0.0.post33-py3-none-any.whl", hash = "sha256:58e1a234e180d3a4d10601d4bcaa6a54817836ff25a9dd80bb0c6c3fe7eae043", size = 181547, upload-time = "2025-10-13T02:52:37.644Z" },
 ]
 
 [package.optional-dependencies]
