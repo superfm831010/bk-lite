@@ -1,60 +1,11 @@
+import json
+import os
+
 from apps.node_mgmt.models.sidecar import Collector
+from apps.core.logger import node_logger as logger
 
 
-COLLECTORS = [
-    {
-        "id": "natsexecutor_linux",
-        "name": "NATS-Executor",
-        "controller_default_run": True,
-        "icon": "caijixinxi",
-        "node_operating_system": "linux",
-        "service_type": "exec",
-        "executable_path": "/opt/fusion-collectors/bin/nats-executor",
-        "execute_parameters": "--config %s",
-        "validation_parameters": "",
-        "default_template": "",
-        "introduction": "NATS Executor is a task scheduling and management tool that automates data storage, backup, and distributed file processing tasks.",
-        "enabled_default_config": True,
-        "default_config": {
-        "nats": """nats_urls: "${NATS_PROTOCOL}://${NATS_USERNAME}:${NATS_PASSWORD}@${NATS_SERVERS}"
-nats_instanceId: "${node.id}"
-nats_conn_timeout: 600
-tls_enabled: "${TLS_ENABLED}" 
-tls_skip_verify: "${TLS_SKIP_VERIFY}"
-tls_hostname: "${TLS_HOSTNAME}"
-tls_ca_file: "${TLS_CA_FILE}"
-tls_cert_file: "${TLS_CERT_FILE}"
-tls_key_file: "${TLS_KEY_FILE}"
-""",
-        }
-    },
-    {
-        "id": "natsexecutor_windows",
-        "name": "NATS-Executor",
-        "controller_default_run": True,
-        "icon": "caijixinxi",
-        "node_operating_system": "windows",
-        "service_type": "exec",
-        "executable_path": "C:\\bklite\\fusion-collectors\\bin\\nats-executor.exe",
-        "execute_parameters": "--config %s",
-        "validation_parameters": "",
-        "default_template": "",
-        "introduction": "NATS Executor is a task scheduling and management tool that automates data storage, backup, and distributed file processing tasks.",
-        "enabled_default_config": True,
-        "default_config": {
-        "nats": """nats_urls: "${NATS_PROTOCOL}://${NATS_USERNAME}:${NATS_PASSWORD}@${NATS_SERVERS}"
-nats_instanceId: "${node.id}"
-nats_conn_timeout: 600
-tls_enabled: ${TLS_ENABLED}
-tls_skip_verify: ${TLS_SKIP_VERIFY}
-tls_hostname: "${TLS_HOSTNAME}"
-tls_ca_file: "${TLS_CA_FILE}"
-tls_cert_file: "${TLS_CERT_FILE}"
-tls_key_file: "${TLS_KEY_FILE}"
-""",
-        }
-    },
-]
+PLUGIN_DIRECTORY = 'apps/node_mgmt/support-files/collectors'
 
 
 def import_collector(collectors):
@@ -78,8 +29,27 @@ def import_collector(collectors):
                                        "default_template", "introduction", "enabled_default_config", "default_config",])
 
 
+def migrate_collector():
+    """迁移采集器"""
+    collectors_path = []
+    for file_name in os.listdir(PLUGIN_DIRECTORY):
+        file_path = os.path.join(PLUGIN_DIRECTORY, file_name)
+        # 直接检查JSON文件，跳过目录
+        if os.path.isfile(file_path) and file_name.endswith('.json'):
+            collectors_path.append(file_path)
+
+    for file_path in collectors_path:
+        # 打开并读取 JSON 文件
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                collectors_data = json.load(file)
+                import_collector(collectors_data)
+        except Exception as e:
+            logger.error(f'导入采集器 {file_path} 失败！原因：{e}')
+
+
 def collector_init():
     """
     初始化采集器
     """
-    import_collector(COLLECTORS)
+    migrate_collector()
