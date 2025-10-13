@@ -34,7 +34,8 @@ class NATSEventBroker(EventBroker):
         """Creates a NATSEventBroker from endpoint configuration."""
         if broker_config is None:
             return None
-
+        logger.info(f"broker_config.url: {broker_config.url}")
+        logger.info(f"broker_config.kwargs: {broker_config.kwargs}")
         return cls(
             host=broker_config.url,
             namespace=broker_config.kwargs.get("namespace"),
