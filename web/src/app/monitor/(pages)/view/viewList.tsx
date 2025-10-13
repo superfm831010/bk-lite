@@ -6,7 +6,6 @@ import useMonitorApi from '@/app/monitor/api';
 import useViewApi from '@/app/monitor/api/view';
 import { useTranslation } from '@/utils/i18n';
 import {
-  deepClone,
   getEnumValueUnit,
   getEnumColor,
   getK8SData,
@@ -34,6 +33,7 @@ import {
   OBJECT_DEFAULT_ICON,
   DERIVATIVE_OBJECTS,
 } from '@/app/monitor/constants';
+import { cloneDeep } from 'lodash';
 const { Option } = Select;
 
 const ViewList: React.FC<ViewListProps> = ({
@@ -318,7 +318,7 @@ const ViewList: React.FC<ViewListProps> = ({
             },
           };
         });
-        const originColumns = deepClone([
+        const originColumns = cloneDeep([
           ...getBaseInstanceColumn({
             objects,
             row: targetObject,
