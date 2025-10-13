@@ -12,6 +12,7 @@ import {
 } from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
+import useIntegrationApi from '@/app/monitor/api/integration';
 import metricStyle from './index.module.scss';
 import { useTranslation } from '@/utils/i18n';
 import CustomTable from '@/components/custom-table';
@@ -31,19 +32,18 @@ import { useSearchParams } from 'next/navigation';
 import { deepClone } from '@/app/monitor/utils/common';
 import { useUserInfoContext } from '@/context/userInfo';
 import Permission from '@/components/permission';
-import { NEED_TAGS_ENTRY_OBJECTS } from '@/app/monitor/constants/monitor';
+import { NEED_TAGS_ENTRY_OBJECTS } from '@/app/monitor/constants/integration';
 
 const Configure = () => {
   const { isLoading } = useApiClient();
+  const { getMonitorObject, getMetricsGroup, getMonitorMetrics } =
+    useMonitorApi();
   const {
-    getMonitorObject,
-    deleteMonitorMetrics,
-    deleteMetricsGroup,
-    getMetricsGroup,
-    getMonitorMetrics,
     updateMetricsGroup,
     updateMonitorMetrics,
-  } = useMonitorApi();
+    deleteMonitorMetrics,
+    deleteMetricsGroup,
+  } = useIntegrationApi();
   const { t } = useTranslation();
   const commonContext = useUserInfoContext();
   const superRef = useRef(commonContext?.isSuperUser || false);

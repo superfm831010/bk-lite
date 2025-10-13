@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Spin, Input, Button, Tag, message } from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
+import useIntegrationApi from '@/app/monitor/api/integration';
 import integrationStyle from './index.module.scss';
 import { SettingOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
@@ -18,12 +19,12 @@ import { useAuth } from '@/context/auth';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import { useSearchParams } from 'next/navigation';
 import Permission from '@/components/permission';
-import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants/monitor';
+import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants';
 
 const Integration = () => {
   const { isLoading } = useApiClient();
-  const { updateMonitorObject, getMonitorObject, getMonitorPlugin } =
-    useMonitorApi();
+  const { getMonitorObject, getMonitorPlugin } = useMonitorApi();
+  const { updateMonitorObject } = useIntegrationApi();
   const { t } = useTranslation();
   const router = useRouter();
   const importRef = useRef<ModalRef>(null);

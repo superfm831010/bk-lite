@@ -13,6 +13,7 @@ import {
 } from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
+import useIntegrationApi from '@/app/monitor/api/integration';
 import assetStyle from './index.module.scss';
 import { useTranslation } from '@/utils/i18n';
 import {
@@ -46,10 +47,8 @@ import TreeSelector from '@/app/monitor/components/treeSelector';
 import EditConfig from './updateConfig';
 import EditInstance from './editInstance';
 import DeleteRule from './deleteRuleModal';
-import {
-  NODE_STATUS_MAP,
-  OBJECT_DEFAULT_ICON,
-} from '@/app/monitor/constants/monitor';
+import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants';
+import { NODE_STATUS_MAP } from '@/app/monitor/constants/integration';
 import Permission from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import type { TableProps, MenuProps } from 'antd';
@@ -59,13 +58,12 @@ type TableRowSelection<T extends object = object> =
 
 const Asset = () => {
   const { isLoading } = useApiClient();
+  const { getInstanceList, getMonitorObject } = useMonitorApi();
   const {
-    getInstanceList,
     getInstanceGroupRule,
-    getMonitorObject,
     getInstanceChildConfig,
     deleteMonitorInstance,
-  } = useMonitorApi();
+  } = useIntegrationApi();
   const { t } = useTranslation();
   const commonContext = useCommon();
   const { convertToLocalizedTime } = useLocalizedTime();
@@ -628,10 +626,7 @@ const Asset = () => {
         <div className={assetStyle.rule}>
           <div className={`${assetStyle.ruleTips} relative`}>
             {t('monitor.integrations.rule')}
-            <Tooltip
-              placement="top"
-              title={t('monitor.integrations.ruleTips')}
-            >
+            <Tooltip placement="top" title={t('monitor.integrations.ruleTips')}>
               <div
                 className="absolute cursor-pointer"
                 style={{
