@@ -12,7 +12,7 @@ from apps.node_mgmt.models.cloud_region import SidecarEnv
 from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization
 from apps.node_mgmt.utils.sidecar import format_tags_dynamic
 from apps.core.utils.crypto.aes_crypto import AESCryptor
-from jinja2 import Template
+from jinja2 import Template as JinjaTemplate
 
 from apps.core.logger import node_logger as logger
 
@@ -346,7 +346,7 @@ class Sidecar:
                 if not config_template:
                     continue
 
-                tpl = Template(config_template)
+                tpl = JinjaTemplate(config_template)
                 _config_template = tpl.render(variables)
 
                 # 如果已经存在关联的配置就跳过
