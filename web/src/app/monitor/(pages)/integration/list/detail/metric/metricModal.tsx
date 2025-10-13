@@ -24,11 +24,8 @@ import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import useApiClient from '@/utils/request';
 import { ModalRef, ListItem, CascaderItem } from '@/app/monitor/types';
-import {
-  MetricInfo,
-  DimensionItem,
-  EnumItem,
-} from '@/app/monitor/types/monitor';
+import { MetricInfo } from '@/app/monitor/types/integration';
+import { DimensionItem, EnumItem } from '@/app/monitor/types/integration';
 import { useTranslation } from '@/utils/i18n';
 import type { ColorPickerProps } from 'antd';
 import { generate, green, presetPalettes, red } from '@ant-design/colors';

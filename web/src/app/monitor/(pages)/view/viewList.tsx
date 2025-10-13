@@ -14,19 +14,17 @@ import {
 } from '@/app/monitor/utils/common';
 import { useObjectConfigInfo } from '@/app/monitor/hooks/integration/common/getObjectConfig';
 import { useRouter } from 'next/navigation';
-import {
-  IntegrationItem,
-  ObjectItem,
-  MetricItem,
-  ViewListProps,
-} from '@/app/monitor/types/monitor';
 import ViewModal from './viewModal';
 import {
   ColumnItem,
   ModalRef,
   Pagination,
   TableDataItem,
+  IntegrationItem,
+  ObjectItem,
+  MetricItem,
 } from '@/app/monitor/types';
+import { ViewListProps } from '@/app/monitor/types/view';
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';

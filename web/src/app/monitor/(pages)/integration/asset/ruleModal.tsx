@@ -13,16 +13,16 @@ import Icon from '@/components/icon';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import useApiClient from '@/utils/request';
-import { ModalRef, ListItem } from '@/app/monitor/types';
 import {
-  RuleInfo,
-  GroupingRules,
-  ObjectItem,
-  IndexViewItem,
-  MetricItem,
+  ModalRef,
+  ListItem,
   GroupInfo,
+  ObjectItem,
+  MetricItem,
+  IndexViewItem,
   FilterItem,
-} from '@/app/monitor/types/monitor';
+} from '@/app/monitor/types';
+import { RuleInfo, GroupingRules } from '@/app/monitor/types/integration';
 import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { deepClone } from '@/app/monitor/utils/common';

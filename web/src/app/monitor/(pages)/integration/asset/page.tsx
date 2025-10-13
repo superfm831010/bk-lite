@@ -23,12 +23,9 @@ import {
   Organization,
   Pagination,
   TableDataItem,
-} from '@/app/monitor/types';
-import {
   ObjectItem,
-  RuleInfo,
-  ObjectInstItem,
-} from '@/app/monitor/types/monitor';
+} from '@/app/monitor/types';
+import { RuleInfo, ObjectInstItem } from '@/app/monitor/types/integration';
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
 import { PlusOutlined, DownOutlined } from '@ant-design/icons';

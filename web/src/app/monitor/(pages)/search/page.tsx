@@ -19,18 +19,18 @@ import {
   TimeSelectorDefaultValue,
   TreeItem,
   TimeValuesProps,
+  GroupInfo,
+  MetricItem,
+  IndexViewItem,
+  ObjectItem,
 } from '@/app/monitor/types';
 import { Dayjs } from 'dayjs';
 import {
-  ObjectItem,
-  MetricItem,
-  TableDataItem,
-  ConditionItem,
   SearchParams,
-  IndexViewItem,
-  GroupInfo,
   InstanceItem,
-} from '@/app/monitor/types/monitor';
+  SearchTableDataItem,
+  ConditionItem,
+} from '@/app/monitor/types/search';
 import {
   deepClone,
   findUnitNameById,
@@ -82,7 +82,7 @@ const SearchView: React.FC = () => {
       rangePickerVaule: null,
     });
   const [columns, setColumns] = useState<ColumnItem[]>([]);
-  const [tableData, setTableData] = useState<TableDataItem[]>([]);
+  const [tableData, setTableData] = useState<SearchTableDataItem[]>([]);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [frequence, setFrequence] = useState<number>(0);
   const [unit, setUnit] = useState<string>('');
@@ -395,11 +395,13 @@ const SearchView: React.FC = () => {
         const _chartData = renderChart(data, list);
         setChartData(_chartData);
       } else {
-        const _tableData = data.map((item: TableDataItem, index: number) => ({
-          ...item.metric,
-          value: item.value[1] ?? '--',
-          index,
-        }));
+        const _tableData = data.map(
+          (item: SearchTableDataItem, index: number) => ({
+            ...item.metric,
+            value: item.value[1] ?? '--',
+            index,
+          })
+        );
         const metricTarget =
           metrics.find((item) => item.name === metric)?.dimensions || [];
         const colKeys = Array.from(
