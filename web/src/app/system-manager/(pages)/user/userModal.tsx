@@ -81,7 +81,6 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
         setSelectedRoles(userDetail.roles?.map((role: { role_id: number }) => role.role_id) || []);
         setSelectedGroups(userDetail.groups?.map((group: { id: number }) => group.id) || []);
 
-        // 修复 groupRules 类型，确保格式为 { [groupId]: { [app: string]: number } }
         const groupRulesObj = userDetail.groups?.reduce((acc: { [key: string]: { [app: string]: number } }, group: { id: number; rules: { [key: string]: number } }) => {
           acc[group.id] = group.rules || {};
           return acc;
