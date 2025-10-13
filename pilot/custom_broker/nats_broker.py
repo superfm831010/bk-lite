@@ -18,7 +18,6 @@ class NATSEventBroker(EventBroker):
         host: Text,
         namespace: Optional[Text] = None,
         event_loop: Optional[AbstractEventLoop] = None,
-        **kwargs: Any,
     ):
         self.host = host
         self.namespace = namespace or "bklite"
@@ -34,13 +33,7 @@ class NATSEventBroker(EventBroker):
         """Creates a NATSEventBroker from endpoint configuration."""
         if broker_config is None:
             return None
-
-        return cls(
-            host=broker_config.url,
-            namespace=broker_config.kwargs.get("namespace"),
-            event_loop=event_loop,
-            **broker_config.kwargs,
-        )
+        return cls(host=broker_config.url, namespace=broker_config.kwargs.get("namespace", "bklite"), event_loop=event_loop)
 
     async def _connect(self):
         """Connect to NATS server."""
