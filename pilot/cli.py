@@ -68,6 +68,7 @@ class BootStrap(object):
                 "type": "custom_broker.nats_broker.NATSEventBroker",
             },
         }
+        logger.info(f"event_broker_params: url: {server_settings.nats_url}, namespace: {server_settings.nats_namespace}")
         with open("data/endpoints.yml", "w", encoding="utf-8") as f:
             yaml.dump(endpoints, f, allow_unicode=True)
 
