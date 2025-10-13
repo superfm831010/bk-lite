@@ -8,7 +8,7 @@ import integrationStyle from './index.module.scss';
 import { SettingOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import Icon from '@/components/icon';
-import { deepClone, getIconByObjectName } from '@/app/monitor/utils/common';
+import { getIconByObjectName } from '@/app/monitor/utils/common';
 import { useObjectConfigInfo } from '@/app/monitor/hooks/integration/common/getObjectConfig';
 import { useRouter } from 'next/navigation';
 import {
@@ -25,6 +25,7 @@ import TreeSelector from '@/app/monitor/components/treeSelector';
 import { useSearchParams } from 'next/navigation';
 import Permission from '@/components/permission';
 import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants';
+import { cloneDeep } from 'lodash';
 
 const Integration = () => {
   const { isLoading } = useApiClient();
@@ -98,7 +99,7 @@ const Integration = () => {
     try {
       setTreeLoading(true);
       const data: ObjectItem[] = await getMonitorObject();
-      const _treeData = getTreeData(deepClone(data));
+      const _treeData = getTreeData(cloneDeep(data));
       setTreeData(_treeData);
       setObjects(data);
       const defaultId = +objId || data[0]?.id;

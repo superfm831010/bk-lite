@@ -32,7 +32,6 @@ import {
   ConditionItem,
 } from '@/app/monitor/types/search';
 import {
-  deepClone,
   findUnitNameById,
   mergeViewQueryKeyValues,
   renderChart,
@@ -41,6 +40,7 @@ import {
 import { useSearchParams } from 'next/navigation';
 import dayjs from 'dayjs';
 import TreeSelector from '@/app/monitor/components/treeSelector';
+import { cloneDeep } from 'lodash';
 const { Option } = Select;
 
 const SearchView: React.FC = () => {
@@ -123,7 +123,7 @@ const SearchView: React.FC = () => {
       const data: ObjectItem[] = await getMonitorObject({
         add_instance_count: true,
       });
-      const _treeData = getTreeData(deepClone(data));
+      const _treeData = getTreeData(cloneDeep(data));
       setTreeData(_treeData);
       setObjects(data);
       setDefaultSelectObj(url_obj_id ? +url_obj_id : '');
@@ -139,7 +139,7 @@ const SearchView: React.FC = () => {
       const getMetrics = getMonitorMetrics(params);
       Promise.all([getGroupList, getMetrics])
         .then((res) => {
-          const metricData = deepClone(res[1] || []);
+          const metricData = cloneDeep(res[1] || []);
           setMetrics(res[1] || []);
           const groupData = res[0].map((item: GroupInfo) => ({
             ...item,
@@ -303,13 +303,13 @@ const SearchView: React.FC = () => {
   };
 
   const handleLabelChange = (val: string, index: number) => {
-    const _conditions = deepClone(conditions);
+    const _conditions = cloneDeep(conditions);
     _conditions[index].label = val;
     setConditions(_conditions);
   };
 
   const handleConditionChange = (val: string, index: number) => {
-    const _conditions = deepClone(conditions);
+    const _conditions = cloneDeep(conditions);
     _conditions[index].condition = val;
     setConditions(_conditions);
   };
@@ -318,13 +318,13 @@ const SearchView: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement>,
     index: number
   ) => {
-    const _conditions = deepClone(conditions);
+    const _conditions = cloneDeep(conditions);
     _conditions[index].value = e.target.value;
     setConditions(_conditions);
   };
 
   const addConditionItem = () => {
-    const _conditions = deepClone(conditions);
+    const _conditions = cloneDeep(conditions);
     _conditions.push({
       label: null,
       condition: null,
@@ -334,7 +334,7 @@ const SearchView: React.FC = () => {
   };
 
   const deleteConditionItem = (index: number) => {
-    const _conditions = deepClone(conditions);
+    const _conditions = cloneDeep(conditions);
     _conditions.splice(index, 1);
     setConditions(_conditions);
   };
@@ -422,7 +422,7 @@ const SearchView: React.FC = () => {
               showTitle: true,
             },
           }));
-        const _columns = deepClone(tableColumns);
+        const _columns: any = cloneDeep(tableColumns);
         if (_columns[0]) _columns[0].fixed = 'left';
         setColumns(_columns);
         setTableData(_tableData);

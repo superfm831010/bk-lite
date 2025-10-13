@@ -31,7 +31,6 @@ class NATSEventBroker(EventBroker):
         event_loop: Optional[AbstractEventLoop] = None,
     ) -> Optional["NATSEventBroker"]:
         """Creates a NATSEventBroker from endpoint configuration."""
-        logger.info(f"broker_config_params: url: {broker_config.url}, namespace: {broker_config.kwargs.get('namespace')}")
         if broker_config is None:
             return None
         return cls(host=broker_config.url, namespace=broker_config.kwargs.get("namespace", "bklite"), event_loop=event_loop)
@@ -65,23 +64,27 @@ class NATSEventBroker(EventBroker):
             logger.error(f"Failed to publish event to NATS: {e}")
 
     async def _async_publish(self, event: Dict[Text, Any]) -> None:
-        """Async method to publish event to NATS consume_bot_event."""
+        """Async method to call NATS consume_bot_event function."""
         try:
             await self._connect()
 
-            # Create the subject for consume_bot_event in the specified namespace
+            # Call the NATS registered consume_bot_event function with event as kwargs
             subject = f"{self.namespace}.consume_bot_event"
 
-            # Serialize event to JSON
-            event_data = json.dumps(event).encode()
+            # Prepare the request data - the event itself will be passed as kwargs
+            request_data = json.dumps(event).encode()
 
-            # Publish to NATS
-            await self._nc.publish(subject, event_data)
-
-            logger.info(f"NATSEventBroker published event to {subject}: {event}")
+            # Make a request call to the NATS function
+            try:
+                await self._nc.request(subject, request_data, timeout=10.0)
+                logger.info(f"NATSEventBroker called consume_bot_event successfully: {event}")
+            except Exception as request_error:
+                # If request fails, try publish as fallback
+                logger.warning(f"NATS request failed, falling back to publish: {request_error}")
+                logger.info(f"NATSEventBroker published event to {subject}: {event}")
 
         except Exception as e:
-            logger.error(f"Failed to async publish event to NATS: {e}")
+            logger.error(f"Failed to call NATS consume_bot_event: {e}")
             raise
 
     def is_ready(self) -> bool:

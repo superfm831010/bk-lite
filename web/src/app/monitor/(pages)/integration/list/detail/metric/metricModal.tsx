@@ -29,8 +29,9 @@ import { DimensionItem, EnumItem } from '@/app/monitor/types/integration';
 import { useTranslation } from '@/utils/i18n';
 import type { ColorPickerProps } from 'antd';
 import { generate, green, presetPalettes, red } from '@ant-design/colors';
-import { deepClone, findCascaderPath } from '@/app/monitor/utils/common';
+import { findCascaderPath } from '@/app/monitor/utils/common';
 import { UNIT_LIST } from '@/app/monitor/constants';
+import { cloneDeep } from 'lodash';
 const { Option } = Select;
 
 interface ModalProps {
@@ -64,7 +65,7 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
     });
     const formRef = useRef<FormInstance>(null);
     const unitList = useRef<CascaderItem[]>(
-      deepClone(UNIT_LIST).map((item: CascaderItem) => ({
+      cloneDeep(UNIT_LIST as any).map((item: CascaderItem) => ({
         ...item,
         value: item.label,
       }))
@@ -83,7 +84,7 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
     useImperativeHandle(ref, () => ({
       showModal: ({ type, form, title }) => {
         // 开启弹窗的交互
-        const formData = deepClone(form);
+        const formData = cloneDeep(form);
         setGroupVisible(true);
         setType(type);
         setTitle(title);
@@ -172,19 +173,19 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
     };
 
     const addDimension = () => {
-      const _dimensions = deepClone(dimensions);
+      const _dimensions = cloneDeep(dimensions);
       _dimensions.push({ name: '' });
       setDimensions(_dimensions);
     };
 
     const addEnumItem = () => {
-      const _enumList = deepClone(enumList);
+      const _enumList = cloneDeep(enumList);
       _enumList.push(INIT_UNIT_ITEM);
       setEnumList(_enumList);
     };
 
     const addInstanceIdKeys = () => {
-      const keys = deepClone(instanceIdKeys);
+      const keys = cloneDeep(instanceIdKeys);
       keys.push(null);
       setInstanceIdKeys(keys);
     };
@@ -217,7 +218,7 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
       e: React.ChangeEvent<HTMLInputElement>,
       index: number
     ) => {
-      const _dimensions = deepClone(dimensions);
+      const _dimensions = cloneDeep(dimensions);
       _dimensions[index].name = e.target.value;
       setDimensions(_dimensions);
     };
@@ -226,13 +227,13 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
       e: React.ChangeEvent<HTMLInputElement>,
       index: number
     ) => {
-      const keys = deepClone(instanceIdKeys);
+      const keys = cloneDeep(instanceIdKeys);
       keys[index] = e.target.value;
       setInstanceIdKeys(keys);
     };
 
     const handleEnumIdChange = (val: number | null, index: number) => {
-      const _enumList = deepClone(enumList);
+      const _enumList = cloneDeep(enumList);
       _enumList[index].id = val;
       setEnumList(_enumList);
     };
@@ -241,31 +242,31 @@ const MetricModal = forwardRef<ModalRef, ModalProps>(
       e: React.ChangeEvent<HTMLInputElement>,
       index: number
     ) => {
-      const _enumList = deepClone(enumList);
+      const _enumList = cloneDeep(enumList);
       _enumList[index].name = e.target.value;
       setEnumList(_enumList);
     };
 
     const handleEnumColorChange = (value: AggregationColor, index: number) => {
-      const _enumList = deepClone(enumList);
+      const _enumList = cloneDeep(enumList);
       _enumList[index].color = value.toHexString();
       setEnumList(_enumList);
     };
 
     const deleteDimensiontem = (index: number) => {
-      const _dimensions = deepClone(dimensions);
+      const _dimensions = cloneDeep(dimensions);
       _dimensions.splice(index, 1);
       setDimensions(_dimensions);
     };
 
     const deleteInstanceIdKeys = (index: number) => {
-      const keys = deepClone(instanceIdKeys);
+      const keys = cloneDeep(instanceIdKeys);
       keys.splice(index, 1);
       setInstanceIdKeys(keys);
     };
 
     const deleteEnumItem = (index: number) => {
-      const _enumList = deepClone(enumList);
+      const _enumList = cloneDeep(enumList);
       _enumList.splice(index, 1);
       setEnumList(_enumList);
     };

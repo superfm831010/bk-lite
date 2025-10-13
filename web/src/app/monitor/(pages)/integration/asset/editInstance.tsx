@@ -15,8 +15,8 @@ import useIntegrationApi from '@/app/monitor/api/integration';
 import { ModalRef, Organization } from '@/app/monitor/types';
 import { InstanceInfo } from '@/app/monitor/types/integration';
 import { useTranslation } from '@/utils/i18n';
-import { deepClone } from '@/app/monitor/utils/common';
 import GroupTreeSelector from '@/components/group-tree-select';
+import { cloneDeep } from 'lodash';
 
 interface ModalProps {
   onSuccess: () => void;
@@ -42,7 +42,7 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       // 开启弹窗的交互
       setTitle(title);
       setModalType(type);
-      setConfigForm(deepClone(form));
+      setConfigForm(cloneDeep(form));
       setVisible(true);
     },
   }));
