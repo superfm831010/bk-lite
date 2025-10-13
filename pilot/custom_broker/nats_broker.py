@@ -31,7 +31,6 @@ class NATSEventBroker(EventBroker):
         event_loop: Optional[AbstractEventLoop] = None,
     ) -> Optional["NATSEventBroker"]:
         """Creates a NATSEventBroker from endpoint configuration."""
-        logger.info(f"broker_config_params: url: {broker_config.url}, namespace: {broker_config.kwargs.get('namespace')}")
         if broker_config is None:
             return None
         return cls(host=broker_config.url, namespace=broker_config.kwargs.get("namespace", "bklite"), event_loop=event_loop)
