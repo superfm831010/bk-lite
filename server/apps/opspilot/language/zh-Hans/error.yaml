@@ -13,7 +13,7 @@ no_view_permission: 你没有权限查看此实例
 # 配额与限制错误
 bot_quota_exceeded: 机器人数量超过配额限制。
 skill_quota_exceeded: 技能数量超过配额限制。
-file_size_exceeded: 文件大小超过配额限制。可用大小：{no_used_file_size} MB
+file_size_exceeded: 文件大小超过配额限制。
 
 # 文件操作错误
 file_import_failed: 文件导入失败。
@@ -59,8 +59,8 @@ qa_pairs_generating: QA 对正在生成中，无法删除
 generate_question_failed: 生成问题失败
 generate_answer_failed: 生成答案失败
 qa_pairs_id_required: QA 对 ID 为必填项。
-invalid_file_format: 无效的文件格式：{filename}。仅允许 .json 和 .csv 文件。
-invalid_json_file: 无效的 JSON 文件：{filename}
+invalid_file_format: 无效的文件格式。仅允许 .json 和 .csv 文件。
+invalid_json_file: 无效的 JSON 文件
 qa_pair_update_failed: 更新 QA 对失败。
 qa_pair_delete_failed: 删除 QA 对失败。
 knowledge_base_has_qa_pairs: 该知识库包含问答对，无法删除。

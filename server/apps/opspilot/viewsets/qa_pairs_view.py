@@ -191,15 +191,17 @@ class QAPairsViewSet(BaseOpsPilotViewSet, MaintainerViewSet, GenericViewSetFun):
         )
         return JsonResponse({"result": True, "message": "QA pairs import started."})
 
-    @staticmethod
-    def set_file_data(files):
+    def set_file_data(self, files):
         file_data = {}
         # 验证文件格式
         allowed_extensions = [".json", ".csv"]
         for i in files:
             file_ext = os.path.splitext(i.name)[1].lower()
             if file_ext not in allowed_extensions:
-                raise Exception(f"Invalid file format: {i.name}. Only .json and .csv files are allowed.")
+                message = (
+                    self.loader.get("error.invalid_file_format") if self.loader else "Invalid file format. Only .json and .csv files are allowed."
+                )
+                raise Exception(message)
             try:
                 if file_ext == ".json":
                     file_data.setdefault(i.name, []).extend(json.loads(i.read().decode("utf-8")))
@@ -213,7 +215,8 @@ class QAPairsViewSet(BaseOpsPilotViewSet, MaintainerViewSet, GenericViewSetFun):
                         content.append({"instruction": q.strip(), "output": a.strip()})
                     file_data.setdefault(i.name, []).extend(content)
             except json.JSONDecodeError:
-                raise Exception(f"Invalid JSON file: {i.name}")
+                message = self.loader.get("error.invalid_json_file") if self.loader else "Invalid JSON file"
+                raise Exception(message)
         return file_data
 
     @action(methods=["GET"], detail=True)

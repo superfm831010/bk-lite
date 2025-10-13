@@ -27,18 +27,16 @@ class FileKnowledgeViewSet(BaseOpsPilotViewSet):
             file_size = sum(i.size for i in files) / 1024 / 1024
             file_quota, used_file_size, __ = client.get_file_quota()
             if file_quota != -1 and file_quota < file_size + used_file_size:
-                no_used_file_size = file_quota - used_file_size
                 return JsonResponse(
                     {
                         "result": False,
-                        "message": f"File size exceeds quota limit. Available size: {no_used_file_size} MB",
+                        "message": self.loader.get("file_size_exceeded") if self.loader else "File size exceeds quota limit.",
                     }
                 )
         result = self.import_file_knowledge(files, kwargs, request.user.username, request.user.domain)
         return JsonResponse(result)
 
-    @staticmethod
-    def import_file_knowledge(files, kwargs, username, domain):
+    def import_file_knowledge(self, files, kwargs, username, domain):
         file_knowledge_list = []
         try:
             for file_obj in files:
@@ -55,4 +53,5 @@ class FileKnowledgeViewSet(BaseOpsPilotViewSet):
             return {"result": True, "data": [i.knowledge_document_id for i in objs]}
         except Exception as e:
             logger.error(f"Failed to import file: {e}")
-            return {"result": False, "message": "Failed to import file."}
+            message = self.loader.get("error.file_import_failed") or "Failed to import file."
+            return {"result": False, "message": message}

@@ -13,7 +13,7 @@ no_view_permission: User does not have permission to view this instance
 # Quota and Limit Errors
 bot_quota_exceeded: Bot count exceeds quota limit.
 skill_quota_exceeded: Skill count exceeds quota limit.
-file_size_exceeded: File size exceeds quota limit. Available size: {no_used_file_size} MB
+file_size_exceeded: File size exceeds quota limit.
 
 # File Operation Errors
 file_import_failed: Failed to import file.
@@ -59,8 +59,8 @@ qa_pairs_generating: QA pairs is generating, cannot delete
 generate_question_failed: generate question failed
 generate_answer_failed: generate answer failed
 qa_pairs_id_required: QA pairs ID is required.
-invalid_file_format: Invalid file format: {filename}. Only .json and .csv files are allowed.
-invalid_json_file: Invalid JSON file: {filename}
+invalid_file_format: Invalid file format. Only .json and .csv files are allowed.
+invalid_json_file: Invalid JSON file
 qa_pair_update_failed: Failed to update QA pair.
 qa_pair_delete_failed: Failed to delete QA pair.
 knowledge_base_has_qa_pairs: This knowledge base contains Q&A pairs and cannot be deleted.
