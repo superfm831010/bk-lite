@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.logger import opspilot_logger as logger
-from apps.core.viewsets.base_viewset import BaseOpsPilotViewSet
+from apps.core.utils.viewset_utils import LanguageViewSet
 from apps.opspilot.enum import DocumentStatus
 from apps.opspilot.models import (
     ConversationTag,
@@ -37,7 +37,7 @@ class ObjFilter(FilterSet):
     train_status = filters.NumberFilter(field_name="train_status", lookup_expr="exact")
 
 
-class KnowledgeDocumentViewSet(BaseOpsPilotViewSet):
+class KnowledgeDocumentViewSet(LanguageViewSet):
     queryset = KnowledgeDocument.objects.all()
     serializer_class = KnowledgeDocumentSerializer
     filterset_class = ObjFilter
