@@ -160,6 +160,7 @@ class NatsService:
                 "collect_type": config.collect_type,
                 "config_type": config.config_type,
                 "content": config.content,
+                "env_config": config.env_config,
             }
             for config in child_configs
         ]
