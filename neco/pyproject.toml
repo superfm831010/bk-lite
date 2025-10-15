@@ -120,5 +120,5 @@ source = "vcs"
 [tool.hatch.version.raw-options]
 version_scheme = "post-release"
 local_scheme = "no-local-version"
-fallback_version = "1.0.0"
+fallback_version = "1.0.1"
 

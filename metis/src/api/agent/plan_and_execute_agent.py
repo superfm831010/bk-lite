@@ -431,6 +431,105 @@ VERBOSE_SSE_CONFIG = SSEDisplayConfig(
 )
 
 
+class MessageTracker:
+    """智能消息跟踪器，用于精确去重和状态管理"""
+    
+    def __init__(self):
+        self.sent_message_hashes = set()  # 已发送消息的hash
+        self.execution_phase = "init"  # 当前执行阶段
+        self.step_count = 0  # 步骤计数
+        self.node_outputs = {}  # 各节点的输出记录
+        self.user_message = ""  # 用户原始问题
+        
+    def set_user_message(self, message: str):
+        """设置用户原始问息，用于过滤重复"""
+        self.user_message = message.strip()
+        
+    def _calculate_content_hash(self, content: str) -> str:
+        """计算内容hash"""
+        import hashlib
+        return hashlib.md5(content.encode('utf-8')).hexdigest()
+        
+    def should_send_message(self, content: str, message_type: str = "general") -> bool:
+        """
+        判断是否应该发送消息
+        Args:
+            content: 消息内容
+            message_type: 消息类型 (planner, executor, replanner, summary, tool, general)
+        """
+        if not content or not content.strip():
+            return False
+            
+        content = content.strip()
+        
+        # 1. 过滤用户原始问题的重复
+        if content == self.user_message:
+            logger.debug(f"[MessageTracker] 跳过用户原始问题重复: {content[:30]}...")
+            return False
+            
+        # 2. 基于内容hash去重 
+        content_hash = self._calculate_content_hash(content)
+        if content_hash in self.sent_message_hashes:
+            logger.debug(f"[MessageTracker] 跳过重复内容: {content[:30]}...")
+            return False
+            
+        # 3. 基于消息类型和执行阶段的智能过滤
+        if message_type == "planner":
+            if "planner_output" in self.node_outputs:
+                logger.debug(f"[MessageTracker] 跳过重复的planner输出")
+                return False
+            self.node_outputs["planner_output"] = content_hash
+            self.execution_phase = "planning"
+            
+        elif message_type == "replanner":
+            # replanner消息允许多次（因为可能有多轮重新规划），但要避免完全相同的内容
+            replanner_key = f"replanner_{self.step_count}"
+            if replanner_key in self.node_outputs and self.node_outputs[replanner_key] == content_hash:
+                logger.debug(f"[MessageTracker] 跳过重复的replanner输出")
+                return False
+            self.node_outputs[replanner_key] = content_hash
+            self.execution_phase = "replanning"
+            
+        elif message_type == "summary":
+            if "summary_output" in self.node_outputs:
+                logger.debug(f"[MessageTracker] 跳过重复的summary输出")
+                return False
+            self.node_outputs["summary_output"] = content_hash
+            self.execution_phase = "completed"
+            
+        elif message_type == "progress":
+            # 进度消息允许重复，但要记录
+            self.step_count += 1
+            
+        # 4. 过滤内部协调消息
+        if self._is_internal_coordination_message(content):
+            logger.debug(f"[MessageTracker] 跳过内部协调消息: {content[:30]}...")
+            return False
+            
+        # 记录已发送的消息
+        self.sent_message_hashes.add(content_hash)
+        return True
+        
+    def _is_internal_coordination_message(self, content: str) -> bool:
+        """判断是否为内部协调消息"""
+        # 重要：不要过滤掉计划相关的信息和总结信息
+        important_keywords = [
+            "执行计划已制定", "计划推理", "执行步骤", "剩余步骤", "计划已调整",
+            "### 📋", "任务完成总结", "🎯 **最终结果**", "📊 任务完成总结",
+            "🎯 **执行结果**", "执行结果"
+        ]
+        if any(keyword in content for keyword in important_keywords):
+            return False  # 这些是重要的计划、执行和总结信息，不应过滤
+            
+        internal_indicators = [
+            content.startswith("请执行以下具体步骤"),  # 内部执行提示
+            "🤔" in content,  # 思考过程
+            content.strip().startswith("{") and content.strip().endswith("}"),  # JSON格式
+            len(content.strip()) < 10,  # 过短的内容可能是无意义的
+        ]
+        return any(internal_indicators)
+
+
 async def stream_plan_execute_response(
     workflow,
     body: Dict[str, Any],
@@ -439,23 +538,24 @@ async def stream_plan_execute_response(
 ) -> AsyncGenerator[str, None]:
     """
     流式处理 Plan and Execute Agent 响应
-    使用简化的标准SSE格式，提供优雅的用户体验
+    使用智能去重和状态跟踪，提供清晰的用户体验
     """
     created = int(datetime.now().timestamp())
-    sent_contents = set()  # 用于去重
-    step_counter = 0  # 步骤计数器
+    message_tracker = MessageTracker()  # 智能消息跟踪器
     tool_call_pending = False  # 是否有待处理的工具调用
     last_tool_name = ""  # 最后一个工具名称
-    user_message = body.user_message if hasattr(
-        body, 'user_message') else ""  # 记录用户原始问题
+    
+    # 设置用户原始问题
+    user_message = body.user_message if hasattr(body, 'user_message') else ""
+    message_tracker.set_user_message(user_message)
 
     try:
         logger.info(f"[Plan Execute SSE] 开始流式处理，chat_id: {chat_id}")
 
         # 发送简洁的开始消息
-        start_content = "🎯 **正在分析您的请求...**"
-        yield _create_sse_data(chat_id, created, model, start_content)
-        sent_contents.add(start_content)
+        start_content = "🎯 **正在分析您的请求...**\n"
+        if message_tracker.should_send_message(start_content, "init"):
+            yield _create_sse_data(chat_id, created, model, start_content)
 
         # 获取流式迭代器
         stream_iter = await workflow.stream(body)
@@ -487,46 +587,59 @@ async def stream_plan_execute_response(
                         for tool_call in message.tool_calls:
                             tool_name = tool_call.get('name', '未知工具')
                             last_tool_name = tool_name
-                            content = f"\n\n🔧 **正在调用工具：{tool_name}**"
-                            if content not in sent_contents:
+                            content = f"\n\n🔧 **正在调用工具：{tool_name}**\n"
+                            if message_tracker.should_send_message(content, "tool_start"):
                                 yield _create_sse_data(chat_id, created, model, content)
-                                sent_contents.add(content)
                                 logger.info(
                                     f"[Plan Execute SSE] 工具调用开始: {tool_name}")
                     else:
                         # 没有工具调用，可能是最终回答或中间思考
                         content = _extract_message_content(
-                            message, step_counter, user_message)
-                        if content and content not in sent_contents:
+                            message, message_tracker.step_count, user_message)
+                        
+                        # 智能判断消息类型
+                        msg_type = "general"
+                        if "执行计划已制定" in content or "计划推理" in content:
+                            msg_type = "planner"
+                        elif "计划已调整" in content or "剩余步骤" in content:
+                            msg_type = "replanner" 
+                        elif any(keyword in content for keyword in ["最终结果", "任务总结", "### 📋", "📊 任务完成总结", "任务完成总结"]):
+                            msg_type = "summary"
+                        elif "🎯 **执行结果**" in content or "执行结果" in content:
+                            msg_type = "execution_result"
+                        elif "步骤" in content and "完成" in content:
+                            msg_type = "progress"
+                            
+                        if message_tracker.should_send_message(content, msg_type):
+                            # 确保重要消息前有适当的换行分隔
+                            if msg_type in ["planner", "replanner", "summary", "progress", "execution_result"]:
+                                if not content.startswith('\n'):
+                                    # 对于summary类型，确保前面有双换行
+                                    if msg_type == "summary":
+                                        content = f"\n\n{content}"
+                                    elif msg_type == "execution_result":
+                                        # 执行结果前也需要换行分隔
+                                        content = f"\n{content}"
+                                    else:
+                                        content = f"\n{content}"
                             yield _create_sse_data(chat_id, created, model, content)
-                            sent_contents.add(content)
                             logger.info(
-                                f"[Plan Execute SSE] 发送AI消息: {content[:50]}...")
+                                f"[Plan Execute SSE] 发送AI消息({msg_type}): {content[:50]}...")
 
                 elif message_type == "HumanMessage":
                     # 检查是否是步骤开始消息（但要过滤掉用户原始输入的重复）
                     if hasattr(message, 'content') and message.content:
                         raw_content = message.content.strip()
 
-                        # 过滤掉用户原始问题的重复输出
-                        if raw_content == user_message or raw_content.strip() == user_message.strip():
-                            logger.debug(f"[Plan Execute SSE] 跳过用户原始问题的重复输出")
-                            continue
-
-                        # 过滤掉包含完整执行步骤列表的消息（这是内部协调信息）
-                        if "执行步骤" in raw_content and raw_content.count("\n") > 5:
-                            logger.debug(f"[Plan Execute SSE] 跳过内部执行步骤列表")
-                            continue
-
-                        # 只输出真正的步骤开始标记
-                        if "开始执行任务" in raw_content and "执行步骤" not in raw_content:
-                            step_counter += 1
-                            content = f"\n\n⚡ **开始执行步骤 {step_counter}**"
-                            if content not in sent_contents:
-                                yield _create_sse_data(chat_id, created, model, content)
-                                sent_contents.add(content)
-                                logger.info(
-                                    f"[Plan Execute SSE] 步骤开始: 步骤{step_counter}")
+                        # 使用智能跟踪器处理人类消息
+                        if message_tracker.should_send_message(raw_content, "human"):
+                            # 检查是否是步骤开始标记
+                            if "开始执行任务" in raw_content and "执行步骤" not in raw_content:
+                                content = f"\n\n⚡ **开始执行步骤 {message_tracker.step_count + 1}**\n"
+                                if message_tracker.should_send_message(content, "step_start"):
+                                    yield _create_sse_data(chat_id, created, model, content)
+                                    logger.info(
+                                        f"[Plan Execute SSE] 步骤开始: 步骤{message_tracker.step_count}")
                     continue
 
                 elif message_type == "ToolMessage":
@@ -536,13 +649,13 @@ async def stream_plan_execute_response(
                             message)
                         result_summary = _extract_tool_result_summary(message)
 
-                        content = f"\n\n✅ **{tool_name} 执行完成**"
+                        content = f"\n\n✅ **{tool_name}** 执行完成"
                         if result_summary:
                             content += f" - {result_summary}"
+                        content += f"\n"  # 确保工具执行完成消息后有换行
 
-                        if content not in sent_contents:
+                        if message_tracker.should_send_message(content, "tool_result"):
                             yield _create_sse_data(chat_id, created, model, content)
-                            sent_contents.add(content)
                             logger.info(
                                 f"[Plan Execute SSE] 工具执行完成: {tool_name}")
 
@@ -558,16 +671,18 @@ async def stream_plan_execute_response(
                     logger.debug(
                         f"[Plan Execute SSE] 处理未知消息类型: {message_type}")
                     content = _extract_message_content(
-                        message, step_counter, user_message)
-                    if content and content not in sent_contents:
+                        message, message_tracker.step_count, user_message)
+                    if message_tracker.should_send_message(content, "unknown"):
                         yield _create_sse_data(chat_id, created, model, content)
-                        sent_contents.add(content)
                         logger.info(
                             f"[Plan Execute SSE] 发送未知类型消息: {content[:50]}...")
 
-        # 发送简洁的完成消息
-        completion_content = "\n\n✨ **任务执行完成！**"
-        yield _create_sse_data(chat_id, created, model, completion_content)
+        # 只有当没有发送过总结时，才发送简洁的完成消息
+        has_summary = "summary_output" in message_tracker.node_outputs
+        if not has_summary:
+            completion_content = "\n\n✨ **任务执行完成！**\n"
+            if message_tracker.should_send_message(completion_content, "completion"):
+                yield _create_sse_data(chat_id, created, model, completion_content)
 
         # 发送结束标志
         end_response = {
@@ -590,7 +705,7 @@ async def stream_plan_execute_response(
 
     except Exception as e:
         logger.error(f"[Plan Execute SSE] 处理过程中出错: {str(e)}", exc_info=True)
-        error_content = f"\n\n❌ **处理遇到问题** - {str(e)}"
+        error_content = f"\n\n❌ **处理遇到问题** - {str(e)}\n"
         yield _create_sse_data(chat_id, created, model, error_content, finish_reason="stop")
 
 
@@ -681,7 +796,7 @@ def _extract_message_content(message: Any, step_counter: int = 0, user_message: 
                     return ""
                 elif message_type == "AIMessage":
                     # AI消息需要过滤和美化
-                    content = _format_ai_message(content, step_counter)
+                    content = content
                 elif message_type == "SystemMessage":
                     # 跳过系统消息
                     return ""
@@ -712,112 +827,26 @@ def _extract_message_content(message: Any, step_counter: int = 0, user_message: 
         return ""
 
 
-def _format_ai_message(content: str, step_counter: int = 0) -> str:
-    """格式化AI消息，基于结构而非关键词提取信息"""
-    try:
-        # 尝试解析JSON格式的结构化输出
-        if content.strip().startswith('{') or content.strip().startswith('```json'):
-            # 如果是markdown代码块包裹的JSON，先提取出来
-            json_content = content
-            if '```json' in content:
-                json_content = content.split(
-                    '```json')[1].split('```')[0].strip()
-            elif '```' in content:
-                json_content = content.split('```')[1].split('```')[0].strip()
-
-            try:
-                data = json.loads(json_content)
-
-                # 处理计划结构 - 转换为友好格式
-                if "steps" in data:
-                    steps = data["steps"]
-                    formatted_steps = []
-                    for i, step in enumerate(steps, 1):
-                        step_desc = step if isinstance(
-                            step, str) else step.get("description", str(step))
-                        formatted_steps.append(f"   {i}. {step_desc}")
-                    steps_text = "\n".join(formatted_steps)
-                    return f"\n\n📋 **执行计划**:\n{steps_text}\n\n🚀 **开始执行...**"
-
-                # 处理最终响应结构
-                if "action" in data and "response" in data["action"]:
-                    response = data["action"]["response"]
-                    return f"\n\n{response}"
-
-                # 其他JSON结构，跳过不输出
-                logger.debug(f"[Plan Execute SSE] 跳过JSON结构输出")
-                return ""
-
-            except json.JSONDecodeError as e:
-                logger.debug(f"[Plan Execute SSE] JSON解析失败: {e}")
-                pass
-
-        # 过滤包含"以下是符合"、"JSON Schema"等技术性描述的内容
-        if any(tech_phrase in content for tech_phrase in [
-            "以下是符合", "JSON Schema", "格式的输出", "execution_strategy"
-        ]):
-            logger.debug(f"[Plan Execute SSE] 跳过技术性描述内容")
-            return ""
-
-        # 过滤包含工具调用技术细节的内容
-        if any(tech_marker in content.lower() for tech_marker in [
-            "tool_calls", "function_call", "api_call", "args"
-        ]):
-            logger.debug(f"[Plan Execute SSE] 跳过工具调用技术细节")
-            return ""
-
-        # 检查是否为用户友好的格式化内容（包含Markdown标记或表情符号）
-        has_formatting = any(marker in content for marker in [
-            "**", "✨", "🔍", "📊", "⚡", "✅", "🎯", "📋"
-        ])
-
-        # 对于包含格式化标记的内容，进一步检查是否是最终答案
-        if has_formatting:
-            # 跳过包含"开始执行"、"执行步骤"等内部协调信息
-            if any(internal_marker in content for internal_marker in [
-                "开始执行任务", "执行步骤:", "💪 **开始执行"
-            ]):
-                logger.debug(f"[Plan Execute SSE] 跳过内部协调信息")
-                return ""
-            # 输出真正的最终答案或统计结果
-            return f"\n\n{content}"
-
-        # 对于纯文本内容，根据长度和结构判断
-        if len(content) > 200:
-            # 长文本可能是详细分析或最终答案
-            has_structure = any(punct in content for punct in [
-                                "。", "！", "？", "\n\n"])
-            if has_structure:
-                return f"\n\n{content}"
-            return ""
-
-        # 短文本直接输出
-        if len(content) > 20:  # 过滤掉太短的内容
-            return f"\n\n{content}"
-
-        return ""
-
-    except Exception as e:
-        logger.debug(f"[Plan Execute SSE] 格式化AI消息失败: {e}")
-        return ""
-
-
 def _format_general_message(content: str) -> str:
-    """格式化一般消息，减少换行符"""
+    """格式化一般消息，确保适当的换行分隔"""
     # 过滤掉技术细节和JSON内容
     if any(keyword in content.lower() for keyword in ["json", "{", "tool", "args"]):
         return ""
 
+    # 确保消息前后都有适当的换行
     if "执行步骤" in content:
-        return f"\n\n⚡ **执行中** - {content}"
+        return f"\n\n⚡ **执行中** - {content}\n"
+    elif "🎯 **执行结果**" in content or "执行结果" in content:
+        return f"\n{content}\n"  # 执行结果消息已经有emoji和格式，只需要换行
     elif "完成" in content:
-        return f"\n\n✅ **完成** - {content}"
+        return f"\n\n✅ **完成** - {content}\n"
     elif "搜索" in content:
-        return f"\n\n🔍 **搜索中** - {content}"
+        return f"\n\n🔍 **搜索中** - {content}\n"
     elif "分析" in content:
-        return f"\n\n📊 **分析中** - {content}"
+        return f"\n\n📊 **分析中** - {content}\n"
     else:
-        return f"\n\n{content}"
+        # 对于一般消息，确保前后都有换行
+        return f"\n\n{content}\n"
 
 
 def _extract_tool_result_summary(message: Any) -> str:

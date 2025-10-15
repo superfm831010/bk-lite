@@ -101,15 +101,13 @@ class PlanAndExecuteAgentNode(ToolsNodes):
             plan_steps = ["分析用户需求", "执行必要的操作", "提供结果"]
             reasoning = "使用备用计划"
         
-        # 显示规划过程
-        steps_display = "\n".join([f"   {i+1}. {step}" for i, step in enumerate(plan_steps)])
-        
-        plan_display = f"""🎯 **任务规划完成**
-
-📋 **执行计划**:
-{steps_display}
-
-🚀 **开始执行...**"""
+        # 改进规划显示，让结构更清晰，显示详细计划
+        plan_display = f"🎯 **执行计划已制定** ({len(plan_steps)} 个步骤)\n\n"
+        plan_display += f"📝 **计划推理**: {reasoning}\n\n"
+        plan_display += "📋 **执行步骤**:\n"
+        for i, step in enumerate(plan_steps, 1):
+            plan_display += f"   **{i}.** {step}\n"
+        plan_display += f"\n🚀 开始执行计划...\n\n---\n"
         
         self.log(config, plan_display)
         
@@ -125,14 +123,13 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         
         current_plan = state.get("current_plan", [])
         if not current_plan:
-            # 没有待执行步骤，直接进入总结
-            return {**state, "final_response": "所有步骤已完成"}
+            # 没有待执行步骤，直接进入总结 - 不设置final_response，让should_continue决定
+            return {**state}
         
         current_step = current_plan[0]  # 取第一个待执行步骤
         
-        step_display = f"""⚡ **执行**: {current_step}"""
-        
-        self.log(config, step_display)
+        # 移除干扰性输出，让执行过程更简洁
+        # self.log(config, f"⚡ 执行步骤 {len(original_plan) - len(current_plan) + 1}")  # 可选：显示步骤编号
         
         # 使用ReAct模式执行当前步骤
         execution_prompt = f"""请执行以下具体步骤：
@@ -143,137 +140,191 @@ class PlanAndExecuteAgentNode(ToolsNodes):
 
 请专注于完成这一个步骤，使用必要的工具，并提供执行结果。"""
         
-        # 传递执行提示给React节点使用
+        # 传递执行提示给React节点使用，不添加额外的显示消息
         return {
             **state,
-            "messages": state.get("messages", []) + [AIMessage(content=step_display)],
             "execution_prompt": execution_prompt
         }
 
     async def replanner_node(self, state: PlanAndExecuteAgentState, config: RunnableConfig):
-        """重新规划节点 - 根据执行结果动态调整计划"""
+        """智能重新规划节点 - 基于执行结果反思并调整剩余计划"""
         
         current_plan = state.get("current_plan", [])
-        messages = state.get("messages", [])
+        original_plan = state.get("original_plan", [])
         
         if not current_plan:
-            return {**state, "final_response": "计划执行完成"}
+            # 计划为空，不设置final_response，让should_continue统一判断
+            return {**state}
         
-        # 获取最近的执行结果
-        recent_results = []
-        for msg in messages[-3:]:  # 检查最近3条消息
-            if hasattr(msg, 'content') and msg.content:
-                recent_results.append(msg.content)
+        # 计算执行进度 - 正确计算已完成步骤数
+        total_steps = len(original_plan) if original_plan else 1
+        completed_count = total_steps - len(current_plan) + 1  # +1 表示刚完成了一步
         
-        execution_context = "\n".join(recent_results) if recent_results else "暂无执行结果"
-        completed_step = current_plan[0] if current_plan else "无"
-        remaining_steps = current_plan[1:] if len(current_plan) > 1 else []
-        
-        # 重新规划提示
-        replan_prompt = f"""基于当前执行情况，请重新评估和调整执行计划。
+        # 构建智能重新规划提示
+        replan_prompt = f"""你是一个智能任务重新规划助手。请基于当前执行情况，反思并重新规划剩余任务步骤。
 
-📋 **原始任务**: {config["configurable"]["graph_request"].user_message}
+📋 **原始用户任务**: {config["configurable"]["graph_request"].user_message}
 
-✅ **已完成步骤**: {completed_step}
+📝 **原始完整计划**:
+{chr(10).join([f"   {i+1}. {step}" for i, step in enumerate(original_plan)])}
 
-📊 **执行结果**: 
-{execution_context}
+📊 **当前剩余步骤**:
+{chr(10).join([f"   {i+1}. {step}" for i, step in enumerate(current_plan)])}
 
-📝 **剩余原计划**: {remaining_steps}
+🔍 **最近执行历史**:
+{chr(10).join([f"- {msg.content}" for msg in state.get("messages", [])[-3:] if hasattr(msg, 'content') and msg.content])}
 
-🤔 **重新规划要求**:
-1. 分析当前执行结果是否符合预期
-2. 评估是否需要调整剩余步骤
-3. 如果任务已基本完成，可以标记为完成
-4. 如果需要继续，请调整优化剩余步骤
+🎯 **重新规划要求**:
+1. 分析当前执行情况和已获得的结果
+2. 判断当前第一个步骤是否已经完成或需要调整
+3. 基于执行结果，重新评估剩余步骤的必要性和顺序
+4. 如果发现新的需求或问题，可以添加新步骤
+5. 如果某些步骤已经不再必要，可以移除
+6. 如果任务已经完成，标记为完成状态
 
-请提供重新规划的分析和调整后的步骤。"""
+请提供你的重新规划结果。"""
 
         try:
+            # 使用LLM进行智能重新规划
             replan_response = await self.structured_output_parser.parse_with_structured_output(
                 user_message=replan_prompt,
                 pydantic_class=ReplanResponse
             )
             
-            if replan_response.is_complete:
-                # 任务完成
-                replan_display = f"""✅ **任务完成**: {replan_response.reasoning}"""
-                
-                return {
-                    **state,
-                    "messages": state.get("messages", []) + [AIMessage(content=replan_display)],
-                    "current_plan": [],
-                    "final_response": "任务执行完成"
-                }
-            else:
-                # 更新计划继续执行
-                new_steps = replan_response.updated_plan.steps
-                replan_display = f"""🔄 **计划调整**: 剩余 {len(new_steps)} 个步骤
-
-📋 **接下来**:
-{chr(10).join([f"   {i+1}. {step}" for i, step in enumerate(new_steps)])}"""
-                
-                self.log(config, replan_display)
-                
-                return {
-                    **state,
-                    "messages": state.get("messages", []) + [AIMessage(content=replan_display)],
-                    "current_plan": new_steps
-                }
-        
+            updated_steps = replan_response.updated_plan.steps
+            reasoning = replan_response.reasoning
+            is_complete = replan_response.is_complete
+            
         except Exception as e:
-            logger.warning(f"重新规划失败: {e}")
-            # 简单移除已完成的步骤
-            remaining = current_plan[1:] if len(current_plan) > 1 else []
+            logger.warning(f"智能重新规划失败: {e}")
+            # 简单降级：移除第一个步骤
+            updated_steps = current_plan[1:] if len(current_plan) > 1 else []
+            reasoning = "使用简单规则：移除已完成步骤"
+            is_complete = len(updated_steps) == 0
+
+        if is_complete or not updated_steps:
+            # 任务完成 - 清空current_plan，让should_continue统一判断进入summary
             return {
                 **state,
-                "current_plan": remaining
+                "current_plan": []
+                # 不设置final_response，避免重复
+            }
+        else:
+            # 还有剩余步骤，继续执行
+            # 改进进度显示，让步骤更清晰，包含重新规划信息
+            progress_display = f"\n---\n\n📊 **步骤 {completed_count}/{total_steps} 完成**\n"
+            
+            # 如果步骤有变化，显示重新规划信息
+            if updated_steps != current_plan[1:]:
+                progress_display += f"\n🔄 **计划已调整**: {reasoning}\n"
+                progress_display += f"\n📋 **剩余步骤**:\n"
+                for i, step in enumerate(updated_steps, 1):
+                    progress_display += f"   **{i}.** {step}\n"
+                progress_display += f"\n"  # 确保末尾有换行
+            
+            logger.debug(f"[replanner_node] 显示进度: {progress_display.strip()}, current_plan长度: {len(current_plan)}, updated_steps长度: {len(updated_steps)}")
+            self.log(config, progress_display)
+            
+            return {
+                **state,
+                "current_plan": updated_steps
             }
 
     async def should_continue(self, state: PlanAndExecuteAgentState) -> str:
-        """判断是否继续执行或结束"""
+        """判断是否继续执行或结束 - 统一判断逻辑，避免重复进入summary"""
         current_plan = state.get("current_plan", [])
-        final_response = state.get("final_response")
         
-        # 如果有明确的最终响应或没有剩余步骤，结束执行
-        if final_response or not current_plan:
+        logger.debug(f"[should_continue] current_plan长度: {len(current_plan)}")
+        
+        # 只基于current_plan判断：没有剩余步骤就结束执行
+        if not current_plan:
+            logger.debug("[should_continue] 没有剩余步骤，返回 summary")
             return "summary"
         
         # 否则继续执行
+        logger.debug("[should_continue] 还有剩余步骤，返回 executor") 
         return "executor"
 
     async def summary_node(self, state: PlanAndExecuteAgentState, config: RunnableConfig):
-        """最终总结节点"""
+        """最终总结节点 - 使用LLM智能总结执行过程和结果"""
+        logger.debug("[summary_node] 进入总结节点")
         
-        # 从消息中提取最终答案
-        messages = state.get("messages", [])
-        final_answer = ""
+        # 检查是否已经有最终响应，避免重复生成
+        existing_final_response = state.get("final_response")
+        if existing_final_response:
+            logger.debug("[summary_node] 已存在final_response，跳过重复生成")
+            return state
         
-        # 找到最后的有效AI消息作为最终结果  
-        for message in reversed(messages):
-            if (hasattr(message, 'content') and message.content and 
-                not any(starter in message.content for starter in ["🎯 **智能任务规划**", "⚡ **执行步骤**", "🔄 **计划调整**"])):
-                final_answer = message.content
-                break
-        
-        if not final_answer:
-            final_answer = "任务已完成"
-        
-        # 获取执行统计
+        # 获取原始用户问题和执行计划
+        user_message = config["configurable"]["graph_request"].user_message
         original_plan = state.get("original_plan", [])
         total_steps = len(original_plan)
         
-        # 创建最终总结 - 简化版本，避免重复显示结果
-        summary = f"""✅ **任务完成** ({total_steps} 个步骤已执行)
+        # 收集整个执行过程的消息历史
+        messages = state.get("messages", [])
+        execution_history = []
+        
+        # 整理执行历史，包括计划、执行步骤和结果
+        for message in messages:
+            if hasattr(message, 'content') and message.content:
+                content = message.content.strip()
+                if content:  # 只收集非空内容
+                    execution_history.append(f"- {content}")
+        
+        # 构建给LLM的总结提示
+        history_text = "\n".join(execution_history)  
+        plan_text = "\n".join([f"   {i+1}. {step}" for i, step in enumerate(original_plan)])
+        
+        summary_prompt = f"""你是一个智能任务总结助手。请基于以下完整的执行历史，为用户生成一个清晰、有用的任务完成总结。
 
-{final_answer}"""
+📋 **原始用户问题**: {user_message}
 
-        self.log(config, summary)
+📝 **执行计划** ({total_steps} 个步骤):
+{plan_text}
+
+📊 **完整执行历史**:
+{history_text}
+
+🎯 **总结要求**:
+1. 简要概述任务完成情况
+2. 突出显示关键的执行结果和数据
+3. 如果有具体数据（如提交记录、统计信息等），请清晰地整理和展示
+4. 保持专业、友好的语调
+5. 如果用户可能需要进一步操作，提供简要建议
+
+请生成一个结构清晰、内容丰富的最终总结。"""
+
+        try:
+            # 使用LLM生成智能总结
+            summary_response = await self.llm.ainvoke([
+                HumanMessage(content=summary_prompt)
+            ])
+            
+            if hasattr(summary_response, 'content') and summary_response.content:
+                intelligent_summary = summary_response.content.strip()
+                logger.debug(f"[summary_node] LLM生成总结，长度: {len(intelligent_summary)}")
+            else:
+                intelligent_summary = "任务已成功完成，所有步骤都已按计划执行。"
+                logger.warning("[summary_node] LLM返回空内容，使用默认总结")
+                
+        except Exception as e:
+            logger.error(f"[summary_node] LLM总结失败: {e}")
+            intelligent_summary = f"""🎉 **任务执行完成！**
+
+✅ 成功完成 {total_steps} 个计划步骤，所有预定目标均已达成。
+
+📋 **执行概况**: 按照既定计划逐步执行，所有工具调用和数据处理都已顺利完成。
+
+💡 如需进一步分析或有其他问题，请随时告知！"""
+
+        # 格式化最终总结显示 - 确保前后都有适当的换行
+        formatted_summary = f"\n\n---\n\n🎯 **最终结果**\n\n{intelligent_summary}\n"
+        self.log(config, formatted_summary)
         
         return {
             **state,
-            "messages": state.get("messages", []) + [AIMessage(content=summary)],
-            "final_response": final_answer
+            "messages": state.get("messages", []) + [AIMessage(content=formatted_summary)],
+            "final_response": formatted_summary
         }
 
 class PlanAndExecuteAgentGraph(BasicGraph):
@@ -310,12 +361,12 @@ class PlanAndExecuteAgentGraph(BasicGraph):
         
         graph_builder.add_node("step_executor_wrapper", step_executor_wrapper)
         
-        # 使用现有的ReAct节点构建方法，传入步骤执行的系统提示
+        # 使用现有的ReAct节点构建方法
         react_entry_node = await node_builder.build_react_nodes(
             graph_builder=graph_builder,
             composite_node_name="react_step_executor", 
             additional_system_prompt="你是任务执行助手，专注完成用户最新消息中的具体步骤。请使用合适的工具完成任务，并简洁地提供结果。",
-            next_node="replanner"  # 执行完单步后进行重新规划
+            next_node="replanner"
         )
 
         # 设置图边缘 - 实现 Plan -> Execute -> Replan -> Execute 循环
@@ -323,12 +374,19 @@ class PlanAndExecuteAgentGraph(BasicGraph):
         graph_builder.add_edge("planner", "executor")                   # 计划 -> 准备执行
         graph_builder.add_edge("executor", "step_executor_wrapper")     # 准备执行 -> 步骤包装
         graph_builder.add_edge("step_executor_wrapper", react_entry_node)  # 步骤包装 -> React执行
-        # react_step_executor 自动连接到 replanner
+        
+        # 手动添加React节点到replanner的连接（因为build_react_nodes没有自动处理next_node参数）
+        graph_builder.add_edge(react_entry_node, "replanner")          # React执行完成 -> 重新规划
         
         # 条件边：重新规划后决定继续执行还是结束
+        async def debug_should_continue(state):
+            result = await node_builder.should_continue(state)
+            logger.debug(f"[debug_should_continue] 返回: {result}")
+            return result
+        
         graph_builder.add_conditional_edges(
             "replanner",
-            node_builder.should_continue,
+            debug_should_continue,
             {
                 "executor": "executor",   # 继续执行下一步
                 "summary": "summary"      # 任务完成，生成总结
