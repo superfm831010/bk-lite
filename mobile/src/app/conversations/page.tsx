@@ -68,7 +68,7 @@ export default function ConversationList() {
       {/* 聊天列表 */}
       <div className="flex-1 overflow-y-auto">
         <List>
-          {filteredChats.map((chat, index) => (
+          {filteredChats.map((chat) => (
             <List.Item
               key={chat.id}
               arrow={false}

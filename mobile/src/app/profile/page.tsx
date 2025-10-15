@@ -16,7 +16,7 @@ import {
 
 export default function ProfilePage() {
   const { t } = useTranslation();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
   const [userInfo, setUserInfo] = useState<UserLoginInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const { logout, isLoading: authLoading } = useAuth();
@@ -42,12 +42,6 @@ export default function ProfilePage() {
   }, []);
 
   const handleLogout = async () => {
-    const confirmed = window.confirm(t('auth.logoutConfirm'));
-
-    if (!confirmed) {
-      return;
-    }
-
     try {
       await logout();
       Toast.show({
@@ -109,12 +103,12 @@ export default function ProfilePage() {
             {!userInfo?.is_superuser &&
               userInfo?.roles &&
               userInfo.roles.length > 0 && (
-                <div className="inline-flex items-center px-2 py-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full">
-                  <span className="text-white text-xs font-medium">
-                    {userInfo.roles[0]}
-                  </span>
-                </div>
-              )}
+              <div className="inline-flex items-center px-2 py-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full">
+                <span className="text-white text-xs font-medium">
+                  {userInfo.roles[0]}
+                </span>
+              </div>
+            )}
           </div>
           <RightOutline className="text-[var(--color-text-4)]" />
         </div>

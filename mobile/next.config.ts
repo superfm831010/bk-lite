@@ -11,14 +11,21 @@ const nextConfig = {
     unoptimized: true,
   },
 
-  assetPrefix: isProd ? undefined : `http://${internalHost}:3001`,
+  // Tauri 开发模式：使用内部主机
+  // 浏览器开发模式：不设置 assetPrefix
+  assetPrefix: isProd ? undefined : (
+    process.env.TAURI_DEV === 'true' ? `http://${internalHost}:3001` : undefined
+  ),
+
+  // 禁用严格模式以避免 Tauri API 初始化问题
+  reactStrictMode: false,
 
   // 开发环境代理配置（生产环境自动忽略）
   async rewrites() {
     // 生产环境（静态导出）不需要 rewrites
     if (isProd) return [];
 
-    const apiTarget = process.env.NEXT_PUBLIC_API_URL || 'https://bklite.canway.net';
+    const apiTarget = process.env.NEXTAPI_URL || 'https://bklite.canway.net';
 
     console.log('[Next.js Rewrites] Proxying /dev-proxy/* to', apiTarget);
 

@@ -12,19 +12,25 @@ import zhMessages from '@/locales/zh.json';
 import enMessages from '@/locales/en.json';
 
 // 预加载的语言包 - 扁平化结构
-const flattenMessages = (nestedMessages: any, prefix = ''): Record<string, string> => {
-  return Object.keys(nestedMessages).reduce((messages: Record<string, string>, key) => {
-    const value = nestedMessages[key];
-    const prefixedKey = prefix ? `${prefix}.${key}` : key;
+const flattenMessages = (
+  nestedMessages: any,
+  prefix = ''
+): Record<string, string> => {
+  return Object.keys(nestedMessages).reduce(
+    (messages: Record<string, string>, key) => {
+      const value = nestedMessages[key];
+      const prefixedKey = prefix ? `${prefix}.${key}` : key;
 
-    if (typeof value === 'string') {
-      messages[prefixedKey] = value;
-    } else {
-      Object.assign(messages, flattenMessages(value, prefixedKey));
-    }
+      if (typeof value === 'string') {
+        messages[prefixedKey] = value;
+      } else {
+        Object.assign(messages, flattenMessages(value, prefixedKey));
+      }
 
-    return messages;
-  }, {});
+      return messages;
+    },
+    {}
+  );
 };
 
 const localeMessages: Record<string, Record<string, string>> = {
@@ -38,9 +44,9 @@ const LocaleContext = createContext<
   | {
       locale: string;
       setLocale: (locale: string) => void;
-    }
-  | undefined
->(undefined);
+        }
+        | undefined
+        >(undefined);
 
 interface LocaleProviderProps {
   children: ReactNode;
