@@ -2,7 +2,7 @@ import os
 import json
 
 from apps.core.logger import monitor_logger as logger
-from apps.monitor.constants import PLUGIN_DIRECTORY
+from apps.monitor.constants.plugin import PluginConstants
 from apps.monitor.services.plugin import MonitorPluginService
 from apps.monitor.services.policy import PolicyService
 
@@ -41,7 +41,7 @@ def find_json_paths(root_dir: str, target_filename: str = None):
 
 def migrate_plugin():
     """迁移插件"""
-    path_list = find_json_paths(PLUGIN_DIRECTORY, "metrics.json")
+    path_list = find_json_paths(PluginConstants.DIRECTORY, "metrics.json")
     for file_path in path_list:
         # 打开并读取 JSON 文件
         try:
@@ -54,7 +54,7 @@ def migrate_plugin():
 
 def migrate_policy():
     """迁移策略"""
-    path_list = find_json_paths(PLUGIN_DIRECTORY, "policy.json")
+    path_list = find_json_paths(PluginConstants.DIRECTORY, "policy.json")
     for file_path in path_list:
         # 打开并读取 JSON 文件
         try:

@@ -4,7 +4,7 @@ import uuid
 
 from jinja2 import Environment, FileSystemLoader, DebugUndefined
 
-from apps.monitor.constants import PLUGIN_DIRECTORY
+from apps.monitor.constants.plugin import PluginConstants
 from apps.monitor.models import CollectConfig
 from apps.rpc.node_mgmt import NodeMgmt
 
@@ -76,7 +76,7 @@ class Controller:
         return configs
 
     def controller(self):
-        base_dir = PLUGIN_DIRECTORY
+        base_dir = PluginConstants.DIRECTORY
         configs = self.format_configs()
         node_configs, node_child_configs, collect_configs = [], [], []
         for config_info in configs:
