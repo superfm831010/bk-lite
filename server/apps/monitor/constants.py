@@ -52,3 +52,5 @@ NO_DATA = "no_data"
 DEFAULT_PERMISSION = ['View', 'Operate']
 INSTANCE_MODULE = "instance"
 POLICY_MODULE = "policy"
+
+PLUGIN_DIRECTORY = 'apps/monitor/support-files/plugins'
