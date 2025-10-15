@@ -160,32 +160,6 @@ const ChartComponent: React.FC = () => {
       </div>
       <div className="grid grid-cols-2 gap-4">
         {renderCard(
-          'studio.statistics.totalConsumption',
-          'studio.statistics.totalConsumptionDesc',
-          loadingTokenConsumption ? (
-            <div className="flex justify-center items-center h-[250px]">
-              <Spin size="large" />
-            </div>
-          ) : (
-            <div className="flex justify-center items-center text-8xl font-bold h-[250px]">
-              {tokenConsumption}
-            </div>
-          ),
-          'totalConsumption'
-        )}
-        {renderCard(
-          'studio.statistics.totalConsumptionOverview',
-          'studio.statistics.totalConsumptionOverviewDesc',
-          loadingTokenOverview ? (
-            <div className="flex justify-center items-center h-[250px]">
-              <Spin size="large" />
-            </div>
-          ) : (
-            <Line {...lineConfig('tokenOverviewData')} />
-          ),
-          'totalConsumptionOverview'
-        )}
-        {renderCard(
           'studio.statistics.totalConversation',
           'studio.statistics.totalConversationDesc',
           loadingConversations ? (
