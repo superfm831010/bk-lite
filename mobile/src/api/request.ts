@@ -1,30 +1,20 @@
 /**
  * API 客户端工具
- * 用于 Tauri 移动应用直接调用后端 API
+ * 所有请求统一通过 Tauri Rust 后端转发
  */
 
-// 获取 API 基础 URL
-const getApiBaseUrl = (): string => {
-  // 开发环境：使用开发代理（避免 CORS）
-  if (process.env.NODE_ENV === 'development') {
-    return '/dev-proxy';
-  }
-
-  return process.env.NEXT_PUBLIC_API_URL || 'https://bklite.canway.net';
-};
+import { tauriFetch, getApiBaseUrl, isTauriApp } from '../utils/tauriFetch';
 
 const API_BASE_URL = getApiBaseUrl();
 
 /**
- * 创建带有默认配置的 fetch 请求
+ * 创建带有默认配置的请求（统一使用 Tauri 转发）
  */
 export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
-  console.log(`[API Request] ${options.method || 'GET'} ${url}`);
 
   // 从 localStorage 获取 token
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -34,27 +24,25 @@ export async function apiRequest<T = any>(
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }), // 添加 token
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
-    mode: 'cors', // 显式设置 CORS 模式
-    credentials: 'include', // 发送 cookies
+    mode: 'cors',
+    credentials: 'include',
   };
 
   try {
-    const response = await fetch(url, config);
-    
-    console.log(`[API Response] ${url} - Status: ${response.status}`);
+    // 统一使用 tauriFetch，自动选择最佳方式（Tauri Rust 代理 > 标准 fetch）
+    const response = await tauriFetch(url, config);
 
     // 检查响应状态
     if (!response.ok) {
       let errorText = '';
       try {
         errorText = await response.text();
-      } catch (e) {
+      } catch {
         errorText = 'Unable to parse error response';
       }
-      console.error(`[API Error] ${url} - ${response.status}: ${errorText}`);
       throw new Error(`API Error: ${response.status} - ${errorText}`);
     }
 
@@ -66,8 +54,9 @@ export async function apiRequest<T = any>(
 
     // 返回文本响应
     return await response.text() as any;
+
   } catch (error) {
-    console.error(`[API Request Failed] ${url}:`, error);
+    console.error('[API] Request failed:', url, error);
     throw error;
   }
 }
@@ -144,4 +133,4 @@ export async function apiPatch<T = any>(
 }
 
 // 导出 API 基础 URL 供其他模块使用
-export { API_BASE_URL };
+export { API_BASE_URL, getApiBaseUrl };

@@ -46,7 +46,7 @@ const roles: GetProp<typeof Bubble.List, 'roles'> = {
 export default function ConversationDetail() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const chatId = searchParams.get('id');
+  const chatId = searchParams?.get('id');
 
   const [chatInfo, setChatInfo] = useState<ChatInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,7 +81,7 @@ export default function ConversationDetail() {
       try {
         const aiReply = getAIReply(message);
         onSuccess([aiReply]);
-      } catch (error) {
+      } catch {
         onError(new Error('AI 回复失败，请稍后重试'));
       }
     },
@@ -114,7 +114,7 @@ export default function ConversationDetail() {
             status: 'online',
           });
         }
-      } catch (error) {
+      } catch {
         Toast.show('加载聊天数据失败');
       } finally {
         setLoading(false);
