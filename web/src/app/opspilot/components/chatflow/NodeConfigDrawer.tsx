@@ -6,6 +6,7 @@ import { DeleteOutlined, InboxOutlined, CopyOutlined } from '@ant-design/icons';
 import { Node } from '@xyflow/react';
 import type { UploadProps, UploadFile as AntdUploadFile } from 'antd';
 import { useTranslation } from '@/utils/i18n';
+import { useChannelApi } from "@/app/system-manager/api/channel";
 
 // Extend UploadFile to include the 'content' property
 interface UploadFile extends AntdUploadFile {
@@ -56,8 +57,12 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([]);
   const [skills, setSkills] = useState<any[]>([]);
   const [loadingSkills, setLoadingSkills] = useState(false);
+  const [notificationChannels, setNotificationChannels] = useState<any[]>([]);
+  const [loadingChannels, setLoadingChannels] = useState(false);
+  const [notificationType, setNotificationType] = useState<'email' | 'enterprise_wechat_bot'>('email');
 
   const { fetchSkill } = useSkillApi();
+  const { getChannelData } = useChannelApi();
   const searchParams = useSearchParams();
   const botId = searchParams ? searchParams.get('id') : '1';
 
@@ -72,6 +77,25 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       message.error(t('skill.settings.noSkillHasBeenSelected'));
     } finally {
       setLoadingSkills(false);
+    }
+  };
+
+  // Load notification channels based on type
+  const loadNotificationChannels = async (channelType: 'email' | 'enterprise_wechat_bot') => {
+    try {
+      setLoadingChannels(true);
+      // Use system-manager API to get channels by type
+      const data = await getChannelData({
+        channel_type: channelType || 'email',
+      });
+
+      setNotificationChannels(data);
+    } catch (error) {
+      console.error('Failed to load notification channels:', error);
+      message.error(t('chatflow.fetchNotificationChannelsFailed'));
+      setNotificationChannels([]);
+    } finally {
+      setLoadingChannels(false);
     }
   };
 
@@ -93,6 +117,15 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       message.success(t('chatflow.nodeConfig.apiLinkCopied'));
     }
   };
+
+  // Load notification channels when notification node is opened
+  React.useEffect(() => {
+    if (node?.data.type === 'notification' && visible) {
+      // Use default type 'email' or get from form/config
+      const currentType = (node.data.config?.notificationType || 'email') as 'email' | 'enterprise_wechat_bot';
+      loadNotificationChannels(currentType);
+    }
+  }, [node?.data.type, visible]);
 
   React.useEffect(() => {
     if (node && visible) {
@@ -219,6 +252,11 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
           name: file.name,
           content: file.response?.content || file.content || ''
         }));
+      }
+
+      // Save notification channels data for notification nodes
+      if (node.data.type === 'notification') {
+        configData.notificationChannels = notificationChannels;
       }
 
       // Save time in HH:mm format for celery nodes
@@ -765,6 +803,62 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                 </>
               );
 
+            case 'notification':
+              // Handle notification type change
+              const handleNotificationTypeChange = (value: 'email' | 'enterprise_wechat_bot') => {
+                setNotificationType(value);
+                // Clear selected notification method when type changes
+                form.setFieldsValue({ notificationMethod: undefined });
+                // Load channels for the new type
+                loadNotificationChannels(value);
+              };
+
+              return (
+                <>
+                  <Form.Item 
+                    name="notificationType" 
+                    label={t('chatflow.notificationCategory')}
+                    initialValue="email"
+                    rules={[{ required: true, message: t('chatflow.pleaseSelectNotificationMethod') }]}
+                  >
+                    <Radio.Group onChange={(e) => handleNotificationTypeChange(e.target.value)}>
+                      <Radio value="email">{t('chatflow.email')}</Radio>
+                      <Radio value="enterprise_wechat_bot">{t('chatflow.enterpriseWechatBot')}</Radio>
+                    </Radio.Group>
+                  </Form.Item>
+
+                  <Form.Item 
+                    name="notificationMethod" 
+                    label={t('chatflow.notificationMethod')} 
+                    rules={[{ required: true, message: t('chatflow.pleaseSelectNotificationMethod') }]}
+                  >
+                    <Select 
+                      placeholder={t('chatflow.selectNotificationMethod')}
+                      loading={loadingChannels}
+                      disabled={loadingChannels}
+                    >
+                      {notificationChannels.map((channel) => (
+                        <Option key={channel.id} value={channel.id}>
+                          {channel.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+
+                  <Form.Item 
+                    name="notificationContent" 
+                    label={t('chatflow.notificationContent')}
+                    rules={[{ required: true, message: t('chatflow.pleaseEnterNotificationContent') }]}
+                    initialValue="last_message"
+                  >
+                    <TextArea 
+                      rows={4} 
+                      placeholder={t('chatflow.enterNotificationContent')}
+                    />
+                  </Form.Item>
+                </>
+              );
+
             default:
               return null;
           }
@@ -772,6 +866,15 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       </>
     );
   };
+
+  // Handle notification type change and load channels when needed
+  React.useEffect(() => {
+    if (node?.data.type === 'notification' && visible) {
+      // Load initial channels based on current form value or default type
+      const currentType = form.getFieldValue('notificationType') || notificationType;
+      loadNotificationChannels(currentType);
+    }
+  }, [node?.data.type, visible, notificationType]);
 
   return (
     <Drawer

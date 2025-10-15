@@ -861,6 +861,17 @@
     "executeMessagePlaceholder": "请输入执行消息（可选）...",
     "executeResult": "执行结果",
     "executeSuccess": "节点执行成功",
-    "executeFailed": "节点执行失败"
+    "executeFailed": "节点执行失败",
+    "notification": "对外通知",
+    "notificationCategory": "通知类别",
+    "notificationMethod": "通知方式",
+    "notificationContent": "通知内容",
+    "email": "邮件",
+    "enterpriseWechatBot": "企微机器人",
+    "selectNotificationMethod": "请选择通知方式",
+    "enterNotificationContent": "请输入通知内容",
+    "pleaseSelectNotificationMethod": "请选择通知方式",
+    "pleaseEnterNotificationContent": "请输入通知内容",
+    "fetchNotificationChannelsFailed": "获取通知渠道失败"
   }
 }

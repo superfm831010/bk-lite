@@ -859,6 +859,17 @@
     "executeMessagePlaceholder": "Enter execution message (optional)...",
     "executeResult": "Execution Result",
     "executeSuccess": "Node executed successfully",
-    "executeFailed": "Node execution failed"
+    "executeFailed": "Node execution failed",
+    "notification": "External Notification",
+    "notificationCategory": "Notification Category", 
+    "notificationMethod": "Notification Method",
+    "notificationContent": "Notification Content",
+    "email": "Email",
+    "enterpriseWechatBot": "Enterprise WeChat Bot",
+    "selectNotificationMethod": "Please select notification method",
+    "enterNotificationContent": "Please enter notification content",
+    "pleaseSelectNotificationMethod": "Please select notification method",
+    "pleaseEnterNotificationContent": "Please enter notification content",
+    "fetchNotificationChannelsFailed": "Failed to fetch notification channels"
   }
 }
