@@ -188,12 +188,20 @@ export const useMssqlTelegraf = () => {
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const server = formData?.child?.content?.config?.servers?.[0] || '';
-            return extractMssqlUrl(server);
+            const configId = (formData?.child?.id || '').toUpperCase();
+            const password =
+              formData?.child?.env_config?.[`PASSWORD__${configId}`];
+            return {
+              ...extractMssqlUrl(server),
+              ENV_PASSWORD: password,
+            };
           },
           getParams: (
             row: IntegrationMonitoredObject,
             config: TableDataItem
           ) => {
+            const configId = (config.child.id || '').toUpperCase();
+            config.child.env_config[`PASSWORD__${configId}`] = row.ENV_PASSWORD;
             return config;
           },
         },
