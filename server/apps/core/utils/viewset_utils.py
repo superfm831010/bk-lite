@@ -90,7 +90,9 @@ class LanguageViewSet(viewsets.ModelViewSet, GenericViewSetFun):
         app_name = self._get_app_name()
         if hasattr(request, "user") and request.user:
             locale = getattr(request.user, "locale", "en") or "en"
-            self.loader = LanguageLoader(app=app_name, default_lang=locale)
+        else:
+            locale = "en"
+        self.loader = LanguageLoader(app=app_name, default_lang=locale)
         return request
 
 
