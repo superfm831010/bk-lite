@@ -113,16 +113,28 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         original_plan = state.get("original_plan", [])
         
         if not current_plan:
-            # 计划为空，不设置final_response，让should_continue统一判断
-            return {**state}
+            # 计划为空，只更新current_plan，不传递任何消息
+            logger.debug("[replanner_node] 计划为空，准备进入总结")
+            return {
+                "current_plan": []
+            }
         
         # 计算执行进度 - 正确计算已完成步骤数
         total_steps = len(original_plan) if original_plan else 1
         completed_count = total_steps - len(current_plan) + 1  # +1 表示刚完成了一步
         
-        # 准备模板变量
-        recent_messages = [msg.content for msg in state.get("messages", [])[-3:] 
-                          if hasattr(msg, 'content') and msg.content]
+        # 准备模板变量 - 只获取最近的非重复消息内容
+        messages = state.get("messages", [])
+        recent_messages = []
+        seen_contents = set()
+        
+        # 从后往前遍历，避免重复内容
+        for msg in reversed(messages[-5:]):  # 只看最近5条消息
+            if hasattr(msg, 'content') and msg.content:
+                content = msg.content.strip()
+                if content and content not in seen_contents:
+                    recent_messages.insert(0, content)  # 保持时间顺序
+                    seen_contents.add(content)
         
         # 使用模板构建智能重新规划提示
         replan_prompt = TemplateLoader.render_template("prompts/plan_and_execute_agent/replan_prompt",{
@@ -141,29 +153,39 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         reasoning = replan_response.reasoning
         is_complete = replan_response.is_complete
 
+        logger.debug(f"[replanner_node] 重新规划结果: is_complete={is_complete}, updated_steps={len(updated_steps)}")
+
         if is_complete or not updated_steps:
-            # 任务完成 - 清空current_plan，让should_continue统一判断进入summary
+            # 任务完成 - 清空current_plan，不添加任何消息
+            logger.debug("[replanner_node] 任务完成，清空计划")
             return {
-                **state,
                 "current_plan": []
             }
         else:
             # 还有剩余步骤，继续执行
-            # 改进进度显示，让步骤更清晰，包含重新规划信息
-            progress_display = f"\n📊 **步骤 {completed_count}/{total_steps} 完成**\n"
+            logger.debug(f"[replanner_node] 还有 {len(updated_steps)} 个步骤待执行")
             
-            # 如果步骤有变化，显示重新规划信息
-            if updated_steps != current_plan[1:]:
+            # 只有当步骤发生实际变化时才显示进度信息
+            expected_remaining = current_plan[1:] if len(current_plan) > 1 else []
+            
+            if updated_steps != expected_remaining:
+                # 计划发生了调整，显示调整信息
+                progress_display = f"\n📊 **步骤 {completed_count}/{total_steps} 完成**\n"
                 progress_display += f"\n🔄 **计划已调整**: {reasoning}\n"
                 progress_display += f"\n📋 **剩余步骤**:\n"
                 for i, step in enumerate(updated_steps, 1):
                     progress_display += f"   **{i}.** {step}\n"
-                progress_display += f"\n"  # 确保末尾有换行
-            
-            return {
-                **state,
-                "current_plan": updated_steps
-            }
+                progress_display += f"\n"
+                
+                return {
+                    "messages": [AIMessage(content=progress_display)],
+                    "current_plan": updated_steps
+                }
+            else:
+                # 计划没有变化，静默更新状态，不添加消息
+                return {
+                    "current_plan": updated_steps
+                }
 
     async def should_continue(self, state: PlanAndExecuteAgentState) -> str:
         """判断是否继续执行或结束 - 统一判断逻辑，避免重复进入summary"""
@@ -183,24 +205,31 @@ class PlanAndExecuteAgentNode(ToolsNodes):
     async def summary_node(self, state: PlanAndExecuteAgentState, config: RunnableConfig):
         """最终总结节点 - 使用LLM智能总结执行过程和结果"""
         
+        logger.debug("[summary_node] 开始生成最终总结")
+        
         # 获取原始用户问题和执行计划
         user_message = config["configurable"]["graph_request"].user_message
         original_plan = state.get("original_plan", [])
         total_steps = len(original_plan)
         
-        # 收集整个执行过程的消息历史
+        # 收集整个执行过程的消息历史，去重处理
         messages = state.get("messages", [])
         execution_history = []
+        seen_contents = set()
         
-        # 整理执行历史，包括计划、执行步骤和结果
+        # 整理执行历史，过滤重复内容
         for message in messages:
             if hasattr(message, 'content') and message.content:
                 content = message.content.strip()
-                if content:  # 只收集非空内容
+                # 过滤掉空内容、重复内容以及包含"最终结果"的内容（避免嵌套）
+                if (content and 
+                    content not in seen_contents and 
+                    "🎯 **最终结果**" not in content):
                     execution_history.append(f"- {content}")
+                    seen_contents.add(content)
         
         # 使用模板构建总结提示
-        summary_prompt = TemplateLoader.render_template("plan_and_execute_agent/summary_prompt.jinja2",{
+        summary_prompt = TemplateLoader.render_template("prompts/plan_and_execute_agent/summary_prompt",{
             "user_message": user_message,
             "total_steps": total_steps,
             "original_plan": original_plan,
@@ -212,12 +241,13 @@ class PlanAndExecuteAgentNode(ToolsNodes):
             HumanMessage(content=summary_prompt)
         ])
 
-        # 格式化最终总结显示 - 确保前后都有适当的换行
+        # 格式化最终总结显示
         formatted_summary = f"\n🎯 **最终结果**\n{summary_response.content}\n"
         
+        logger.debug("[summary_node] 总结生成完成")
+        
         return {
-            **state,
-            "messages": state.get("messages", []) + [AIMessage(content=formatted_summary)],
+            "messages": [AIMessage(content=formatted_summary)],
             "final_response": formatted_summary
         }
 

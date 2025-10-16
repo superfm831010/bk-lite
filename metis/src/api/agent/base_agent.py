@@ -63,6 +63,7 @@ class BaseAgent:
             async for chunk in result:
                 # 使用新的 filter_messages 方法处理消息
                 content = await workflow.filter_messages(chunk)
+                
                 if not content:
                     continue
                     
