@@ -192,12 +192,16 @@ class KnowledgeDocumentViewSet(LanguageViewSet):
     @HasPermission("knowledge_document-View")
     def get_chunk_detail(self, request):
         knowledge_id = request.GET.get("knowledge_id")
-        instance = KnowledgeDocument.objects.get(id=knowledge_id)
         chunk_id = request.GET.get("chunk_id")
-        is_qa_paris = request.GET.get("is_qa_paris", "0") == "1"
+        is_qa_paris = request.GET.get("is_qa_pairs", "0") == "1"
         if not chunk_id:
             return JsonResponse({"result": True, "message": self.loader.get("chunk_id_required")})
-        index_name = instance.knowledge_index_name()
+        if is_qa_paris:
+            qa_paris_id = knowledge_id.split("qa_pairs_id_")[-1]
+            index_name = QAPairs.objects.get(id=qa_paris_id).knowledge_base.knowledge_index_name()
+        else:
+            instance = KnowledgeDocument.objects.get(id=knowledge_id)
+            index_name = instance.knowledge_index_name()
         res = ChunkHelper.get_document_es_chunk(
             index_name,
             1,
