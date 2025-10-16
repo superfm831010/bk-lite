@@ -1,9 +1,7 @@
 from typing import TypedDict, Annotated, Optional
 
 from langgraph.graph import add_messages
-from langchain_core.messages.base import BaseMessage
-from typing import List
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
 from neco.llm.chain.entity import BasicLLMRequest, BasicLLMResponse, ToolsServer
 from neco.llm.chain.graph import BasicGraph
 from neco.llm.chain.node import ToolsNodes
@@ -27,11 +25,6 @@ class ReActAgentNode(ToolsNodes):
 
 
 class ReActAgentGraph(BasicGraph):
-    async def filter_messages(self, chunk: BaseMessage) -> List:
-        if type(chunk[0]) is SystemMessage or type(chunk[0]) is HumanMessage:
-            return ""
-        else:
-            return chunk[0].content
     
     async def compile_graph(self, request: ReActAgentRequest):
         """编译 ReAct Agent 执行图"""

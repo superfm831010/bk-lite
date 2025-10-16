@@ -430,6 +430,14 @@ class ToolsNodes(BasicNode):
         self.tools_prompt_tokens = 0
         self.tools_completions_tokens = 0
 
+    def get_tools_description(self) -> str:
+        if self.tools:
+            tools_info = ""
+            for tool in self.tools:
+                tools_info += f"{tool.name}: {tool.description}\n"
+            return tools_info
+        return ""
+    
     async def call_with_structured_output(self, llm, user_message: str, pydantic_model):
         """
         通用结构化输出调用方法
