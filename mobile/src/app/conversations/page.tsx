@@ -35,7 +35,7 @@ export default function ConversationList() {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--color-background-body)]">
+    <div className="flex flex-col h-full bg-[var(--color-background-body)]">
       {/* 顶部导航栏 */}
       <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-bg)]">
         <ScanningOutline fontSize={20} className="text-[var(--color-text-2)]" />

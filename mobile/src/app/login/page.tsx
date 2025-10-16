@@ -86,7 +86,7 @@ export default function LoginPage() {
       }
 
       if (userData.token) {
-        login(userData.token);
+        login(userData.token, userData);
         Toast.show({ content: 'Login successful', icon: 'success' });
       }
 
@@ -147,21 +147,21 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 flex flex-col">
+    <div className="min-h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 flex flex-col">
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
           {/* Logo 和标题区域 */}
           <div className="text-center mb-6">
-            <div className="flex justify-center mb-2">
+            <div className="flex justify-center mb-1">
               <Image
                 src="/logo-site.png"
                 alt="WeOps Logo"
-                width={54}
-                height={54}
-                className="w-12 h-12 object-contain"
+                width={58}
+                height={58}
+                className="w-14 h-14 object-contain"
               />
             </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-1">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
               {authStep === 'login' && 'Sign In'}
               {authStep === 'reset-password' && 'Reset Password'}
               {authStep === 'otp-verification' && 'Verify Identity'}
@@ -191,7 +191,7 @@ export default function LoginPage() {
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 {/* 域选择 */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-normal text-gray-600">
+                  <label className="text-xs font-medium text-gray-500">
                     Domain
                   </label>
                   {loadingDomains ? (
@@ -224,7 +224,7 @@ export default function LoginPage() {
 
                 {/* 用户名输入 */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-normal text-gray-600">
+                  <label className="text-xs font-medium text-gray-500">
                     Username
                   </label>
                   <div className="relative">
@@ -250,7 +250,7 @@ export default function LoginPage() {
 
                 {/* 密码输入 */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-normal text-gray-600">
+                  <label className="text-xs font-medium text-gray-500">
                     Password
                   </label>
                   <div className="relative">
