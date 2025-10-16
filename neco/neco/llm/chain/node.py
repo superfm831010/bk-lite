@@ -558,7 +558,7 @@ class ToolsNodes(BasicNode):
             # 去重工具名称
             executed_tools = list(dict.fromkeys(executed_tools))
             
-            # 找到最后一个 AI 消息
+            # 找到最后一个 AI 消 Messages
             last_ai_message = None
             for msg in reversed(final_messages):
                 if isinstance(msg, AIMessage):
@@ -585,8 +585,63 @@ class ToolsNodes(BasicNode):
         
         graph_builder.add_node(react_wrapper_name, react_wrapper_node)
         return react_wrapper_name
-  
     
+    async def invoke_react_for_candidate(self, user_message: str, messages: List[BaseMessage], config: RunnableConfig, system_prompt: str) -> AIMessage:
+        """通用的 ReAct 候选生成方法
+        
+        Args:
+            user_message: 用户消息
+            messages: 上下文消息列表
+            config: 运行配置
+            system_prompt: 系统提示词
+            
+        Returns:
+            生成的 AI 消息
+        """
+        try:
+            # 创建临时状态图来使用可复用的 ReAct 节点组合
+            temp_graph_builder = StateGraph(dict)
+            
+            # 使用可复用的 ReAct 节点组合构建图
+            react_entry_node = await self.build_react_nodes(
+                graph_builder=temp_graph_builder,
+                composite_node_name="temp_react_candidate",
+                additional_system_prompt=system_prompt,
+                next_node=END
+            )
+            
+            # 设置起始节点
+            temp_graph_builder.set_entry_point(react_entry_node)
+            temp_graph_builder.add_edge(react_entry_node, END)
+            
+            # 编译临时图
+            temp_graph = temp_graph_builder.compile()
+            
+            # 调用 ReAct 节点
+            result = await temp_graph.ainvoke(
+                {"messages": messages[-3:] if len(messages) > 3 else messages},
+                config=config
+            )
+            
+            # 提取最后的 AI 消息
+            result_messages = result.get("messages", [])
+            if isinstance(result_messages, list):
+                for msg in reversed(result_messages):
+                    if isinstance(msg, AIMessage):
+                        return msg
+            elif isinstance(result_messages, AIMessage):
+                return result_messages
+            
+            # 如果没有找到 AI 消息，返回默认响应
+            return AIMessage(content=f"正在分析问题: {user_message}")
+            
+        except Exception as e:
+            logger.warning(f"ReAct 调用失败: {e}，使用降级方案")
+            return AIMessage(
+                content=f"正在重新分析这个问题: {user_message}，寻找更好的解决方案...",
+                tool_calls=[]
+            )
+
     def _get_current_tools(self, tools_node: Optional[ToolNode]) -> list:
         """获取当前可用的工具列表"""
         if tools_node and hasattr(tools_node, 'tools'):

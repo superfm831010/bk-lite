@@ -72,12 +72,12 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         reasoning = plan_response.reasoning
         
         # 改进规划显示，让结构更清晰，显示详细计划
-        plan_display = f"🎯 **执行计划已制定** ({len(plan_steps)} 个步骤)\n"
-        plan_display += f"📝 **计划推理**: {reasoning}\n"
-        plan_display += "📋 **执行步骤**:\n"
+        plan_display = f"🎯 **执行计划已制定** ({len(plan_steps)} 个步骤)\n\n"
+        plan_display += f"📝 **计划推理**: {reasoning}\n\n"
+        plan_display += "📋 **执行步骤**:\n\n"
         for i, step in enumerate(plan_steps, 1):
-            plan_display += f"   **{i}.** {step}\n"
-        plan_display += f"\n🚀 开始执行计划...\n"
+            plan_display += f"   **{i}.** {step}\n\n"
+        plan_display += f"\n\n🚀 开始执行计划...\n\n"
         
         return {
             "messages": [AIMessage(content=plan_display)],
@@ -170,12 +170,12 @@ class PlanAndExecuteAgentNode(ToolsNodes):
             
             if updated_steps != expected_remaining:
                 # 计划发生了调整，显示调整信息
-                progress_display = f"\n📊 **步骤 {completed_count}/{total_steps} 完成**\n"
-                progress_display += f"\n🔄 **计划已调整**: {reasoning}\n"
-                progress_display += f"\n📋 **剩余步骤**:\n"
+                progress_display = f"\n\n📊 **步骤 {completed_count}/{total_steps} 完成**\n\n"
+                progress_display += f"\n\n🔄 **计划已调整**: {reasoning}\n\n"
+                progress_display += f"\n\n📋 **剩余步骤**:\n\n"
                 for i, step in enumerate(updated_steps, 1):
-                    progress_display += f"   **{i}.** {step}\n"
-                progress_display += f"\n"
+                    progress_display += f"   **{i}.** {step}\n\n"
+                progress_display += f"\n\n"
                 
                 return {
                     "messages": [AIMessage(content=progress_display)],
@@ -242,7 +242,7 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         ])
 
         # 格式化最终总结显示
-        formatted_summary = f"\n🎯 **最终结果**\n{summary_response.content}\n"
+        formatted_summary = f"\n\n🎯 **最终结果**\n\n{summary_response.content}\n\n"
         
         logger.debug("[summary_node] 总结生成完成")
         
