@@ -862,12 +862,19 @@
     "notificationCategory": "通知类别",
     "notificationMethod": "通知方式",
     "notificationContent": "通知内容",
+    "notificationRecipients": "通知人",
+    "notificationTitle": "通知标题",
     "email": "邮件",
     "enterpriseWechatBot": "企微机器人",
     "selectNotificationMethod": "请选择通知方式",
+    "selectNotificationRecipients": "请选择通知人",
     "enterNotificationContent": "请输入通知内容",
+    "enterNotificationTitle": "请输入通知标题",
     "pleaseSelectNotificationMethod": "请选择通知方式",
+    "pleaseSelectNotificationRecipients": "请选择通知人",
     "pleaseEnterNotificationContent": "请输入通知内容",
-    "fetchNotificationChannelsFailed": "获取通知渠道失败"
+    "pleaseEnterNotificationTitle": "请输入通知标题",
+    "fetchNotificationChannelsFailed": "获取通知渠道失败",
+    "fetchUsersFailed": "获取用户列表失败"
   }
 }

@@ -7,6 +7,7 @@ import { Node } from '@xyflow/react';
 import type { UploadProps, UploadFile as AntdUploadFile } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useChannelApi } from "@/app/system-manager/api/channel";
+import { useStudioApi } from "@/app/opspilot/api/studio";
 
 // Extend UploadFile to include the 'content' property
 interface UploadFile extends AntdUploadFile {
@@ -60,9 +61,13 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   const [notificationChannels, setNotificationChannels] = useState<any[]>([]);
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [notificationType, setNotificationType] = useState<'email' | 'enterprise_wechat_bot'>('email');
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [usersLoaded, setUsersLoaded] = useState(false); // 添加标记，记录是否已加载过用户数据
 
   const { fetchSkill } = useSkillApi();
   const { getChannelData } = useChannelApi();
+  const { getAllUsers } = useStudioApi();
   const searchParams = useSearchParams();
   const botId = searchParams ? searchParams.get('id') : '1';
 
@@ -99,6 +104,26 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     }
   };
 
+  // Load all users
+  const loadAllUsers = async () => {
+    if (usersLoaded) {
+      return;
+    }
+
+    try {
+      setLoadingUsers(true);
+      const users = await getAllUsers();
+      setAllUsers(users || []);
+      setUsersLoaded(true);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+      message.error(t('chatflow.fetchUsersFailed'));
+      setAllUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
   // 复制API URL到剪贴板
   const copyApiUrl = async () => {
     const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -124,6 +149,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       // Use default type 'email' or get from form/config
       const currentType = (node.data.config?.notificationType || 'email') as 'email' | 'enterprise_wechat_bot';
       loadNotificationChannels(currentType);
+      loadAllUsers();
     }
   }, [node?.data.type, visible]);
 
@@ -808,7 +834,11 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
               const handleNotificationTypeChange = (value: 'email' | 'enterprise_wechat_bot') => {
                 setNotificationType(value);
                 // Clear selected notification method when type changes
-                form.setFieldsValue({ notificationMethod: undefined });
+                form.setFieldsValue({ 
+                  notificationMethod: undefined,
+                  notificationRecipients: undefined,
+                  notificationTitle: undefined
+                });
                 // Load channels for the new type
                 loadNotificationChannels(value);
               };
@@ -844,6 +874,48 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                       ))}
                     </Select>
                   </Form.Item>
+
+                  {/* 邮件通知的额外字段 */}
+                  {notificationType === 'email' && (
+                    <>
+                      <Form.Item 
+                        name="notificationRecipients" 
+                        label={t('chatflow.notificationRecipients')}
+                        rules={[{ required: true, message: t('chatflow.pleaseSelectNotificationRecipients') }]}
+                      >
+                        <Select
+                          mode="multiple"
+                          placeholder={t('chatflow.selectNotificationRecipients')}
+                          loading={loadingUsers}
+                          disabled={loadingUsers}
+                          showSearch
+                          filterOption={(input, option) =>
+                            option?.label?.toString().toLowerCase().includes(input.toLowerCase()) ?? false
+                          }
+                        >
+                          {allUsers.map((user) => (
+                            <Option 
+                              key={user.id} 
+                              value={user.id}
+                              label={`${user.display_name || user.name}(${user.username})`}
+                            >
+                              {user.display_name || user.name}({user.username})
+                            </Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+
+                      <Form.Item 
+                        name="notificationTitle" 
+                        label={t('chatflow.notificationTitle')}
+                        rules={[{ required: true, message: t('chatflow.pleaseEnterNotificationTitle') }]}
+                      >
+                        <Input 
+                          placeholder={t('chatflow.enterNotificationTitle')}
+                        />
+                      </Form.Item>
+                    </>
+                  )}
 
                   <Form.Item 
                     name="notificationContent" 

@@ -860,12 +860,19 @@
     "notificationCategory": "Notification Category", 
     "notificationMethod": "Notification Method",
     "notificationContent": "Notification Content",
+    "notificationRecipients": "Notification Recipients",
+    "notificationTitle": "Notification Title",
     "email": "Email",
     "enterpriseWechatBot": "Enterprise WeChat Bot",
     "selectNotificationMethod": "Please select notification method",
+    "selectNotificationRecipients": "Please select notification recipients",
     "enterNotificationContent": "Please enter notification content",
+    "enterNotificationTitle": "Please enter notification title",
     "pleaseSelectNotificationMethod": "Please select notification method",
+    "pleaseSelectNotificationRecipients": "Please select notification recipients",
     "pleaseEnterNotificationContent": "Please enter notification content",
-    "fetchNotificationChannelsFailed": "Failed to fetch notification channels"
+    "pleaseEnterNotificationTitle": "Please enter notification title",
+    "fetchNotificationChannelsFailed": "Failed to fetch notification channels",
+    "fetchUsersFailed": "Failed to fetch users"
   }
 }
