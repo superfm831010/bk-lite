@@ -204,7 +204,7 @@
       "description": "文档管理用于添加新知识，包括本地文件、网页链接或自定义文本。新添加的知识可以分块，以便机器人使用。",
       "batchSet": "批量设置",
       "name": "名称",
-      "chunkSize": "块大小",
+      "chunkSize": "分块数",
       "createdAt": "创建时间",
       "createdBy": "创建者",
       "actions": "操作",
