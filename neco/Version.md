@@ -1,3 +1,6 @@
+# 1.0.4
+* 修复知识图谱的 Document Type 为 Graph
+
 # 1.0.3
 * 优化 Lats Agent 和 ChatflowAgent 图结构
 

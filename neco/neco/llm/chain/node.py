@@ -287,7 +287,7 @@ class BasicNode:
                     'chunk_id': f"summary_{content_hash}",
                     'segment_number': 1,
                     'segment_id': f"summary_{content_hash}",
-                    'chunk_type': 'Document'
+                    'chunk_type': 'Graph'
                 }
 
         return SummaryResult()
