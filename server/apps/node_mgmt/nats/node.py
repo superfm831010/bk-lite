@@ -257,7 +257,7 @@ def cloudregion_tls_env_by_node_id(node_id):
         "NATS_PROTOCOL": "nats",
         "NATS_TLS_CA_FILE": "",
     }
-
+    
     # 用查询到的值覆盖默认值
     for obj in objs:
         result[obj.key] = obj.value

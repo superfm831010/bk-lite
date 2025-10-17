@@ -228,13 +228,13 @@ class Sidecar:
         # 从数据库获取节点信息
         node = Node.objects.filter(id=node_id).first()
         if not node:
-            return EncryptedJsonResponse(status=404, data={}, manage="Node collector Configuration not found", request=request)
+            return EncryptedJsonResponse(status=404, data={"error": "Node not found"}, request=request)
 
         # 查询配置，并预取关联的子配置
         configuration = CollectorConfiguration.objects.filter(id=configuration_id).prefetch_related(
             'childconfig_set').first()
         if not configuration:
-            return EncryptedJsonResponse(status=404, data={}, manage="Configuration not found", request=request)
+            return EncryptedJsonResponse(status=404, data={"error": "Configuration not found"}, request=request)
 
         # 合并子配置内容到模板
         merged_template = configuration.config_template
@@ -254,8 +254,9 @@ class Sidecar:
 
         variables = Sidecar.get_variables(node)
 
-        # 不在变量中渲染NATS_PASSWORD，走环境变量渲染
-        variables.pop("NATS_PASSWORD", None)
+        # 不在变量中渲染NATS_PASSWORD，走环境变量渲染，nat executor会注入NATS_PASSWORD
+        if configuration.collector.name != "NATS-Executor":
+            variables.pop("NATS_PASSWORD", None)
 
         # 如果配置中有 env_config，则合并到变量中
         if configuration_data.get('env_config'):
@@ -277,12 +278,12 @@ class Sidecar:
     def get_node_config_env(request, node_id, configuration_id):
         node = Node.objects.filter(id=node_id).first()
         if not node:
-            return EncryptedJsonResponse(status=404, data={}, manage="Node collector Configuration not found", request=request)
+            return EncryptedJsonResponse(status=404, data={"error": "Node not found"}, request=request)
 
         # 查询配置，并预取关联的子配置
         obj = CollectorConfiguration.objects.filter(id=configuration_id).prefetch_related('childconfig_set').first()
         if not obj:
-            return EncryptedJsonResponse(status=404, data={}, manage="Configuration environment not found", request=request)
+            return EncryptedJsonResponse(status=404, data={"error": "Configuration not found"}, request=request)
 
         # 获取云区域环境变量（仅获取 NATS_PASSWORD）
         nats_pwd_obj = SidecarEnv.objects.filter(key="NATS_PASSWORD", cloud_region=node.cloud_region_id).first()
@@ -330,7 +331,7 @@ class Sidecar:
         logger.debug(f"Merged env config for configuration {configuration_id}: {len(final_env_config)} variables (NATS_PASSWORD from cloud region: {'yes' if 'NATS_PASSWORD' in cloud_region_nats_password else 'no'})")
 
         return EncryptedJsonResponse(
-            dict(
+            data=dict(
                 id=configuration_id, 
                 env_config=final_env_config
             ),
