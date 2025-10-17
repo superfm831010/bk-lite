@@ -193,15 +193,20 @@ class KnowledgeDocumentViewSet(LanguageViewSet):
     def get_chunk_detail(self, request):
         knowledge_id = request.GET.get("knowledge_id")
         chunk_id = request.GET.get("chunk_id")
-        is_qa_paris = request.GET.get("is_qa_pairs", "0") == "1"
+        chunk_type = request.GET.get("type", "document")
         if not chunk_id:
             return JsonResponse({"result": True, "message": self.loader.get("chunk_id_required")})
-        if is_qa_paris:
+        if chunk_type == "QA":
             qa_paris_id = knowledge_id.split("qa_pairs_id_")[-1]
             index_name = QAPairs.objects.get(id=qa_paris_id).knowledge_base.knowledge_index_name()
-        else:
+        elif chunk_type == "Document":
             instance = KnowledgeDocument.objects.get(id=knowledge_id)
             index_name = instance.knowledge_index_name()
+        elif chunk_type == "Graph":
+            graph_id = knowledge_id.split("graph-")[-1]
+            return self.get_graph_detail(graph_id, chunk_id)
+        else:
+            return JsonResponse({"result": True, "message": self.loader.get("no_support_chunk_type")})
         res = ChunkHelper.get_document_es_chunk(
             index_name,
             1,
@@ -211,7 +216,7 @@ class KnowledgeDocumentViewSet(LanguageViewSet):
         )
         if res["documents"]:
             return_data = res["documents"][0]
-            if not is_qa_paris:
+            if chunk_type == "Document":
                 data = {
                     "id": return_data["metadata"]["chunk_id"],
                     "content": return_data["page_content"],
@@ -226,6 +231,13 @@ class KnowledgeDocumentViewSet(LanguageViewSet):
                 }
             return JsonResponse({"result": True, "data": data})
         return JsonResponse({"result": False, "message": self.loader.get("chunk_not_found")})
+
+    def get_graph_detail(self, graph_id, chunk_id):
+        obj = KnowledgeGraph.objects.filter(id=graph_id).first()
+        if not obj:
+            return JsonResponse({"result": True, "message": self.loader.get("knowledge_graph_not_found")})
+        res = GraphUtils.search_graph(obj, 10, chunk_id)
+        return JsonResponse(res)
 
     @action(methods=["POST"], detail=False)
     @HasPermission("knowledge_document-Delete")
