@@ -254,8 +254,9 @@ class Sidecar:
 
         variables = Sidecar.get_variables(node)
 
-        # 不在变量中渲染NATS_PASSWORD，走环境变量渲染
-        variables.pop("NATS_PASSWORD", None)
+        # 不在变量中渲染NATS_PASSWORD，走环境变量渲染，nat executor会注入NATS_PASSWORD
+        if configuration.collector.name != "NATS-Executor":
+            variables.pop("NATS_PASSWORD", None)
 
         # 如果配置中有 env_config，则合并到变量中
         if configuration_data.get('env_config'):
@@ -331,7 +332,7 @@ class Sidecar:
 
         return EncryptedJsonResponse(
             data=dict(
-                id=configuration_id,
+                id=configuration_id, 
                 env_config=final_env_config
             ),
             request=request
