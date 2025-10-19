@@ -38,11 +38,11 @@ const LayoutWithProviders = ({ children }: { children: React.ReactNode }) => {
   
   const isLoading = isAuthLoading || (isAuthenticated && (permissionsLoading || menusLoading));
   const authPaths = ['/auth/signin', '/auth/signout'];
-  const excludedPaths = ['/no-permission', '/no-found', '/', ...authPaths];
+  const excludedPaths = ['/no-permission', '/not-found', '/', ...authPaths];
 
   const isPathInMenu = useCallback((path: string, menus: MenuItem[]): boolean => {
     for (const menu of menus) {
-      if (menu.url?.startsWith(path)) {
+      if (menu.url && path.startsWith(menu.url)) {
         return true;
       }
       if (menu.children && isPathInMenu(path, menu.children)) {
@@ -74,7 +74,7 @@ const LayoutWithProviders = ({ children }: { children: React.ReactNode }) => {
           }
         } else {
           setIsAllowed(false);
-          router.replace('/no-found');
+          router.replace('/not-found');
         }
       }
     };
@@ -114,7 +114,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <title>BlueKing Lite - AI 原生的轻量化运维平台</title>
+        <title>黄埔海关智能运维平台</title>
         <link rel="icon" href="/logo-site.png" type="image/png"/>
         <Script src="/iconfont.js" strategy="afterInteractive"/>
       </head>
