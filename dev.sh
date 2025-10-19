@@ -39,6 +39,12 @@ fi
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_ROOT"
 
+# 尝试加载 uv 环境（如果已安装）
+if [ -f "$HOME/.local/bin/env" ]; then
+    # 临时导出 PATH 以包含 uv
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
 # PID 文件目录
 PID_DIR="$PROJECT_ROOT/.dev-pids"
 mkdir -p "$PID_DIR"
