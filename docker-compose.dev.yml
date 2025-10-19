@@ -44,7 +44,7 @@ services:
     container_name: bklite-redis-dev
     command: redis-server --requirepass bklite_redis_pass
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_dev:/data
     networks:
