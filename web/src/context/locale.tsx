@@ -11,12 +11,12 @@ const LocaleContext = createContext<{
     } | undefined>(undefined);
 
 export const LocaleProvider = ({ children }: { children: ReactNode }) => {
-  const [locale, setLocale] = useState('en');
+  const [locale, setLocale] = useState('zh-CN');
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedLocale = localStorage.getItem('locale') || 'en';
+    const savedLocale = localStorage.getItem('locale') || 'zh-CN';
     setLocale(savedLocale);
     fetchLocaleMessages(savedLocale);
   }, []);
