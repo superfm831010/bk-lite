@@ -29,3 +29,14 @@ agents/fusion-collector/agent/vector
 agents/fusion-collector/agent/mibs
 agents/fusion-collector/agent/misc
 agents/fusion-collector/agent/collector-sidecar
+
+# Local development
+.dev-pids/
+.dev-logs/
+.env
+.env.local
+.env.dev
+server/.env
+server/.env.dev
+web/.env.local
+web/.env.local.dev

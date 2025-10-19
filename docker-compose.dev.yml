@@ -1,0 +1,195 @@
+# Blueking Lite - 本地开发环境 Docker Compose 配置
+# 仅包含基础设施服务，应用服务（Server/Web）在本地运行
+
+networks:
+  bklite-dev:
+    driver: bridge
+    name: bklite-dev
+
+volumes:
+  postgres_dev:
+  redis_dev:
+  nats_dev:
+  minio_dev:
+  victoria_metrics_dev:
+  victoria_logs_dev:
+  falkordb_dev:
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: bklite-postgres-dev
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: bklite_dev_pass
+      POSTGRES_DB: bklite
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev:/var/lib/postgresql/data
+    networks:
+      - bklite-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis 缓存和消息队列
+  redis:
+    image: redis:7-alpine
+    container_name: bklite-redis-dev
+    command: redis-server --requirepass bklite_redis_pass
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev:/data
+    networks:
+      - bklite-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "bklite_redis_pass", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # MinIO 对象存储
+  minio:
+    image: minio/minio:latest
+    container_name: bklite-minio-dev
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_dev:/data
+    networks:
+      - bklite-dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # NATS 消息服务器
+  nats:
+    image: nats:latest
+    container_name: bklite-nats-dev
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - nats_dev:/data
+    networks:
+      - bklite-dev
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Victoria Metrics 时序数据库
+  victoria-metrics:
+    image: victoriametrics/victoria-metrics:latest
+    container_name: bklite-victoria-metrics-dev
+    command:
+      - "--storageDataPath=/victoria-metrics-data"
+      - "--httpListenAddr=0.0.0.0:8428"
+      - "--retentionPeriod=7d"
+    ports:
+      - "8428:8428"
+    volumes:
+      - victoria_metrics_dev:/victoria-metrics-data
+    networks:
+      - bklite-dev
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8428/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Victoria Logs 日志存储
+  victoria-logs:
+    image: victoriametrics/victoria-logs:latest
+    container_name: bklite-victoria-logs-dev
+    command:
+      - "-storageDataPath=/vlogs"
+      - "-loggerFormat=json"
+    ports:
+      - "9428:9428"
+    volumes:
+      - victoria_logs_dev:/vlogs
+    networks:
+      - bklite-dev
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9428/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # FalkorDB 图数据库
+  falkordb:
+    image: falkordb/falkordb:latest
+    container_name: bklite-falkordb-dev
+    environment:
+      - REDIS_ARGS=--requirepass bklite_falkordb_pass
+    ports:
+      - "6479:6379"
+    volumes:
+      - falkordb_dev:/data
+    networks:
+      - bklite-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "-a", "bklite_falkordb_pass", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # MLflow 实验跟踪
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: bklite-mlflow-dev
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --backend-store-uri
+      - postgresql://postgres:bklite_dev_pass@postgres:5432/mlflow
+      - --artifacts-destination
+      - s3://mlflow-artifacts/
+      - --serve-artifacts
+    environment:
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin123
+      - AWS_DEFAULT_REGION=us-east-1
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+    ports:
+      - "5000:5000"
+    networks:
+      - bklite-dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
