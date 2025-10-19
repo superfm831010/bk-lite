@@ -57,19 +57,40 @@ git push -u myfork master
 
 > **注意**：密码处输入的是 Token，不是 GitHub 账户密码
 
-#### 3. 配置 Git 凭证缓存（可选）
+#### 3. 配置 Git 凭证存储
 
-为避免每次都输入 token，可以配置凭证缓存：
+**✅ 已配置**：当前系统已配置凭证永久存储
+
+为避免每次都输入 token，已配置凭证永久存储：
 
 ```bash
-# 缓存凭证 15 分钟（默认）
-git config --global credential.helper cache
+# 当前配置：永久存储凭证到本地文件
+git config --global credential.helper store
+```
 
-# 缓存凭证 1 小时
+**工作原理**：
+- 首次推送时输入用户名和 Personal Access Token
+- 凭证会以明文形式保存到 `~/.git-credentials` 文件
+- 后续所有 Git 操作自动使用保存的凭证，无需重新输入
+- 系统重启后凭证依然有效
+
+**凭证文件位置**：`~/.git-credentials`
+
+**安全提示**：
+- ⚠️ 凭证以明文形式存储，请确保系统安全
+- ⚠️ 不要将 `~/.git-credentials` 文件分享给他人
+- ⚠️ 如果 token 泄露，请立即在 GitHub 上撤销并重新生成
+
+**其他可选配置**：
+```bash
+# 内存缓存凭证 1 小时（更安全）
 git config --global credential.helper 'cache --timeout=3600'
 
-# 或者永久存储（保存到磁盘，不安全）
-git config --global credential.helper store
+# 内存缓存凭证 24 小时
+git config --global credential.helper 'cache --timeout=86400'
+
+# 内存缓存凭证 7 天
+git config --global credential.helper 'cache --timeout=604800'
 ```
 
 ### 方式二：使用 SSH（需要配置 SSH Key）
@@ -197,5 +218,7 @@ git config --global credential.helper cache
 
 ## 配置历史记录
 
-- **2025-10-19**：初始配置，设置 myfork 指向 https://github.com/superfm831010/bk-lite.git
-- **2025-10-19**：尝试 SSH 失败，改用 HTTPS + Personal Access Token 方式
+- **2025-10-19 06:00**：初始配置，设置 myfork 指向 https://github.com/superfm831010/bk-lite.git
+- **2025-10-19 06:15**：尝试 SSH 失败，改用 HTTPS + Personal Access Token 方式
+- **2025-10-19 06:30**：配置 Git 凭证缓存 24 小时（后改为永久存储）
+- **2025-10-19 06:35**：改为凭证永久存储（credential.helper store），明文保存到 ~/.git-credentials
