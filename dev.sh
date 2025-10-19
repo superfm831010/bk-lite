@@ -275,12 +275,12 @@ start_server() {
     fi
 
     cd "$PROJECT_ROOT/server"
-    nohup uv run uvicorn asgi:application --host 0.0.0.0 --port 8001 --reload > "$LOG_DIR/server.log" 2>&1 &
+    nohup uv run uvicorn asgi:application --host 0.0.0.0 --port 18001 --reload > "$LOG_DIR/server.log" 2>&1 &
     echo $! > "$PID_DIR/server.pid"
     cd "$PROJECT_ROOT"
 
     log_success "Server 已启动 (PID: $(cat $PID_DIR/server.pid))"
-    log_info "访问地址: http://localhost:8001"
+    log_info "访问地址: http://localhost:18001"
     log_info "日志文件: $LOG_DIR/server.log"
 }
 
@@ -352,7 +352,7 @@ start_web() {
     cd "$PROJECT_ROOT"
 
     log_success "Web 已启动 (PID: $(cat $PID_DIR/web.pid))"
-    log_info "访问地址: http://localhost:3000"
+    log_info "访问地址: http://localhost:3011"
     log_info "日志文件: $LOG_DIR/web.log"
 }
 
@@ -432,7 +432,7 @@ show_status() {
     # Server 状态
     printf "${CYAN}Server 状态:${NC}\n"
     if [ -f "$PID_DIR/server.pid" ] && kill -0 $(cat "$PID_DIR/server.pid") 2>/dev/null; then
-        printf "${GREEN}● 运行中${NC} (PID: %s) - http://localhost:8001\n" "$(cat $PID_DIR/server.pid)"
+        printf "${GREEN}● 运行中${NC} (PID: %s) - http://localhost:18001\n" "$(cat $PID_DIR/server.pid)"
     else
         printf "${RED}● 已停止${NC}\n"
     fi
@@ -441,7 +441,7 @@ show_status() {
     # Web 状态
     printf "${CYAN}Web 状态:${NC}\n"
     if [ -f "$PID_DIR/web.pid" ] && kill -0 $(cat "$PID_DIR/web.pid") 2>/dev/null; then
-        printf "${GREEN}● 运行中${NC} (PID: %s) - http://localhost:3000\n" "$(cat $PID_DIR/web.pid)"
+        printf "${GREEN}● 运行中${NC} (PID: %s) - http://localhost:3011\n" "$(cat $PID_DIR/web.pid)"
     else
         printf "${RED}● 已停止${NC}\n"
     fi
@@ -609,10 +609,10 @@ show_help() {
     echo "    5. $0 start all"
     echo ""
     printf "${GREEN}访问地址:${NC}\n"
-    echo "    - Web 前端: http://localhost:3000"
-    echo "    - Server API: http://localhost:8001"
-    echo "    - MinIO 控制台: http://localhost:9001"
-    echo "    - MLflow: http://localhost:5000"
+    echo "    - Web 前端: http://localhost:3011"
+    echo "    - Server API: http://localhost:18001"
+    echo "    - MinIO 控制台: http://localhost:19001"
+    echo "    - MLflow: http://localhost:15000"
     echo ""
 }
 

@@ -26,7 +26,7 @@ services:
       POSTGRES_DB: bklite
       PGDATA: /var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "15432:5432"
     volumes:
       - postgres_dev:/var/lib/postgresql/data
     networks:
@@ -44,7 +44,7 @@ services:
     container_name: bklite-redis-dev
     command: redis-server --requirepass bklite_redis_pass
     ports:
-      - "6380:6379"
+      - "16380:6379"
     volumes:
       - redis_dev:/data
     networks:
@@ -65,8 +65,8 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin123
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "19000:9000"
+      - "19001:9001"
     volumes:
       - minio_dev:/data
     networks:
@@ -84,8 +84,8 @@ services:
     container_name: bklite-nats-dev
     command: ["-js", "-m", "8222"]
     ports:
-      - "4222:4222"
-      - "8222:8222"
+      - "14222:4222"
+      # Monitor端口仅容器内访问，不对外暴露
     volumes:
       - nats_dev:/data
     networks:
@@ -106,7 +106,7 @@ services:
       - "--httpListenAddr=0.0.0.0:8428"
       - "--retentionPeriod=7d"
     ports:
-      - "8428:8428"
+      - "18428:8428"
     volumes:
       - victoria_metrics_dev:/victoria-metrics-data
     networks:
@@ -126,7 +126,7 @@ services:
       - "-storageDataPath=/vlogs"
       - "-loggerFormat=json"
     ports:
-      - "9428:9428"
+      - "19428:9428"
     volumes:
       - victoria_logs_dev:/vlogs
     networks:
@@ -145,7 +145,7 @@ services:
     environment:
       - REDIS_ARGS=--requirepass bklite_falkordb_pass
     ports:
-      - "6479:6379"
+      - "16479:6379"
     volumes:
       - falkordb_dev:/data
     networks:
@@ -179,7 +179,7 @@ services:
       - AWS_DEFAULT_REGION=us-east-1
       - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
     ports:
-      - "5000:5000"
+      - "15000:5000"
     networks:
       - bklite-dev
     depends_on:
