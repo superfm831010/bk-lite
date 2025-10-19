@@ -14,6 +14,7 @@ volumes:
   victoria_metrics_dev:
   victoria_logs_dev:
   falkordb_dev:
+  mlflow_dev:
 
 services:
   # PostgreSQL 数据库
@@ -82,7 +83,7 @@ services:
   nats:
     image: nats:latest
     container_name: bklite-nats-dev
-    command: ["-js", "-m", "8222"]
+    command: ["-js", "-m", "8222", "-sd", "/data"]
     ports:
       - "14222:4222"
       # Monitor端口仅容器内访问，不对外暴露
@@ -159,10 +160,12 @@ services:
 
   # MLflow 实验跟踪
   mlflow:
-    image: ghcr.io/mlflow/mlflow:latest
+    build:
+      context: ./deploy/docker/mlflow
+      dockerfile: Dockerfile
+    image: bklite-mlflow:dev
     container_name: bklite-mlflow-dev
     command:
-      - mlflow
       - server
       - --host
       - 0.0.0.0
@@ -180,6 +183,8 @@ services:
       - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
     ports:
       - "15000:5000"
+    volumes:
+      - mlflow_dev:/mlflow
     networks:
       - bklite-dev
     depends_on:

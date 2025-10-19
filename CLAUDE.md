@@ -339,4 +339,4 @@ Both web and mobile use Husky for pre-commit hooks. The hooks run:
 - 中文答复用户
 - 交流、修改过程把相关内容分文档记录在“二次开发及部署文档”目录下
 - 修改提交到git
-- 当前是用名为bklite 的conda环境
+- 开发环境使用名为bklite的conda
