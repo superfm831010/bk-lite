@@ -4,14 +4,36 @@
 
 set -euo pipefail
 
+# 检测终端是否支持颜色
+if [ -t 1 ] && command -v tput &> /dev/null && tput colors &> /dev/null && [ "$(tput colors)" -ge 8 ]; then
+    USE_COLOR=true
+else
+    USE_COLOR=false
+fi
+
+# 允许通过环境变量禁用颜色
+if [ "${NO_COLOR:-}" = "1" ] || [ "${TERM:-}" = "dumb" ]; then
+    USE_COLOR=false
+fi
+
 # 颜色定义
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-MAGENTA='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+if [ "$USE_COLOR" = true ]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    MAGENTA='\033[0;35m'
+    CYAN='\033[0;36m'
+    NC='\033[0m' # No Color
+else
+    RED=''
+    GREEN=''
+    YELLOW=''
+    BLUE=''
+    MAGENTA=''
+    CYAN=''
+    NC=''
+fi
 
 # 项目根目录
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -30,23 +52,23 @@ mkdir -p "$LOG_DIR"
 #=============================================================================
 
 log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    printf "${BLUE}[INFO]${NC} %s\n" "$1"
 }
 
 log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    printf "${GREEN}[SUCCESS]${NC} %s\n" "$1"
 }
 
 log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
+    printf "${YELLOW}[WARN]${NC} %s\n" "$1"
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    printf "${RED}[ERROR]${NC} %s\n" "$1"
 }
 
 log_step() {
-    echo -e "${MAGENTA}[STEP]${NC} $1"
+    printf "${MAGENTA}[STEP]${NC} %s\n" "$1"
 }
 
 #=============================================================================
@@ -397,25 +419,25 @@ show_status() {
     echo ""
 
     # Docker 服务状态
-    echo -e "${CYAN}基础设施服务:${NC}"
+    printf "${CYAN}基础设施服务:${NC}\n"
     docker compose -f docker-compose.dev.yml ps
     echo ""
 
     # Server 状态
-    echo -e "${CYAN}Server 状态:${NC}"
+    printf "${CYAN}Server 状态:${NC}\n"
     if [ -f "$PID_DIR/server.pid" ] && kill -0 $(cat "$PID_DIR/server.pid") 2>/dev/null; then
-        echo -e "${GREEN}● 运行中${NC} (PID: $(cat $PID_DIR/server.pid)) - http://localhost:8001"
+        printf "${GREEN}● 运行中${NC} (PID: %s) - http://localhost:8001\n" "$(cat $PID_DIR/server.pid)"
     else
-        echo -e "${RED}● 已停止${NC}"
+        printf "${RED}● 已停止${NC}\n"
     fi
     echo ""
 
     # Web 状态
-    echo -e "${CYAN}Web 状态:${NC}"
+    printf "${CYAN}Web 状态:${NC}\n"
     if [ -f "$PID_DIR/web.pid" ] && kill -0 $(cat "$PID_DIR/web.pid") 2>/dev/null; then
-        echo -e "${GREEN}● 运行中${NC} (PID: $(cat $PID_DIR/web.pid)) - http://localhost:3000"
+        printf "${GREEN}● 运行中${NC} (PID: %s) - http://localhost:3000\n" "$(cat $PID_DIR/web.pid)"
     else
-        echo -e "${RED}● 已停止${NC}"
+        printf "${RED}● 已停止${NC}\n"
     fi
     echo ""
 }
@@ -538,56 +560,54 @@ git_push() {
 #=============================================================================
 
 show_help() {
-    cat << EOF
-${CYAN}Blueking Lite 本地开发环境管理工具${NC}
-
-用法:
-    $0 <command> [options]
-
-${YELLOW}环境管理:${NC}
-    check               检查开发环境是否就绪
-    install             安装所有依赖 (Server + Web)
-
-${YELLOW}服务管理:${NC}
-    start <service>     启动服务 [all|infra|server|web]
-    stop <service>      停止服务 [all|infra|server|web]
-    restart <service>   重启服务 [all|infra|server|web]
-    status              查看所有服务状态
-    logs <service>      查看日志 [infra|server|web]
-
-${YELLOW}数据库管理:${NC}
-    db migrate          运行数据库迁移
-    db reset            重置数据库 (删除所有数据)
-    db shell            打开数据库 Shell
-    db init             初始化数据库
-
-${YELLOW}Git 管理:${NC}
-    git-setup           配置 Git 凭证和远程仓库
-    git-push            提交并推送代码到 GitHub
-
-${YELLOW}示例:${NC}
-    $0 check            # 检查环境
-    $0 install          # 安装依赖
-    $0 start all        # 启动所有服务
-    $0 status           # 查看状态
-    $0 logs server      # 查看 Server 日志
-    $0 db reset         # 重置数据库
-    $0 git-setup        # 配置 Git
-
-${YELLOW}快速开始:${NC}
-    1. $0 check
-    2. $0 install
-    3. $0 start infra
-    4. $0 db init
-    5. $0 start all
-
-${GREEN}访问地址:${NC}
-    - Web 前端: http://localhost:3000
-    - Server API: http://localhost:8001
-    - MinIO 控制台: http://localhost:9001
-    - MLflow: http://localhost:5000
-
-EOF
+    printf "${CYAN}Blueking Lite 本地开发环境管理工具${NC}\n"
+    echo ""
+    echo "用法:"
+    echo "    $0 <command> [options]"
+    echo ""
+    printf "${YELLOW}环境管理:${NC}\n"
+    echo "    check               检查开发环境是否就绪"
+    echo "    install             安装所有依赖 (Server + Web)"
+    echo ""
+    printf "${YELLOW}服务管理:${NC}\n"
+    echo "    start <service>     启动服务 [all|infra|server|web]"
+    echo "    stop <service>      停止服务 [all|infra|server|web]"
+    echo "    restart <service>   重启服务 [all|infra|server|web]"
+    echo "    status              查看所有服务状态"
+    echo "    logs <service>      查看日志 [infra|server|web]"
+    echo ""
+    printf "${YELLOW}数据库管理:${NC}\n"
+    echo "    db migrate          运行数据库迁移"
+    echo "    db reset            重置数据库 (删除所有数据)"
+    echo "    db shell            打开数据库 Shell"
+    echo "    db init             初始化数据库"
+    echo ""
+    printf "${YELLOW}Git 管理:${NC}\n"
+    echo "    git-setup           配置 Git 凭证和远程仓库"
+    echo "    git-push            提交并推送代码到 GitHub"
+    echo ""
+    printf "${YELLOW}示例:${NC}\n"
+    echo "    $0 check            # 检查环境"
+    echo "    $0 install          # 安装依赖"
+    echo "    $0 start all        # 启动所有服务"
+    echo "    $0 status           # 查看状态"
+    echo "    $0 logs server      # 查看 Server 日志"
+    echo "    $0 db reset         # 重置数据库"
+    echo "    $0 git-setup        # 配置 Git"
+    echo ""
+    printf "${YELLOW}快速开始:${NC}\n"
+    echo "    1. $0 check"
+    echo "    2. $0 install"
+    echo "    3. $0 start infra"
+    echo "    4. $0 db init"
+    echo "    5. $0 start all"
+    echo ""
+    printf "${GREEN}访问地址:${NC}\n"
+    echo "    - Web 前端: http://localhost:3000"
+    echo "    - Server API: http://localhost:8001"
+    echo "    - MinIO 控制台: http://localhost:9001"
+    echo "    - MLflow: http://localhost:5000"
+    echo ""
 }
 
 #=============================================================================
