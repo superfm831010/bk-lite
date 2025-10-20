@@ -12,10 +12,11 @@
     "clean": "rm -rf .next",
     "prepare": "husky",
     "tauri": "tauri",
-    "build:android": "cross-env ANDROID_NDK_HOME=%ANDROID_HOME%/ndk/29.0.14206865 pnpm tauri android build --target aarch64",
-    "build:android-debug": "cross-env ANDROID_NDK_HOME=%ANDROID_HOME%/ndk/29.0.14206865 pnpm tauri android build --debug --target aarch64",
-    "build:android-all": "cross-env ANDROID_NDK_HOME=%ANDROID_HOME%/ndk/29.0.14206865 pnpm tauri android build",
-    "build:aab": "cross-env ANDROID_NDK_HOME=%ANDROID_HOME%/ndk/29.0.14206865 pnpm tauri android build --aab"
+    "android:env": "source .android-env.sh",
+    "build:android": "pnpm run build && source .android-env.sh && pnpm tauri android build --target aarch64",
+    "build:android-debug": "pnpm run build && source .android-env.sh && pnpm tauri android build --debug --target aarch64",
+    "build:android-all": "pnpm run build && source .android-env.sh && pnpm tauri android build",
+    "build:aab": "pnpm run build && source .android-env.sh && pnpm tauri android build --aab"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.2",
