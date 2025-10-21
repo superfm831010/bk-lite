@@ -6,6 +6,7 @@ import { Select, Input } from "antd";
 import PasswordResetForm from "./PasswordResetForm";
 import OtpVerificationForm from "./OtpVerificationForm";
 import { saveAuthToken } from "@/utils/crossDomainAuth";
+import { useTranslation } from "@/utils/i18n";
 
 interface SigninClientProps {
   searchParams: {
@@ -41,6 +42,7 @@ interface BkSettings {
 }
 
 export default function SigninClient({ searchParams: { callbackUrl, error }, signinErrors }: SigninClientProps) {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [domain, setDomain] = useState("");
@@ -174,7 +176,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
       const responseData = await response.json();
       
       if (!response.ok || !responseData.result) {
-        setFormError(responseData.message || "Login failed");
+        setFormError(responseData.message || t("auth.loginFailed"));
         setIsLoading(false);
         return;
       }
@@ -215,7 +217,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
       
     } catch (error) {
       console.error("Login error:", error);
-      setFormError("An error occurred during login");
+      setFormError(t("auth.loginError"));
       setIsLoading(false);
     }
   };
@@ -302,12 +304,12 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
         }
       } else {
         console.error('SignIn failed with unknown error');
-        setFormError("Authentication failed");
+        setFormError(t("auth.authenticationFailed"));
         setIsLoading(false);
       }
     } catch (error) {
       console.error("Failed to complete authentication:", error);
-      setFormError("Authentication failed");
+      setFormError(t("auth.authenticationFailed"));
       setIsLoading(false);
     }
   };
@@ -335,7 +337,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
     <form onSubmit={handleLoginSubmit} className="flex flex-col space-y-6 w-full">
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <label htmlFor="domain" className="text-sm font-medium text-[var(--color-text-1)]">Domain</label>
+          <label htmlFor="domain" className="text-sm font-medium text-[var(--color-text-1)]">{t("auth.domain")}</label>
           {loadingDomains && (
             <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
           )}
@@ -344,13 +346,13 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
           id="domain"
           value={domain || undefined}
           onChange={setDomain}
-          placeholder={loadingDomains ? 'Loading domains...' : 'Select a domain'}
+          placeholder={loadingDomains ? t("auth.loadingDomains") : t("auth.selectDomain")}
           loading={loadingDomains}
           disabled={loadingDomains}
           className="w-full"
           size="middle"
           style={{ height: '48px' }}
-          dropdownStyle={{ 
+          dropdownStyle={{
             borderRadius: '8px',
             boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
           }}
@@ -362,14 +364,14 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
             loadingDomains ? (
               <div className="flex items-center justify-center py-4">
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mr-2"></div>
-                Loading...
+                {t("auth.loading")}
               </div>
             ) : (
               <div className="flex items-center justify-center py-4 text-gray-500">
                 <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                No domains available
+                {t("auth.noDomains")}
               </div>
             )
           }
@@ -380,16 +382,16 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
-            No domains available
+            {t("auth.noDomains")}
           </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="username" className="text-sm font-medium text-[var(--color-text-1)]">Username</label>
+        <label htmlFor="username" className="text-sm font-medium text-[var(--color-text-1)]">{t("auth.username")}</label>
         <Input
           id="username"
-          placeholder="Enter your username"
+          placeholder={t("auth.enterUsername")}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           size="large"
@@ -397,12 +399,12 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
           className="h-12"
         />
       </div>
-      
+
       <div className="space-y-2">
-        <label htmlFor="password" className="text-sm font-medium text-[var(--color-text-1)]">Password</label>
+        <label htmlFor="password" className="text-sm font-medium text-[var(--color-text-1)]">{t("auth.password")}</label>
         <Input.Password
           id="password"
-          placeholder="Enter your password"
+          placeholder={t("auth.enterPassword")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           size="large"
@@ -411,8 +413,8 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
         />
       </div>
       
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         disabled={isLoading}
         className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg shadow transition-all duration-150 ease-in-out transform hover:-translate-y-0.5 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
       >
@@ -422,9 +424,9 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            Signing in...
+            {t("auth.signingIn")}
           </span>
-        ) : 'Sign In'}
+        ) : t("auth.signIn")}
       </button>
     </form>
   );
@@ -487,7 +489,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
             <div className="w-full border-t border-[var(--color-border-3)]"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-[var(--color-bg)] text-[var(--color-text-1)]">Or continue with</span>
+            <span className="px-2 bg-[var(--color-bg)] text-[var(--color-text-1)]">{t("auth.orContinueWith")}</span>
           </div>
         </div>
         
@@ -497,23 +499,23 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
               onClick={handleWechatSignIn}
               className="w-full flex items-center justify-center px-4 py-3 text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
             >
-              Sign in with WeChat
+              {t("auth.signInWithWechat")}
             </button>
           )}
-          
+
           {hasBkLogin && (
             <button
               onClick={handleBkSignIn}
               className="w-full flex items-center justify-center px-4 py-3 text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
             >
-              Sign in with BlueKing
+              {t("auth.signInWithBlueking")}
             </button>
           )}
         </div>
         
         {isWechatBrowser && hasWechat && (
           <div className="mt-4 text-center text-sm text-green-600">
-            You are using WeChat browser, for best experience use the WeChat login.
+            {t("auth.wechatBrowserTip")}
           </div>
         )}
       </div>
@@ -539,20 +541,20 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
               <Image src="/logo-site.png" alt="Logo" width={60} height={60} className="h-14 w-auto" />
             </div>
             <h2 className="text-3xl font-bold text-[var(--color-text-1)]">
-              {authStep === 'login' && 'Sign In'}
-              {authStep === 'reset-password' && 'Reset Password'}
-              {authStep === 'otp-verification' && 'Verify Identity'}
+              {authStep === 'login' && t("auth.signInTitle")}
+              {authStep === 'reset-password' && t("auth.resetPasswordTitle")}
+              {authStep === 'otp-verification' && t("auth.otpVerificationTitle")}
             </h2>
             <p className="text-[var(--color-text-3)] mt-2">
-              {authStep === 'login' && 'Enter your credentials to continue'}
-              {authStep === 'reset-password' && 'Create a new password to secure your account'}
-              {authStep === 'otp-verification' && 'Complete the verification process'}
+              {authStep === 'login' && t("auth.signInSubtitle")}
+              {authStep === 'reset-password' && t("auth.resetPasswordSubtitle")}
+              {authStep === 'otp-verification' && t("auth.otpVerificationSubtitle")}
             </p>
           </div>
           
           {error && (
             <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6">
-              <p className="font-medium">{signinErrors[error.toLowerCase()]}</p>
+              <p className="font-medium">{t(signinErrors[error.toLowerCase()] || signinErrors.default)}</p>
             </div>
           )}
           

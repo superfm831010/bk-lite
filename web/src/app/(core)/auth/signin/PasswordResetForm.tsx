@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Input, Button } from "antd";
+import { useTranslation } from "@/utils/i18n";
 
 interface LoginResponse {
   temporary_pwd?: boolean;
@@ -19,26 +20,27 @@ interface PasswordResetFormProps {
   onError: (error: string) => void;
 }
 
-export default function PasswordResetForm({ 
-  username, 
-  loginData, 
-  onPasswordReset, 
-  onError 
+export default function PasswordResetForm({
+  username,
+  loginData,
+  onPasswordReset,
+  onError
 }: PasswordResetFormProps) {
+  const { t } = useTranslation();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
-      onError("Passwords do not match");
+      onError(t("auth.passwordsNotMatch"));
       return;
     }
-    
+
     if (newPassword.length < 8) {
-      onError("Password must be at least 8 characters long");
+      onError(t("auth.passwordTooShort"));
       return;
     }
     
@@ -58,9 +60,9 @@ export default function PasswordResetForm({
       });
       
       const responseData = await response.json();
-      
+
       if (!response.ok || !responseData.result) {
-        onError(responseData.message || "Password reset failed");
+        onError(responseData.message || t("auth.passwordResetFailed"));
         setIsLoading(false);
         return;
       }
@@ -79,13 +81,13 @@ export default function PasswordResetForm({
   return (
     <div>
       <div className="text-center mb-6">
-        <h3 className="text-xl font-semibold text-[var(--color-text-1)]">Reset</h3>
-        <p className="text-gray-500 mt-2">You are using a temporary password. Please create a new password to continue.</p>
+        <h3 className="text-xl font-semibold text-[var(--color-text-1)]">{t("auth.resetPassword")}</h3>
+        <p className="text-gray-500 mt-2">{t("auth.resetPasswordDesc")}</p>
       </div>
-      
+
       <form onSubmit={handlePasswordReset} className="flex flex-col space-y-6 w-full">
         <div className="space-y-2">
-          <label htmlFor="username-display" className="text-sm font-medium text-[var(--color-text-1)]">Username</label>
+          <label htmlFor="username-display" className="text-sm font-medium text-[var(--color-text-1)]">{t("auth.username")}</label>
           <Input
             id="username-display"
             type="text"
@@ -95,12 +97,12 @@ export default function PasswordResetForm({
             disabled
           />
         </div>
-        
+
         <div className="space-y-2">
-          <label htmlFor="new-password" className="text-sm font-medium text-[var(--color-text-1)]">New Password</label>
+          <label htmlFor="new-password" className="text-sm font-medium text-[var(--color-text-1)]">{t("auth.newPassword")}</label>
           <Input.Password
             id="new-password"
-            placeholder="Enter new password"
+            placeholder={t("auth.enterNewPassword")}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             className="w-full"
@@ -108,12 +110,12 @@ export default function PasswordResetForm({
             required
           />
         </div>
-        
+
         <div className="space-y-2">
-          <label htmlFor="confirm-password" className="text-sm font-medium text-[var(--color-text-1)]">Confirm Password</label>
+          <label htmlFor="confirm-password" className="text-sm font-medium text-[var(--color-text-1)]">{t("auth.confirmPassword")}</label>
           <Input.Password
             id="confirm-password"
-            placeholder="Confirm new password"
+            placeholder={t("auth.confirmNewPassword")}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             className="w-full"
@@ -121,15 +123,15 @@ export default function PasswordResetForm({
             required
           />
         </div>
-        
-        <Button 
+
+        <Button
           type="primary"
-          htmlType="submit" 
+          htmlType="submit"
           loading={isLoading}
           className="w-full"
           size="large"
         >
-          Reset Password
+          {t("auth.resetPassword")}
         </Button>
       </form>
     </div>
