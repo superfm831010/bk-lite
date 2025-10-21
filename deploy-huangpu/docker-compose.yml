@@ -93,7 +93,7 @@ services:
     volumes:
       - ./conf/nats/nats.conf:/etc/nats/nats.conf:ro
       - ./conf/certs:/etc/nats/certs:ro
-      - huangpu_nats:/nats
+      - huangpu_nats:/data
     ports:
       - "24222:4222"  # 避免与开发环境端口冲突
     command:
