@@ -219,7 +219,7 @@ initialize_config() {
     # 检查是否存在 secrets 文件
     if [ -f "$secrets_file" ]; then
         log "SUCCESS" "发现已保存的密码配置，加载中..."
-        source $secrets_file
+        . "./$secrets_file"
     else
         log "INFO" "首次部署，生成随机密码..."
         export POSTGRES_PASSWORD=$(generate_password 32)
@@ -233,7 +233,7 @@ initialize_config() {
         export FALKORDB_PASSWORD=$(generate_password 32)
 
         # 保存密码到 secrets 文件
-        cat > $secrets_file <<EOF
+        cat > "$secrets_file" <<EOF
 # 黄埔海关智能运维平台 - 密码配置
 # 生成日期: $(date +'%Y-%m-%d %H:%M:%S')
 # 警告: 请妥善保管此文件，不要泄露!
@@ -247,7 +247,7 @@ export MINIO_ROOT_USER=$MINIO_ROOT_USER
 export MINIO_ROOT_PASSWORD=$MINIO_ROOT_PASSWORD
 export FALKORDB_PASSWORD=$FALKORDB_PASSWORD
 EOF
-        chmod 600 $secrets_file
+        chmod 600 "$secrets_file"
         log "SUCCESS" "密码已生成并保存到 $secrets_file"
         log "WARNING" "请妥善保管 $secrets_file 文件！"
     fi
@@ -262,11 +262,11 @@ EOF
         export HOST_IP=${HOST_IP:-$DEFAULT_IP}
         log "INFO" "使用 IP 地址: $HOST_IP"
     else
-        source $config_file
+        . "./$config_file"
     fi
 
     # 生成 .env 文件
-    cat > $config_file <<EOF
+    cat > "$config_file" <<EOF
 # 黄埔海关智能运维平台 - 环境配置
 HOST_IP=${HOST_IP}
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
