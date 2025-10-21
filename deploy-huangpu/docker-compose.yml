@@ -1,0 +1,337 @@
+# 黄埔海关智能运维平台 - 内网生产环境部署配置
+# 版本: v1.0
+# 生成日期: 2025-10-21
+
+version: '3.8'
+
+networks:
+  bklite-prod-huangpu:
+    driver: bridge
+    name: bklite-prod-huangpu
+
+volumes:
+  huangpu_postgres:
+  huangpu_redis:
+  huangpu_nats:
+  huangpu_minio:
+  huangpu_victoria_metrics:
+  huangpu_victoria_logs:
+  huangpu_falkordb:
+  huangpu_mlflow:
+
+services:
+  # Traefik 反向代理
+  traefik:
+    image: traefik:3.3.3
+    container_name: bklite-traefik-prod
+    restart: always
+    ports:
+      - "8080:80"  # 对外访问端口
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./conf/traefik/dynamic.yml:/etc/traefik/dynamic.yml
+    command:
+      - "--log.level=INFO"
+      - "--api.insecure=true"
+      - "--api.dashboard=false"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      - "--providers.file.watch=true"
+      - "--accesslog"
+      - "--entrypoints.web.address=:80"
+    networks:
+      - bklite-prod-huangpu
+    labels:
+      - "traefik.enable=true"
+
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15
+    container_name: bklite-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "25432:5432"  # 避免与开发环境端口冲突
+    volumes:
+      - huangpu_postgres:/var/lib/postgresql/data
+      - ./conf/postgres/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+    networks:
+      - bklite-prod-huangpu
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存和消息队列
+  redis:
+    image: redis:5.0.14
+    container_name: bklite-redis-prod
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "26380:6379"  # 避免与开发环境端口冲突
+    volumes:
+      - huangpu_redis:/data
+    networks:
+      - bklite-prod-huangpu
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NATS 消息服务器
+  nats:
+    image: nats:2.10.25
+    container_name: bklite-nats-prod
+    restart: always
+    volumes:
+      - ./conf/nats/nats.conf:/etc/nats/nats.conf:ro
+      - ./conf/certs:/etc/nats/certs:ro
+      - huangpu_nats:/nats
+    ports:
+      - "24222:4222"  # 避免与开发环境端口冲突
+    command:
+      - "-c"
+      - "/etc/nats/nats.conf"
+    networks:
+      - bklite-prod-huangpu
+
+  # Victoria Metrics 时序数据库
+  victoria-metrics:
+    image: victoriametrics/victoria-metrics:v1.106.1
+    container_name: bklite-vm-prod
+    restart: always
+    volumes:
+      - huangpu_victoria_metrics:/victoria-metrics-data
+    ports:
+      - "28428:8428"  # 避免与开发环境端口冲突
+    command:
+      - "--storageDataPath=/victoria-metrics-data"
+      - "--httpListenAddr=0.0.0.0:8428"
+      - "--retentionPeriod=168h"
+      - "-maxLabelsPerTimeseries=300"
+    networks:
+      - bklite-prod-huangpu
+    depends_on:
+      - nats
+
+  # Victoria Logs 日志存储
+  victoria-logs:
+    image: victoriametrics/victoria-logs:v1.25.0
+    container_name: bklite-vl-prod
+    restart: always
+    networks:
+      - bklite-prod-huangpu
+    volumes:
+      - huangpu_victoria_logs:/vlogs
+    ports:
+      - "29428:9428"  # 避免与开发环境端口冲突
+    command:
+      - -storageDataPath=/vlogs
+      - -loggerFormat=json
+      - -insert.maxLineSizeBytes=10000000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9428/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MinIO 对象存储
+  minio:
+    image: minio/minio:RELEASE.2024-05-01T01-11-10Z-cpuv1
+    container_name: bklite-minio-prod
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "29000:9000"   # 避免与开发环境端口冲突
+      - "29001:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - huangpu_minio:/data
+    networks:
+      - bklite-prod-huangpu
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # FalkorDB 图数据库
+  falkordb:
+    image: falkordb/falkordb:v4.12.4
+    container_name: bklite-falkordb-prod
+    restart: always
+    environment:
+      - REDIS_ARGS=--requirepass ${FALKORDB_PASSWORD}
+      - FALKORDB_ARGS=THREAD_COUNT 4
+    ports:
+      - "26479:6379"  # 避免与开发环境端口冲突
+    networks:
+      - bklite-prod-huangpu
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${FALKORDB_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - huangpu_falkordb:/var/lib/falkordb/data
+
+  # MLflow 实验跟踪
+  mlflow:
+    image: bklite/mlflow:latest
+    container_name: bklite-mlflow-prod
+    restart: always
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "15000"
+      - --backend-store-uri
+      - postgresql+psycopg2://postgres:${POSTGRES_PASSWORD}@postgres:5432/mlflow
+      - --artifacts-destination
+      - s3://mlflow-artifacts/
+      - --serve-artifacts
+    ports:
+      - "25000:15000"  # 避免与开发环境端口冲突
+    networks:
+      - bklite-prod-huangpu
+    environment:
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - AWS_DEFAULT_REGION=us-east-1
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sSf", "http://localhost:15000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # NATS Executor
+  nats-executor:
+    image: bklite/nats-executor:latest
+    container_name: bklite-nats-executor-prod
+    restart: always
+    environment:
+      - NATS_INSTANCE_ID=default
+      - NATS_URLS=tls://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
+      - NATS_CA_FILE=/etc/nats/certs/ca.crt
+    networks:
+      - bklite-prod-huangpu
+    volumes:
+      - ./conf/certs:/etc/nats/certs:ro
+
+  # Server 后端服务（黄埔海关定制版）
+  server:
+    image: bklite/server:huangpu-v1.0
+    container_name: bklite-server-prod
+    restart: always
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - NATS_SERVERS=tls://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
+      - NATS_TLS_ENABLED=true
+      - NATS_TLS_CA_FILE=/etc/nats/certs/ca.crt
+      - NATS_NAMESPACE=bklite
+      - DB_ENGINE=postgresql
+      - DB_NAME=bklite
+      - DB_USER=postgres
+      - DB_HOST=postgres
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_PORT=5432
+      - ADMIN_PASSWORD=password
+      - ENABLE_CELERY=true
+      - CELERY_WORKER_CONCURRENCY=2
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/3
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/3
+      - DEFAULT_ZONE_VAR_NATS_SERVERS=${HOST_IP}:24222
+      - DEFAULT_ZONE_VAR_NATS_PASSWORD=${NATS_ADMIN_PASSWORD}
+      - DEFAULT_ZONE_VAR_NATS_USERNAME=${NATS_ADMIN_USERNAME}
+      - DEFAULT_ZONE_VAR_NODE_SERVER_URL=http://${HOST_IP}:8080
+      - DEFAULT_ZONE_VAR_NATS_PROTOCOL=tls
+      - DEFAULT_ZONE_VAR_NATS_TLS_CA_FILE=/opt/fusion-collectors/certs/ca.crt
+      - VICTORIAMETRICS_HOST=http://victoria-metrics:8428
+      - TOP_GROUP=Default
+      - DEFAULT_GROUP_NAME=Guest
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_USE_HTTPS=0
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - METIS_SERVER_URL=http://metis:18083
+      - PILOT_RUNTIME=docker
+      - INSTALL_APPS=system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,alerts,log,mlops,operation_analysis
+      - VICTORIALOGS_HOST=http://victoria-logs:9428
+      - MLFLOW_TRACKER_URL=http://mlflow:15000
+      - MLFLOW_ENABLE_SYSTEM_METRICS_LOGGING=true
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - AWS_DEFAULT_REGION=us-east-1
+      - FALKORDB_DATABASE=cmdb_graph
+      - FALKORDB_REQUIREPASS=${FALKORDB_PASSWORD}
+      - FALKORDB_HOST=falkordb
+      - FALKORDB_PORT=6379
+    healthcheck:
+      test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "http://127.0.0.1:8000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 300
+      start_period: 90s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      falkordb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - bklite-prod-huangpu
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./conf/certs:/etc/nats/certs:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sidecar.rule=Host(`${HOST_IP}`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.sidecar.entrypoints=web"
+      - "traefik.http.services.sidecar.loadbalancer.server.port=8000"
+
+  # Web 前端服务（黄埔海关定制版）
+  web:
+    image: bklite/web:huangpu-v1.0
+    container_name: bklite-web-prod
+    restart: always
+    environment:
+      - NEXTAUTH_URL=http://${HOST_IP}:8080
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAPI_URL=http://server:8000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.system-manager-web.rule=Host(`${HOST_IP}`)"
+      - "traefik.http.routers.system-manager-web.entrypoints=web"
+      - "traefik.http.services.system-manager-web.loadbalancer.server.port=3000"
+    networks:
+      - bklite-prod-huangpu
+    depends_on:
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 3
