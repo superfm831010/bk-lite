@@ -227,7 +227,7 @@ services:
     container_name: bklite-nats-executor-prod
     restart: always
     environment:
-      - NATS_INSTANCE_ID=default
+      - NATS_INSTANCE_ID=管理网
       - NATS_URLS=tls://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
       - NATS_CA_FILE=/etc/nats/certs/ca.crt
     networks:
