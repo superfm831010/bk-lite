@@ -19,9 +19,102 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+TEMP_DIRS=()
+cleanup() {
+    for dir in "${TEMP_DIRS[@]}"; do
+        if [ -d "$dir" ]; then
+            rm -rf "$dir"
+        fi
+    done
+}
+trap cleanup EXIT
+
 # 配置
 CONTAINER_NAME="bklite-server-prod"
 POSTGRES_CONTAINER="bklite-postgres-prod"
+CERT_SOURCE="${SCRIPT_DIR}/conf/certs/ca.crt"
+
+prepare_package() {
+    local original_file="$1"
+    if [ ! -f "$original_file" ]; then
+        echo -e "${RED}错误: 探针包不存在，无法预处理: ${original_file}${NC}"
+        return 1
+    fi
+
+    if [ ! -f "$CERT_SOURCE" ]; then
+        echo -e "${YELLOW}警告: 未找到 CA 证书 ${CERT_SOURCE}，跳过证书注入${NC}"
+    fi
+
+    local work_dir
+    work_dir="$(mktemp -d)"
+    TEMP_DIRS+=("$work_dir")
+
+    local src_dir="$work_dir/src"
+    mkdir -p "$src_dir"
+    local extracted_format=""
+    if [[ "$original_file" == *.zip ]]; then
+        unzip -q "$original_file" -d "$src_dir"
+        extracted_format="zip"
+    elif [[ "$original_file" == *.tar.gz ]]; then
+        tar -xzf "$original_file" -C "$src_dir"
+        extracted_format="tar"
+    else
+        echo -e "${RED}错误: 不支持的探针包格式: ${original_file}${NC}"
+        return 1
+    fi
+
+    if [ -f "$CERT_SOURCE" ]; then
+        mkdir -p "$src_dir/fusion-collectors/certs"
+        cp "$CERT_SOURCE" "$src_dir/fusion-collectors/certs/ca.crt"
+    fi
+
+    local sidecar_file="$src_dir/fusion-collectors/sidecar.yml"
+    if [ -f "$sidecar_file" ]; then
+        SIDECAR_FILE="$sidecar_file" python3 - <<'PY'
+import os
+from pathlib import Path
+import yaml
+
+sidecar_path = Path(os.environ["SIDECAR_FILE"])
+data = yaml.safe_load(sidecar_path.read_text())
+allowlist = data.get("collector_binaries_accesslist") or []
+required = [
+    "/opt/fusion-collectors/bin/*",
+    "/opt/fusion-collectors/bin/*/*",
+]
+for item in required:
+    if item not in allowlist:
+        allowlist.append(item)
+data["collector_binaries_accesslist"] = allowlist
+sidecar_path.write_text(
+    yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
+)
+PY
+    fi
+
+    local prepared_file="$work_dir/$(basename "$original_file")"
+
+    if [ "$extracted_format" = "zip" ]; then
+        python3 - <<'PY'
+import os
+import sys
+import zipfile
+
+base_dir = sys.argv[1]
+output_file = sys.argv[2]
+with zipfile.ZipFile(output_file, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+    for root, _, files in os.walk(base_dir):
+        for name in files:
+            path = os.path.join(root, name)
+            arcname = os.path.relpath(path, base_dir)
+            zf.write(path, arcname)
+PY "$src_dir" "$prepared_file"
+    else
+        (cd "$src_dir" && tar -czf "$prepared_file" .)
+    fi
+
+    echo "$prepared_file"
+}
 
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}BlueKing Lite 探针包初始化脚本${NC}"
@@ -153,7 +246,9 @@ auto_init() {
     # 查找 Controller 包
     for file in fusion-collectors*.zip fusion-collectors*.tar.gz; do
         if check_probe_file "$file" 2>/dev/null; then
-            upload_probe_package "$file" "linux" "Controller" "1.0.0" "controller"
+            local prepared
+            prepared="$(prepare_package "$file")" || return 1
+            upload_probe_package "$prepared" "linux" "Controller" "1.0.0" "controller"
             count=$((count + 1))
         fi
     done
@@ -239,7 +334,9 @@ main() {
         if ! check_probe_file "$file"; then
             exit 1
         fi
-        upload_probe_package "$file" "$os" "$object" "$version" "$type"
+        local prepared
+        prepared="$(prepare_package "$file")" || exit 1
+        upload_probe_package "$prepared" "$os" "$object" "$version" "$type"
     fi
 
     # 验证结果

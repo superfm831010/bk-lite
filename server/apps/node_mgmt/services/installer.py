@@ -24,6 +24,10 @@ class InstallerService:
     @staticmethod
     def install_controller(cloud_region_id, work_node, package_version_id, nodes):
         """安装控制器"""
+        work_node = work_node or NodeConstants.DEFAULT_WORK_NODE
+        if work_node != NodeConstants.DEFAULT_WORK_NODE:
+            work_node = NodeConstants.DEFAULT_WORK_NODE
+
         task_obj = ControllerTask.objects.create(
             cloud_region_id=cloud_region_id,
             work_node=work_node,
@@ -51,6 +55,10 @@ class InstallerService:
     @staticmethod
     def uninstall_controller(cloud_region_id, work_node, nodes):
         """卸载控制器"""
+        work_node = work_node or NodeConstants.DEFAULT_WORK_NODE
+        if work_node != NodeConstants.DEFAULT_WORK_NODE:
+            work_node = NodeConstants.DEFAULT_WORK_NODE
+
         task_obj = ControllerTask.objects.create(
             cloud_region_id=cloud_region_id,
             work_node=work_node,

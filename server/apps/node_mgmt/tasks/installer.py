@@ -288,7 +288,11 @@ def install_collector(task_id):
             # 根据文件扩展名决定是否解压
             if package_obj.name.lower().endswith('.zip'):
                 _add_step(steps, "unzip", "running", "Extracting collector package", timestamp)
-                unzip_name = unzip_file(node_obj.node_id, f"{collector_install_dir}/{package_obj.name}", collector_install_dir)
+                unzip_name = unzip_file(
+                    node_obj.node_id,
+                    f"{collector_install_dir}/{package_obj.name}",
+                    collector_install_dir,
+                )
                 executable_name = unzip_name
                 _update_step_status(steps, "success", f"Package extracted successfully: {unzip_name}")
             else:
@@ -299,8 +303,14 @@ def install_collector(task_id):
             if package_obj.os in NodeConstants.LINUX_OS:
                 _add_step(steps, "set_exe", "running", "Setting execution permissions", timestamp)
                 executable_path = f"{collector_install_dir}/{executable_name}"
-                exec_command_to_local(node_obj.node_id,
-                    f"if [ -d '{executable_path}' ]; then find '{executable_path}' -type f -exec chmod +x {{}} \\; ; else chmod +x '{executable_path}'; fi")
+                exec_command_to_local(
+                    node_obj.node_id,
+                    (
+                        "if [ -d '{path}' ]; then "
+                        "find '{path}' -type f -exec chmod +x {{}} \\; ; "
+                        "else chmod +x '{path}'; fi"
+                    ).format(path=executable_path),
+                )
                 _update_step_status(steps, "success", "Execution permissions set successfully")
 
         except Exception as e:

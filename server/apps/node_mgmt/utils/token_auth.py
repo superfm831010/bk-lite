@@ -13,7 +13,7 @@ from apps.core.logger import node_logger as logger
 
 def get_client_token(request):
     try:
-        # token格式"Basic BASE64(YWRtaW46YWR:token)"
+        # token格式"Basic BASE64(token:token)"
         base64_token = request.META.get(AUTH_TOKEN_HEADER_NAME).split("Basic ")[-1]
         token = base64.b64decode(base64_token).decode('utf-8')
         token = token.split(':', 1)[0]
@@ -36,21 +36,29 @@ def check_token_auth(node_id, request):
     """
     client_token = get_client_token(request)
 
-    if not node_id or not client_token:
-        logger.warning(f"Token认证失败: node_id={node_id}, has_token={bool(client_token)}")
+    if not client_token:
+        logger.warning("Token认证失败: 未获取到客户端token")
         raise UnauthorizedException("缺少必要的认证信息")
 
     client_token_data = decode_token(client_token)
-    if node_id != client_token_data["node_id"]:
-        logger.warning(f"Token认证失败: node_id不匹配 expected={node_id}, got={client_token_data.get('node_id')}")
+    token_node_id = client_token_data.get("node_id")
+    if not token_node_id:
+        logger.warning("Token认证失败: token缺少node_id")
+        raise UnauthorizedException("缺少必要的认证信息")
+
+    request_node_id = node_id or token_node_id
+    if node_id and node_id != token_node_id:
+        logger.warning(f"Token认证失败: node_id不匹配 expected={node_id}, got={token_node_id}")
         raise UnauthorizedException("节点ID不匹配")
 
-    server_token = get_node_cache_token(node_id)
+    server_token = get_node_cache_token(token_node_id)
     if client_token != server_token:
-        logger.warning(f"Token认证失败: token不匹配 node_id={node_id}")
+        logger.warning(f"Token认证失败: token不匹配 node_id={token_node_id}")
         raise UnauthorizedException("Token无效或已过期")
 
-    logger.debug(f"Token认证成功: node_id={node_id}")
+    logger.debug(f"Token认证成功: node_id={request_node_id}")
+    request.META["sidecar_node_id"] = request_node_id
+    return request_node_id
 
 
 def generate_node_token(node_id: str, ip: str, user: str, secret: str = SECRET_KEY):

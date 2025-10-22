@@ -254,9 +254,6 @@ class Sidecar:
 
         variables = Sidecar.get_variables(node)
 
-        # 不在变量中渲染NATS_PASSWORD，走环境变量渲染
-        variables.pop("NATS_PASSWORD", None)
-
         # 如果配置中有 env_config，则合并到变量中
         if configuration_data.get('env_config'):
             variables.update(configuration_data['env_config'])
