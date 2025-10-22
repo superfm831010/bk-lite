@@ -95,7 +95,7 @@ PY
     local prepared_file="$work_dir/$(basename "$original_file")"
 
     if [ "$extracted_format" = "zip" ]; then
-        python3 - <<'PY'
+        python3 - "$src_dir" "$prepared_file" <<'PY'
 import os
 import sys
 import zipfile
@@ -108,7 +108,7 @@ with zipfile.ZipFile(output_file, "w", compression=zipfile.ZIP_DEFLATED) as zf:
             path = os.path.join(root, name)
             arcname = os.path.relpath(path, base_dir)
             zf.write(path, arcname)
-PY "$src_dir" "$prepared_file"
+PY
     else
         (cd "$src_dir" && tar -czf "$prepared_file" .)
     fi
@@ -245,6 +245,7 @@ auto_init() {
 
     # 查找 Controller 包
     for file in fusion-collectors*.zip fusion-collectors*.tar.gz; do
+        [ -e "$file" ] || continue
         if check_probe_file "$file" 2>/dev/null; then
             local prepared
             prepared="$(prepare_package "$file")" || return 1
